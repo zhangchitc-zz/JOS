@@ -124,7 +124,7 @@ boot_alloc(uint32_t n, uint32_t align)
 	//	Step 4: return allocated chunk
 
     v = ROUNDUP (boot_freemem, align);
-    boot_freemem = (char*) (v + n);
+    boot_freemem = (char*) v + n;
     
 	return v;
 }
@@ -154,6 +154,9 @@ i386_vm_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
 	pgdir = boot_alloc(PGSIZE, PGSIZE);
+
+    cprintf ("%CgrnDEBUG:%Cwht pgdir addr = %u\n", (uint32_t) pgdir);
+
 	memset(pgdir, 0, PGSIZE);
 	boot_pgdir = pgdir;
 	boot_cr3 = PADDR(pgdir);
@@ -178,7 +181,10 @@ i386_vm_init(void)
 	// array.  'npage' is the number of physical pages in memory.
 	// User-level programs will get read-only access to the array as well.
 	// Your code goes here:
+	
 
+	pages = boot_alloc (npage * sizeof (struct Page), PGSIZE);
+    cprintf ("%CgrnDEBUG:%Cwht pages addr = %u\n", (uint32_t) pages);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
