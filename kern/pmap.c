@@ -207,7 +207,12 @@ i386_vm_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-	 
+	boot_map_segment (
+        pgdir, 
+        UPAGES, 
+        ROUNDUP (npage * sizeof (struct Page), PGSIZE), 
+        KADDR (pages),
+        PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
