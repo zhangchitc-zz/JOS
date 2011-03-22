@@ -155,7 +155,7 @@ i386_vm_init(void)
 	// create initial page directory.
 	pgdir = boot_alloc(PGSIZE, PGSIZE);
 
-    cprintf ("%CgrnDEBUG:%Cwht pgdir addr = %u\n", (uint32_t) pgdir);
+    // cprintf ("%CgrnDEBUG:%Cwht pgdir addr = %u\n", (uint32_t) pgdir);
 
 	memset(pgdir, 0, PGSIZE);
 	boot_pgdir = pgdir;
@@ -184,7 +184,7 @@ i386_vm_init(void)
 	
 
 	pages = boot_alloc (npage * sizeof (struct Page), PGSIZE);
-    cprintf ("%CgrnDEBUG:%Cwht pages addr = %u\n", (uint32_t) pages);
+    // cprintf ("%CgrnDEBUG:%Cwht pages addr = %u\n", (uint32_t) pages);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -518,6 +518,15 @@ int
 page_alloc(struct Page **pp_store)
 {
 	// Fill this function in
+
+    // cprintf ("%CgrnDEBUG:%Cwht LIST_EMPTY = %d\n", LIST_EMPTY (&page_free_list));
+ 	
+    if (!LIST_EMPTY (&page_free_list)) {
+        *pp_store = LIST_FIRST (&page_free_list);
+        LIST_REMOVE (LIST_FIRST (&page_free_list), pp_link);
+        return 0;
+    }
+
 	return -E_NO_MEM;
 }
 
