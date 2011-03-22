@@ -211,7 +211,7 @@ i386_vm_init(void)
         pgdir, 
         UPAGES, 
         ROUNDUP (npage * sizeof (struct Page), PGSIZE), 
-        KADDR (pages),
+        (physaddr_t) KADDR ((uintptr_t) pages),
         PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
@@ -673,7 +673,7 @@ boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int per
     pte_t *pte;
 
     for (offset = 0; offset < size; offset += PGSIZE) {
-        pte = pgdir_walk (pgdir, la, 1);
+        pte = pgdir_walk (pgdir, (void*)la, 1);
 
         *pte = pa|perm|PTE_P;
 
