@@ -207,6 +207,7 @@ i386_vm_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	 
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -575,6 +576,47 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
+	//
+    //
+	// Added by Chi Zhang (zhangchitc@gmail.com
+    //
+    // Attention!! this function return kernel virtual address!! (kva)
+    //
+    //
+	// If a page table doesn't exist in the page directory, 
+	// the corresponding page directory entry 
+	// pgdir[idx]'s 'present' bit equals 0
+	//
+	// pgdir stores the physical address of page table
+	// First 
+    // we need to locate the position of PDX(va)th entry in kernel virtual space
+	// Then 
+    // we can use (pte_t*) pointer and Page Table Index to look for answer 
+
+    pde_t *pt = pgdir + PDX(va);
+    void *pt_kva;
+
+    if (*pt & PTE_P) {
+        pt_kva = (void*) KADDR (PTE_ADDR (*pt));
+        return (pte_t*) pt_kva + PTX (va);
+    }
+
+    struct Page *newpt;
+
+    if (create == 1 && page_alloc (&newpt) == 0) {
+        
+        // Alert!!! memset must use kernel virtual address
+        // consult the i386_vm_init () when it first clears page directory
+        memset (page2kva (newpt), 0, PGSIZE);
+        newpt -> pp_ref = 1;
+
+        // Because the x86 MMU will still check the page table permission
+        // so it is better to leave page directory more permissive
+        *pt = PADDR (page2kva (newpt))|PTE_U|PTE_W|PTE_P;
+        pt_kva = (void*) KADDR (PTE_ADDR (*pt));
+        return (pte_t*) pt_kva + PTX (va);
+    }
+
 	return NULL;
 }
 
@@ -621,6 +663,18 @@ static void
 boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+
+    int offset;
+    pte_t *pte;
+
+    for (offset = 0; offset < size; offset += PGSIZE) {
+        pte = pgdir_walk (pgdir, la, 1);
+
+        *pte = pa|perm|PTE_P;
+
+        pa += PGSIZE;
+        la += PGSIZE;
+    }
 }
 
 //
