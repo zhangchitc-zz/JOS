@@ -538,6 +538,8 @@ void
 page_free(struct Page *pp)
 {
 	// Fill this function in
+	
+    LIST_INSERT_HEAD (&page_free_list, pp, pp_link);
 }
 
 //
