@@ -456,10 +456,35 @@ page_init(void)
 	//     page tables and other data structures?
 	//
 	// Change the code to reflect this.
+	//
+	
+
+    //
+	// Added by Chi Zhang (zhangchitc@gmail.com)
+	//
+	// There are several blocks of physical memory are in use
+	// 1)  [0, PGSIZE)                              : for real-mode IDT and BIOS
+	// 2)  [IOPHYSMEM, EXTPHYSMEM)                  : for IO hole (IOPHYSMEM = basemem)
+	// 3)  [EXTPHYSMEM, end)                        : for kernel
+	// 4)  [boot_pgdir, boot_pgdir + PGSIZE)        : for Page Directory
+	// 5)  [pages, pages + npage * sizeof (Page))   : for Page structs
+	// 
+	// Actually, the 2 ~ 5 items are consecutive memory space
+	// Starting from [IOPHYSMEM, boot_freemem)
+	// using PPN macro to obtain index 
+	// from PPN (IOPHYSMEM) to PPN (ROUNDUP (boot_freemem, PGSIZE)) 
+	//
 	int i;
+    int lower_ppn = PPN (IOPHYSMEM);
+    int upper_ppn = PPN (ROUNDUP (boot_freemem, PGSIZE));
+
 	LIST_INIT(&page_free_list);
 	for (i = 0; i < npage; i++) {
 		pages[i].pp_ref = 0;
+
+        if (i == 0) continue;
+        if (lower_ppn <= i && i < upper_ppn) continue;
+ 
 		LIST_INSERT_HEAD(&page_free_list, &pages[i], pp_link);
 	}
 }
