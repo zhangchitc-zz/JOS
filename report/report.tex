@@ -1,0 +1,220 @@
+\documentclass{article}
+
+\usepackage{csquotes}
+% 使用中文CJK包
+\usepackage{CJK}
+% 图像插入宏包
+\usepackage{graphicx}
+% 自定义颜色支持
+\usepackage[usenames,dvipsnames]{color}
+% 长表格跨页支持
+\usepackage{longtable}
+% 代码高亮支持
+\usepackage{listings}
+% 算法伪代码包
+\usepackage[ruled,vlined]{algorithm2e}
+% 自定义标题格式
+\usepackage{titlesec}
+% 扩展tabular样式
+\usepackage{array}
+% 添加页眉页脚
+\usepackage{fancyhdr}
+% 虚拟正文测试
+\usepackage{lipsum}
+% 首行缩进
+\usepackage{indentfirst}
+% 树状结构图
+\usepackage{tree-dvips}
+% 脚注环境
+\usepackage{footnote}
+% 定制表格线
+\usepackage{makecell}
+% tikz绘图包
+\usepackage{tikz}
+% URL超链接
+\usepackage[dvips, colorlinks, linkcolor=black]{hyperref}
+
+% hyperref中文兼容
+\pdfstringdefDisableCommands{
+\let\CJK@XX\relax
+\let\CJK@XXX\relax
+\let\CJK@XXXp\relax
+\let\CJK@XXXX\relax
+\let\CJK@XXXXp\relax
+}
+
+\usetikzlibrary{positioning,shapes,shadows,arrows}
+
+
+% 设置脚注在table中可用
+\makesavenoteenv{table}
+
+% 设置标题格式
+%\titleformat{\chapter}{\raggedright\Huge\bfseries}{Chapter \thechapter}{1em}{}
+
+% 设置默认字体族, 具体字体请查看texdoc psnfss2e
+
+% 设置Roman字体为Palatino
+\renewcommand{\rmdefault}{ppl} 
+% 设置TypeWriter字体为Courier
+\renewcommand{\ttdefault}{pcr} 
+
+% 设置行距
+\setlength{\parskip}{1ex}
+
+% 定义需要的颜色
+
+\definecolor{lightgray}{RGB}{230,230,230}
+\definecolor{lightblue}{RGB}{224, 224, 255}
+\definecolor{darkblue}{RGB}{192, 192, 255}
+\definecolor{lightpink}{RGB}{255, 224, 224}
+\definecolor{darkpink}{RGB}{255, 192, 192}
+\definecolor{keywordyellow}{RGB}{255, 204, 0}
+\definecolor{keywordred}{RGB}{194, 58, 0}
+\definecolor{numbercolor}{RGB}{102, 51, 0}
+
+% 设置代码风格
+
+% 定义C语言代码风格
+\lstdefinestyle{ccode}
+{ 
+    language=C, 
+    numbers=left, 
+    numberstyle=\color{numbercolor},
+    basicstyle=\scriptsize\ttfamily\bfseries,
+    keywordstyle=\color{blue}, 
+    commentstyle=\color{PineGreen},
+    stringstyle=\color{red}, 
+    frame=shadowbox, 
+    frameround=tttt,
+    breaklines=true,
+    backgroundcolor=\color{lightgray} }
+
+% 定义汇编语言代码风格
+\lstdefinestyle{acode}
+{ 
+    language=,
+    morekeywords=[1]{mov, movl, movb, movw, orl, xorw, cli, cld, inb, testb, test, jnz, push, pop, jmp, call, lea, add, sub, ret, jle, outb, ljmp, lgdt},
+    morekeywords=[2]{ax, bx, cx, dx, eax, ebx, ecx, edx, cr0, cr1, cr2, cr3, al, ds, es, ss, esp, ebp}, 
+    morekeywords=[3]{data, text, bss},
+    morekeywords=[4]{long, align, p2align, ascii, fill, globl, space, set, rept, byte, word},
+    morecomment=[l]\#,
+    numbers=left, 
+    numberstyle=\color{numbercolor},
+    basicstyle=\scriptsize\ttfamily\bfseries,
+    keywordstyle=[1]\color{blue}, 
+    keywordstyle=[2]\color{keywordyellow},
+    keywordstyle=[3]\color{orange},
+    keywordstyle=[4]\color{keywordred},
+    commentstyle=\color{PineGreen},
+    stringstyle=\color{red}, 
+    frame=shadowbox, 
+    frameround=tttt,
+    breaklines=true,
+    backgroundcolor=\color{lightgray} }
+
+    
+% 定义命令行输出风格
+\lstdefinestyle{console}
+{
+    language=bash, 
+    numbers=none, 
+    frame=tRBl,
+    basicstyle=\scriptsize\color{green}\ttfamily\bfseries,     
+    backgroundcolor=\color{black}}
+
+
+% 定义exercise输出风格
+\lstdefinestyle{exercise}
+{
+    numbers=none, 
+    frame=tRBl,
+    breaklines=true,
+    breakindent=0pt,
+    framexleftmargin=1em,
+    framexrightmargin=1em,
+    framextopmargin=2ex,
+    framexbottommargin=2ex,
+    xleftmargin=0.05\linewidth,
+    xrightmargin=0.05\linewidth,
+    basicstyle=\scriptsize\ttfamily\mdseries,   
+    moredelim=[is][\ttfamily\bfseries]{|}{|},
+    framerule=0.8pt,
+    rulecolor=\color{darkblue}, 
+    backgroundcolor=\color{lightblue}}
+    
+
+% 定义challenge输出风格
+\lstdefinestyle{challenge}
+{
+    numbers=none, 
+    frame=tRBl,
+    breaklines=true,
+    breakindent=0pt,
+    framexleftmargin=1em,
+    framexrightmargin=1em,
+    framextopmargin=2ex,
+    framexbottommargin=2ex,
+    xleftmargin=0.05\linewidth,
+    xrightmargin=0.05\linewidth,
+    basicstyle=\scriptsize\ttfamily\mdseries,   
+    moredelim=[is][\ttfamily\bfseries]{|}{|},
+    framerule=0.8pt,
+    rulecolor=\color{darkpink}, 
+    backgroundcolor=\color{lightpink}}
+    
+
+
+% 非常重要, listings关闭非ASCII字符兼容
+\lstset{extendedchars=false}
+
+
+% 定义问题的答案格式
+\newcommand{\highlight}[1]{{\bfseries \color{red}  #1}}
+% 定义函数名格式
+\newcommand{\funcname}[1]{{\ttfamily \small #1}}
+
+
+
+
+\pagestyle{fancy}
+\begin{document}
+\begin{CJK*}{UTF8}{gkai}
+
+\lhead{操作系统实习报告}
+\rhead{张弛, 00848231}
+\title{操作系统JOS实习第二次报告}
+\author{张弛 \hspace{1ex} 00848231, \\
+        zhangchitc@gmail.com}
+
+\maketitle
+% 记得在文档末尾插入\clearpage
+\tableofcontents
+\newpage
+
+\section{Physical Page Management}
+
+\subsection{Getting Started with x86 assembly}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
+\end{lstlisting}
+
+
+\clearpage
+
+\end{CJK*}
+\end{document}
+	
