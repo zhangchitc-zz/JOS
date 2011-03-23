@@ -398,7 +398,6 @@ check_boot_pgdir(void)
 	for (i = 0; i < n; i += PGSIZE)
 		assert(check_va2pa(pgdir, UPAGES + i) == PADDR(pages) + i);
 	
-
 	// check phys mem
 	for (i = 0; i < npage * PGSIZE; i += PGSIZE)
 		assert(check_va2pa(pgdir, KERNBASE + i) == i);
@@ -665,7 +664,39 @@ int
 page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm) 
 {
 	// Fill this function in
-	return 0;
+    //
+    // 
+    // Added by Chi Zhang (zhangchitc@gmail.com)
+    //
+    // about the corner-case: if a physical page need to change its access permission
+    // it will insert itself into the same virtual address with new permission
+    // but will not modify its pp_ref value
+	
+    pte_t *pte = pgdir_walk (pgdir, va, 1);
+
+    if (pte == NULL) {
+        return -E_NO_MEM;
+    }
+
+    if (*pte & PTE_P) {
+
+        if (PTE_ADDR(*pte) == page2pa (pp)) {
+            // if the same pp is re-inserted at the same virtual address
+            // Alert!!! Remeber tlb_invalidate ()
+            // in order to perserve its original pp_ref value
+            // first decrease then increase
+            tlb_invalidate (pgdir, va);
+            pp -> pp_ref --;
+        } else {
+            // inside the page_remove, it will invoke tlb_invalidate and page_decref
+            page_remove (pgdir, va);
+        }
+    }
+    
+    *pte = page2pa (pp)|perm|PTE_P;
+    pp -> pp_ref ++;
+
+    return 0;
 }
 
 //
@@ -750,10 +781,8 @@ page_remove(pde_t *pgdir, void *va)
 
     if (physpage != NULL) {
         page_decref (physpage);
-        if (physpage -> pp_ref == 0) {
-            *pte = 0;
-            tlb_invalidate (pgdir, va);
-        }
+        *pte = 0;
+        tlb_invalidate (pgdir, va);
     }
 }
 
