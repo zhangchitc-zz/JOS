@@ -711,6 +711,17 @@ struct Page *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	// Fill this function in
+	
+    pte_t *pte = pgdir_walk (pgdir, va, 0);
+
+    if (pte_store != 0) {
+        *pte_store = pte;
+    }
+
+    if (pte != NULL && (*pte & PTE_P)) {
+        return pa2page (PTE_ADDR (*pte));
+    }
+    
 	return NULL;
 }
 
@@ -733,6 +744,17 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
+
+    pte_t *pte;
+    struct Page *physpage = page_lookup (pgdir, va, &pte);
+
+    if (physpage != NULL) {
+        page_decref (physpage);
+        if (physpage -> pp_ref == 0) {
+            *pte = 0;
+            tlb_invalidate (pgdir, va);
+        }
+    }
 }
 
 //
