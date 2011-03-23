@@ -211,7 +211,7 @@ i386_vm_init(void)
         pgdir, 
         UPAGES, 
         ROUNDUP (npage * sizeof (struct Page), PGSIZE), 
-        (physaddr_t) KADDR ((uintptr_t) pages),
+        (physaddr_t) KADDR ((uintptr_t) pages), // KADDR returns a (void*)
         PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
@@ -225,6 +225,13 @@ i386_vm_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	//
+	boot_map_segment (
+        pgdir,
+        KSTACKTOP - KSTKSIZE,
+        KSTKSIZE, // 8 * PGSIZE
+        (physaddr_t) KADDR ((uintptr_t) bootstack),
+        PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE. 
@@ -234,6 +241,13 @@ i386_vm_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here: 
+
+    boot_map_segment (
+        pgdir,
+        KERNBASE,
+        ~KERNBASE + 1, // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
+        (physaddr_t) 0,
+        PTE_W); 
 
 	// Check that the initial page directory has been set up correctly.
 	check_boot_pgdir();
