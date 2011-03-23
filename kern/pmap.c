@@ -211,7 +211,7 @@ i386_vm_init(void)
         pgdir, 
         UPAGES, 
         ROUNDUP (npage * sizeof (struct Page), PGSIZE), 
-        (physaddr_t) KADDR ((uintptr_t) pages), // KADDR returns a (void*)
+        PADDR ((uintptr_t) pages), // PADDR returns a (void*)
         PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ i386_vm_init(void)
         pgdir,
         KSTACKTOP - KSTKSIZE,
         KSTKSIZE, // 8 * PGSIZE
-        (physaddr_t) KADDR ((uintptr_t) bootstack),
+        PADDR ((uintptr_t) bootstack),
         PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
