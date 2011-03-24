@@ -21,6 +21,8 @@
 \usepackage{fancyhdr}
 % 虚拟正文测试
 \usepackage{lipsum}
+% 数学环境包
+\usepackage{amsmath}
 % 首行缩进
 \usepackage{indentfirst}
 % 树状结构图
@@ -33,6 +35,9 @@
 \usepackage{tikz}
 % URL超链接
 \usepackage[dvips, colorlinks, linkcolor=black]{hyperref}
+% 断行URL超链接
+\usepackage{breakurl}
+
 
 % hyperref中文兼容
 \pdfstringdefDisableCommands{
@@ -194,7 +199,7 @@
 
 \section{Introduction}
 
-我在实验中主要参考了华中科技大学邵志远老师写的JOS实习指导，在邵老师的主页上{\scriptsize \url{http://grid.hust.edu.cn/zyshao/OSEngineering.htm}} 可以找到。但是这次实验的指导远远不如lab1的指导详尽，所以我这里需要补充的内容会很多。
+我在实验中主要参考了华中科技大学邵志远老师写的JOS实习指导，在邵老师的主页上\burl{http://grid.hust.edu.cn/zyshao/OSEngineering.htm} 可以找到。但是这次实验的指导远远不如lab1的指导详尽，所以我这里需要补充的内容会很多。
 
 \section{Physical Page Management}
 
@@ -327,6 +332,7 @@ zhangchi@zhangchi-desktop:/tmp/test$
 \begin{figure}[htp]
 \centering
 \includegraphics[scale=0.320]{/home/zhangchi/lab/report/screen2.png}
+\label{physmemlayout}
 \end{figure}
 
 我们第一步的目的就是为页目录和pages分配好空间，并建立起空闲页表page\_free\_list。
@@ -445,7 +451,9 @@ boot_alloc(uint32_t n, uint32_t align)
 	page_check();
 \end{lstlisting}
 
-前两句对pgdir的操作我们可以先不用管他，在后来设置页表的时候我们会回过头来看这两句话的含义。在23行里为pages分配空间以后，就进入倒\funcname{page\_init ()}对链表进行初始化了。在进行接下来的编码之前，我们先需要了解JOS对于地址编码的一些规定，在inc/mmu.h中，我们可以找到一组详尽的宏：
+前两句对pgdir的操作我们可以先不用管他，在后来设置页表的时候我们会回过头来看这两句话的含义。在23行里为pages分配空间以后，就进入倒\funcname{page\_init ()}对链表进行初始化了。
+
+在进行接下来的编码之前，我们先需要了解JOS对于地址编码的一些规定，在inc/mmu.h中，我们可以找到一组详尽的宏：
 
 \begin{lstlisting}[style=ccode, firstnumber=16, title={\scriptsize \ttfamily \bfseries inc/mmu.h}]
 // A linear address 'la' has a three-part structure as follows:
@@ -480,7 +488,82 @@ boot_alloc(uint32_t n, uint32_t align)
 \end{lstlisting}
 
 
-其中PDX，PTX和PGOFF
+其中PDX，PTX和PGOFF都很好理解，需要注意的是PPN，一个\highlight{线性地址}的PPN其实没有什么意义，但是如果我们对一个\highlight{物理地址}取PPN的话，就可以利用这个PPN直接访问\highlight{这个物理地址在pages数组中的对应页}！这个宏所以非常的好用。
+
+我们来看到前面提到对物理页面链表进行初始化的\funcname{page\_init ()} 过程：
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_init ()}]
+//
+// Initialize page structure and memory free list.
+// After this is done, NEVER use boot_alloc again.  ONLY use the page
+// allocator functions below to allocate and deallocate physical
+// memory via the page_free_list.
+//
+void
+page_init(void)
+{
+    // The example code here marks all physical pages as free.
+    // However this is not truly the case.  What memory is free?
+    //  1) Mark physical page 0 as in use.
+    //     This way we preserve the real-mode IDT and BIOS structures
+    //     in case we ever need them.  (Currently we don't, but...)
+    //  2) The rest of base memory, [PGSIZE, basemem) is free.
+    //  3) Then comes the IO hole [IOPHYSMEM, EXTPHYSMEM).
+    //     Mark it as in use so that it can never be allocated.
+    //  4) Then extended memory [EXTPHYSMEM, ...).
+    //     Some of it is in use, some is free. Where is the kernel
+    //     in physical memory?  Which pages are already in use for
+    //     page tables and other data structures?
+    //
+    // Change the code to reflect this.
+    //
+
+    int i;
+    int lower_ppn = PPN (IOPHYSMEM);
+    int upper_ppn = PPN (ROUNDUP (boot_freemem, PGSIZE));
+
+    LIST_INIT(&page_free_list);
+    for (i = 0; i < npage; i++) {
+        pages[i].pp_ref = 0;
+
+        if (i == 0) continue;
+        if (lower_ppn <= i && i < upper_ppn) continue;
+ 
+        LIST_INSERT_HEAD(&page_free_list, &pages[i], pp_link);
+    }
+}
+\end{lstlisting}
+
+这个函数的具体工作就是建立其每个物理页面对应的实际链表节点，然后把那些被操作系统占用或是系统预留空间从链表里去除掉。通过对照\ref{physmemlayout}中提到的物理内存的使用布局，可以总结出以下几个使用的物理地址区域：
+
+
+\begin{description}
+\item[$[0, \mathrm{PGSIZE})$] ：\newline
+中断向量表IDT以及BIOS的相关载入程序
+\item[$[0, \text{PGSIZE})$] \
+中断向量表IDT以及BIOS的相关载入程序
+
+\end{description}
+
+\begin{align}
+[0, \text{PGSIZE}) &: \text{中断向量表IDT以及BIOS的相关载入程序} \notag \\
+[\mathrm{IOPHYSMEM}, \mathrm{EXTPHYSMEM}) &: 用来 \notag
+\end{align}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
 \end{lstlisting}
