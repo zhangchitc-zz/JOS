@@ -374,6 +374,7 @@ static struct Page_list page_free_list;	// Free list of physical pages
 其中\funcname{boot\_alloc ()}为其分配内存空间地址，然后将分配的地址段清空。然后将其物理地址（PADDR）放入boot\_cr3准备启动x86的页面地址转换机制。这里要注意几点：
 
 \begin{itemize}
+\item{PGSIZE为一个物理页的大小4KB = 4096B，定义在inc/mmu.h中，其中还有我们后面要用的重要常量PTSIZE，为一个页表对应实际物理内存的大小，即1024 * 4KB = 4MB}
 \item{从\funcname{boot\_alloc ()}得到的页面是不会作相应的初始化工作的，所以如果对分配到的空间有要求清空，必须自己亲自动手}
 \item{\funcname{memset}接受的清空地址是pgdir即一个虚拟地址，这个在我们后面的工作中对实际分配到的\highlight{物理页面}进行初始化时提醒，清空时使用\funcname{memset}也一定要使用实际物理页面对应的\highlight{内核虚拟地址}}
 \item{boot\_cr3得到的是一个\highlight{物理地址}，这个和我们前面强调的分清每个地址变量到底是虚拟地址还是物理地址有密切联系}
@@ -541,67 +542,205 @@ page_init(void)
 
 \begin{description}
 \item[$[0, \mathrm{PGSIZE})$] ：\newline
-中断向量表IDT以及BIOS的相关载入程序
-\item[$[0, \text{PGSIZE})$] \
-中断向量表IDT以及BIOS的相关载入程序
-
+存放中断向量表IDT以及BIOS的相关载入程序
+\item[$[\mathrm{IOPHYSMEM}, \mathrm{EXTPHYSMEM})$]：\newline
+存放输入输出所需要的空间，比如VGA的一部分显存直接映射这个地址
+\item[$[\mathrm{EXTPHYSMEM}, \mathrm{end})$]：\newline
+存放操作系统内核kernel
+\item[$[\mathrm{PADDR(boot\_pgdir)}, \mathrm{PADDR(boot\_pgdir) + \mathrm{PGSIZE}})$]：\newline
+存放页目录
+\item[$[\mathrm{PADDR(pages)}, \mathrm{boot\_freemem})$]：\newline
+存放pages数组
 \end{description}
 
-\begin{align}
-[0, \text{PGSIZE}) &: \text{中断向量表IDT以及BIOS的相关载入程序} \notag \\
-[\mathrm{IOPHYSMEM}, \mathrm{EXTPHYSMEM}) &: 用来 \notag
-\end{align}
+但是除了第一项之外，后面的4段区域实际上是一段连续内存$[\mathrm{IOPHYSMEM}, \mathrm{boot\_freemem})$，所以上面的代码在实现时，把这段区域对应的物理页下标算出来，那么如果是第一个物理页或者是上面区间内的物理页，就不加入空闲页链表里。
 
+接下来我们还要完成两个的对物理页链表的操作：申请和释放，先来看申请的操作\funcname{page\_alloc ()}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_alloc ()}]
+int
+page_alloc(struct Page **pp_store)
+{
+    // Fill this function in
+ 	
+    if (!LIST_EMPTY (&page_free_list)) {
+        *pp_store = LIST_FIRST (&page_free_list);
+        LIST_REMOVE (LIST_FIRST (&page_free_list), pp_link);
+        return 0;
+    }
+
+    return -E_NO_MEM;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+这个很简单，直接按照注释来做即可。再看释放页面的\funcname{page\_free ()}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_free ()}]
+void
+page_free(struct Page *pp)
+{
+    // Fill this function in
+	
+    LIST_INSERT_HEAD (&page_free_list, pp, pp_link);
+}\end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+好像更简单了\ldots好吧亚
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+这个时候我们重新编译内核后启动JOS，应该可以通过\funcname{check\_page\_alloc() }的所有测试了。
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
-
-
-
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
+\section{Virtual Memory}
 
 
 \begin{lstlisting}[style=exercise]
+|Exercise 2|. Read chapters 5 and 6 of the Intel 80386 Reference Manual, if you haven't done so already. You can skip 6.3. Although JOS relies most heavily on page translation, you will also need a basic understanding of how segmentation works in protected mode to understand what's going on in JOS.
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
+貌似我没怎么看\ldots，这个部分的lab请仔细阅读绍老师课件里4.3中第二小节``页表管理''。
+
+\subsection{Virtual, Linear, and Physical Addresses}
 
 \begin{lstlisting}[style=exercise]
+|Exercise 3|. While GDB can only access QEMU's memory by virtual address, it's often useful to be able to inspect physical memory while setting up virtual memory. Review the QEMU monitor commands, especially the xp command, which lets you inspect physical memory. To access the QEMU monitor, press Ctrl-a c in the terminal (the same binding returns to the serial console).
+
+Use the xp command in the QEMU monitor and the x command in GDB to inspect memory at corresponding physical and virtual addresses and make sure you see the same data.
+
+QEMU's info mem command may also prove useful in the lab. We've also added an info pg command to our patched version of QEMU that prints out the current page table.
 \end{lstlisting}
+
+这里提到的调试命令貌似都没用到过。不过这一章里提到用两种数据类型来区分虚拟和物理地址。这样在我们编写程序时通过函数内部的声明能够很清晰的看出对应操作的地址是哪一类，以便于我们理解代码。
+
+这里提到的有关地址类型的问题
+
+\begin{lstlisting}[style=exercise]
+|Question|
+
+|1.| Assuming that the following JOS kernel code is correct, what type should variable x have, uintptr_t or physaddr_t?
+
+	mystery_t x;
+	char* value = return_a_pointer();
+	*value = 10;
+	x = (mystery_t) value;
+\end{lstlisting}
+
+因为在内核中操作数据都是以内核虚拟地址进行的，所以x的类型应该是\funcname{uintptr\_t}
+
+
+\subsection{Reference counting}
+
+从这里就开始提到虚拟内存空间了。里面出现了\funcname{UTOP}这样的地址，那么我们来看看详细定义在inc/memlayout.h中的虚拟内存布局：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries inc/memlayout.h}]
+/*
+ * Virtual memory map:                                Permissions
+ *                                                    kernel/user
+ *
+ *    4 Gig -------->  +------------------------------+
+ *                     |                              | RW/--
+ *                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *                     :              .               :
+ *                     :              .               :
+ *                     :              .               :
+ *                     |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| RW/--
+ *                     |                              | RW/--
+ *                     |   Remapped Physical Memory   | RW/--
+ *                     |                              | RW/--
+ *    KERNBASE ----->  +------------------------------+ 0xf0000000
+ *                     |  Cur. Page Table (Kern. RW)  | RW/--  PTSIZE
+ *    VPT,KSTACKTOP--> +------------------------------+ 0xefc00000      --+
+ *                     |         Kernel Stack         | RW/--  KSTKSIZE   |
+ *                     | - - - - - - - - - - - - - - -|                 PTSIZE
+ *                     |      Invalid Memory (*)      | --/--             |
+ *    ULIM     ------> +------------------------------+ 0xef800000      --+
+ *                     |  Cur. Page Table (User R-)   | R-/R-  PTSIZE
+ *    UVPT      ---->  +------------------------------+ 0xef400000
+ *                     |          RO PAGES            | R-/R-  PTSIZE
+ *    UPAGES    ---->  +------------------------------+ 0xef000000
+ *                     |           RO ENVS            | R-/R-  PTSIZE
+ * UTOP,UENVS ------>  +------------------------------+ 0xeec00000
+ * UXSTACKTOP -/       |     User Exception Stack     | RW/RW  PGSIZE
+ *                     +------------------------------+ 0xeebff000
+ *                     |       Empty Memory (*)       | --/--  PGSIZE
+ *    USTACKTOP  --->  +------------------------------+ 0xeebfe000
+ *                     |      Normal User Stack       | RW/RW  PGSIZE
+ *                     +------------------------------+ 0xeebfd000
+ *                     |                              |
+ *                     |                              |
+ *                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *                     .                              .
+ *                     .                              .
+ *                     .                              .
+ *                     |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+ *                     |     Program Data & Heap      |
+ *    UTEXT -------->  +------------------------------+ 0x00800000
+ *    PFTEMP ------->  |       Empty Memory (*)       |        PTSIZE
+ *                     |                              |
+ *    UTEMP -s------->  +------------------------------+ 0x00400000      --+
+ *                     |       Empty Memory (*)       |                   |
+ *                     | - - - - - - - - - - - - - - -|                   |
+ *                     |  User STAB Data (optional)   |                 PTSIZE
+ *    USTABDATA ---->  +------------------------------+ 0x00200000        |
+ *                     |       Empty Memory (*)       |                   |
+ *    0 ------------>  +------------------------------+                 --+
+ *
+ * (*) Note: The kernel ensures that "Invalid Memory" (ULIM) is *never*
+ *     mapped.  "Empty Memory" is normally unmapped, but user programs may
+ *     map pages there if desired.  JOS user programs map pages temporarily
+ *     at UTEMP.
+ */
+\end{lstlisting}
+
+这个页面布局代表的是启用地址转换以后，无论是操作系统还是用户程序，看到的虚拟内存布局（这也就是说，\highlight{操作系统和用户程序使用的是同一套页目录和页表}，这个在绍老师的讲义里有提到），那么这个虚拟地址和我们在前面\ref{physmemlayout}中看到的实际物理页面布局之间有什么联系呢？我们先来看看这个页表里有哪些组成部分：
+
+\begin{description}
+\item[$[\mathrm{USTABDATA},\mathrm{UTEXT})$] ：\newline
+这个部分暂时在这个lab里还没有涉及过，我们先可以不用管它有什么具体用途
+\item[$[\mathrm{UTEXT},\mathrm{USTACKTOP})$] ：\newline
+用户程序的.text段以及用户堆栈共用区域，两个区域从两头向中间生长。
+\item[$[\mathrm{USTACKTOP},\mathrm{UPAGES})$] ：\newline
+这个也用不到，不用关注，后面的lab会用到。
+\item[$[\mathrm{UPAGES},\mathrm{UVPT})$] ：\newline
+在虚拟地址中这段内存就是对应的在\highlight{实际物理地址里pages数组}对应储存位置。（在后面的代码部分我们可以看到相应的操作语句）。可以看到这段地址在ULIM之下，也就是说操作系统开放pages数组便于让用户程序可以访问。为什么呢？比如说假如有的程序想要知道一个物理页面被引用了多少次，那么根据相应的pages[i].pp\_ref就可以知道了。我们看到这个区域在布局中分配了PTSIZE的大小，那么这个大小够么？因为我们知道在物理页面中pages所占用的大小为npage $\times$ sizeof (struct Page) = 12 $\times$ npage。我们看看PTSIZE的空间可以装struct Page的个数为1024 $\times$ 4KB / 12B = 4MB / 12B = $\frac{1}{3}$M。
+\end{description}
+
+
+\subsection{Page Table Management}
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+\end{lstlisting}
+
+
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
+
+
 
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}

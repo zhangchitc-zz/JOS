@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2011.3.23)  24 MAR 2011 16:38
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  24 MAR 2011 23:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1005,7 +1005,7 @@ kai/m/n/10/30 ^^A \C70/gkai/m/n/10/64 Í \C70/gkai/m/n/10/4f \ \C70/gkai/m/n/10/
 m/n/10 ELF\C70/gkai/m/n/10/65 ‡
  []
 
-</home/zhangchi/lab/report/screen1.png, id=181, 1142.2675pt x 380.42125pt>
+</home/zhangchi/lab/report/screen1.png, id=201, 1142.2675pt x 380.42125pt>
 File: /home/zhangchi/lab/report/screen1.png Graphic file (type png)
 
 <use /home/zhangchi/lab/report/screen1.png>
@@ -1025,7 +1025,7 @@ Overfull \hbox (7.03938pt too wide) in paragraph at lines 327--328
 10/66 /
  []
 
-</home/zhangchi/lab/report/screen2.png, id=182, 1127.21124pt x 378.41376pt>
+</home/zhangchi/lab/report/screen2.png, id=202, 1127.21124pt x 378.41376pt>
 File: /home/zhangchi/lab/report/screen2.png Graphic file (type png)
 
 <use /home/zhangchi/lab/report/screen2.png>
@@ -1534,63 +1534,6 @@ LaTeX Font Info:    Font shape `OMS/ppl/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 377.
 
 
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
-Package xcolor Warning: Incompatible color definition on input line 391.
-
-
 Package xcolor Warning: Incompatible color definition on input line 392.
 
 
@@ -1646,27 +1589,6 @@ Package xcolor Warning: Incompatible color definition on input line 392.
 
 
 Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 392.
-
-
-Package xcolor Warning: Incompatible color definition on input line 393.
 
 
 Package xcolor Warning: Incompatible color definition on input line 393.
@@ -1807,7 +1729,19 @@ Package xcolor Warning: Incompatible color definition on input line 394.
 Package xcolor Warning: Incompatible color definition on input line 394.
 
 
-Package xcolor Warning: Incompatible color definition on input line 395.
+Package xcolor Warning: Incompatible color definition on input line 394.
+
+
+Package xcolor Warning: Incompatible color definition on input line 394.
+
+
+Package xcolor Warning: Incompatible color definition on input line 394.
+
+
+Package xcolor Warning: Incompatible color definition on input line 394.
+
+
+Package xcolor Warning: Incompatible color definition on input line 394.
 
 
 Package xcolor Warning: Incompatible color definition on input line 395.
@@ -1873,46 +1807,73 @@ Package xcolor Warning: Incompatible color definition on input line 395.
 Package xcolor Warning: Incompatible color definition on input line 395.
 
 
-Package xcolor Warning: Incompatible color definition on input line 395.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
-Package xcolor Warning: Incompatible color definition on input line 399.
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
+
+
+Package xcolor Warning: Incompatible color definition on input line 396.
 
 
 Package xcolor Warning: Incompatible color definition on input line 400.
@@ -1954,51 +1915,6 @@ Package xcolor Warning: Incompatible color definition on input line 400.
 Package xcolor Warning: Incompatible color definition on input line 400.
 
 
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 400.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
-Package xcolor Warning: Incompatible color definition on input line 401.
-
-
 Package xcolor Warning: Incompatible color definition on input line 401.
 
 
@@ -2135,6 +2051,36 @@ Package xcolor Warning: Incompatible color definition on input line 402.
 
 
 Package xcolor Warning: Incompatible color definition on input line 402.
+
+
+Package xcolor Warning: Incompatible color definition on input line 402.
+
+
+Package xcolor Warning: Incompatible color definition on input line 402.
+
+
+Package xcolor Warning: Incompatible color definition on input line 402.
+
+
+Package xcolor Warning: Incompatible color definition on input line 402.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
+
+
+Package xcolor Warning: Incompatible color definition on input line 403.
 
 
 Package xcolor Warning: Incompatible color definition on input line 403.
@@ -2233,79 +2179,58 @@ Package xcolor Warning: Incompatible color definition on input line 404.
 Package xcolor Warning: Incompatible color definition on input line 404.
 
 
-Package xcolor Warning: Incompatible color definition on input line 418.
+Package xcolor Warning: Incompatible color definition on input line 404.
 
 
-Package xcolor Warning: Incompatible color definition on input line 418.
+Package xcolor Warning: Incompatible color definition on input line 404.
 
 
-Package xcolor Warning: Incompatible color definition on input line 418.
+Package xcolor Warning: Incompatible color definition on input line 404.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 404.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
-
-
-Package xcolor Warning: Incompatible color definition on input line 419.
+Package xcolor Warning: Incompatible color definition on input line 405.
 
 
 Package xcolor Warning: Incompatible color definition on input line 419.
@@ -2374,31 +2299,22 @@ Package xcolor Warning: Incompatible color definition on input line 420.
 Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
-Package xcolor Warning: Incompatible color definition on input line 421.
-
-
-Package xcolor Warning: Incompatible color definition on input line 421.
-
-
-Package xcolor Warning: Incompatible color definition on input line 421.
-
-
-Package xcolor Warning: Incompatible color definition on input line 421.
+Package xcolor Warning: Incompatible color definition on input line 420.
 
 
 Package xcolor Warning: Incompatible color definition on input line 421.
@@ -2485,182 +2401,197 @@ Package xcolor Warning: Incompatible color definition on input line 422.
 Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 424.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 427.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 423.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 
-Package xcolor Warning: Incompatible color definition on input line 428.
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
+
+
+Package xcolor Warning: Incompatible color definition on input line 425.
 
 [6]
 
-Package xcolor Warning: Incompatible color definition on input line 431.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 431.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 431.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 428.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
-
-
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 429.
 
 
 Package xcolor Warning: Incompatible color definition on input line 432.
@@ -2672,28 +2603,16 @@ Package xcolor Warning: Incompatible color definition on input line 432.
 Package xcolor Warning: Incompatible color definition on input line 432.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
 
-Package xcolor Warning: Incompatible color definition on input line 432.
-
-
-Package xcolor Warning: Incompatible color definition on input line 432.
-
-
-Package xcolor Warning: Incompatible color definition on input line 432.
-
-
-Package xcolor Warning: Incompatible color definition on input line 432.
-
-
-Package xcolor Warning: Incompatible color definition on input line 432.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
 
 Package xcolor Warning: Incompatible color definition on input line 433.
@@ -2852,7 +2771,10 @@ Package xcolor Warning: Incompatible color definition on input line 434.
 Package xcolor Warning: Incompatible color definition on input line 434.
 
 
-Package xcolor Warning: Incompatible color definition on input line 435.
+Package xcolor Warning: Incompatible color definition on input line 434.
+
+
+Package xcolor Warning: Incompatible color definition on input line 434.
 
 
 Package xcolor Warning: Incompatible color definition on input line 435.
@@ -2928,15 +2850,6 @@ Package xcolor Warning: Incompatible color definition on input line 435.
 
 
 Package xcolor Warning: Incompatible color definition on input line 435.
-
-
-Package xcolor Warning: Incompatible color definition on input line 435.
-
-
-Package xcolor Warning: Incompatible color definition on input line 436.
-
-
-Package xcolor Warning: Incompatible color definition on input line 436.
 
 
 Package xcolor Warning: Incompatible color definition on input line 436.
@@ -3053,13 +2966,91 @@ Package xcolor Warning: Incompatible color definition on input line 437.
 Package xcolor Warning: Incompatible color definition on input line 437.
 
 
-Package xcolor Warning: Incompatible color definition on input line 442.
+Package xcolor Warning: Incompatible color definition on input line 437.
 
 
-Package xcolor Warning: Incompatible color definition on input line 442.
+Package xcolor Warning: Incompatible color definition on input line 437.
 
 
-Package xcolor Warning: Incompatible color definition on input line 442.
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
+
+
+Package xcolor Warning: Incompatible color definition on input line 438.
 
 
 Package xcolor Warning: Incompatible color definition on input line 443.
@@ -3069,93 +3060,6 @@ Package xcolor Warning: Incompatible color definition on input line 443.
 
 
 Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 443.
-
-
-Package xcolor Warning: Incompatible color definition on input line 444.
-
-
-Package xcolor Warning: Incompatible color definition on input line 444.
-
-
-Package xcolor Warning: Incompatible color definition on input line 444.
-
-
-Package xcolor Warning: Incompatible color definition on input line 444.
-
-
-Package xcolor Warning: Incompatible color definition on input line 444.
 
 
 Package xcolor Warning: Incompatible color definition on input line 444.
@@ -3305,7 +3209,34 @@ Package xcolor Warning: Incompatible color definition on input line 445.
 Package xcolor Warning: Incompatible color definition on input line 445.
 
 
-Package xcolor Warning: Incompatible color definition on input line 446.
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
+
+
+Package xcolor Warning: Incompatible color definition on input line 445.
 
 
 Package xcolor Warning: Incompatible color definition on input line 446.
@@ -3374,82 +3305,148 @@ Package xcolor Warning: Incompatible color definition on input line 446.
 Package xcolor Warning: Incompatible color definition on input line 446.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 447.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 460.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 460.
 
 
-Package xcolor Warning: Incompatible color definition on input line 459.
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
+
+
+Package xcolor Warning: Incompatible color definition on input line 460.
 
 
 Package xcolor Warning: Incompatible color definition on input line 460.
@@ -3458,12 +3455,6 @@ Package xcolor Warning: Incompatible color definition on input line 460.
 Package xcolor Warning: Incompatible color definition on input line 461.
 
 
-Package xcolor Warning: Incompatible color definition on input line 461.
-
-
-Package xcolor Warning: Incompatible color definition on input line 461.
-
-
 Package xcolor Warning: Incompatible color definition on input line 462.
 
 
@@ -3473,73 +3464,28 @@ Package xcolor Warning: Incompatible color definition on input line 462.
 Package xcolor Warning: Incompatible color definition on input line 462.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
-
-
-Package xcolor Warning: Incompatible color definition on input line 462.
+Package xcolor Warning: Incompatible color definition on input line 463.
 
 
 Package xcolor Warning: Incompatible color definition on input line 463.
@@ -3605,7 +3551,49 @@ Package xcolor Warning: Incompatible color definition on input line 464.
 Package xcolor Warning: Incompatible color definition on input line 464.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
+
+
+Package xcolor Warning: Incompatible color definition on input line 464.
 
 
 Package xcolor Warning: Incompatible color definition on input line 465.
@@ -3617,79 +3605,58 @@ Package xcolor Warning: Incompatible color definition on input line 465.
 Package xcolor Warning: Incompatible color definition on input line 465.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
-
-
-Package xcolor Warning: Incompatible color definition on input line 465.
+Package xcolor Warning: Incompatible color definition on input line 466.
 
 
 Package xcolor Warning: Incompatible color definition on input line 466.
@@ -3728,109 +3695,37 @@ Package xcolor Warning: Incompatible color definition on input line 466.
 Package xcolor Warning: Incompatible color definition on input line 467.
 
 
-Package xcolor Warning: Incompatible color definition on input line 468.
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
+
+
+Package xcolor Warning: Incompatible color definition on input line 467.
 
 
 Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 468.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
-
-
-Package xcolor Warning: Incompatible color definition on input line 469.
 
 
 Package xcolor Warning: Incompatible color definition on input line 469.
@@ -3992,307 +3887,328 @@ Package xcolor Warning: Incompatible color definition on input line 470.
 Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 472.
+Package xcolor Warning: Incompatible color definition on input line 470.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 474.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 471.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 478.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 473.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 480.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 483.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 475.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 477.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
 
 
-Package xcolor Warning: Incompatible color definition on input line 486.
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 479.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 481.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
+
+
+Package xcolor Warning: Incompatible color definition on input line 484.
 
 [7]
 
-Package xcolor Warning: Incompatible color definition on input line 498.
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
+
+
+Package xcolor Warning: Incompatible color definition on input line 487.
 
 
 Package xcolor Warning: Incompatible color definition on input line 499.
 
 
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 499.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
-Package xcolor Warning: Incompatible color definition on input line 500.
-
-
 Package xcolor Warning: Incompatible color definition on input line 500.
 
 
@@ -4390,6 +4306,60 @@ Package xcolor Warning: Incompatible color definition on input line 501.
 
 
 Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 501.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
+
+
+Package xcolor Warning: Incompatible color definition on input line 502.
 
 
 Package xcolor Warning: Incompatible color definition on input line 502.
@@ -4425,85 +4395,34 @@ Package xcolor Warning: Incompatible color definition on input line 502.
 Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
+Package xcolor Warning: Incompatible color definition on input line 503.
 
 
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 507.
-
-
-Package xcolor Warning: Incompatible color definition on input line 508.
-
-
-Package xcolor Warning: Incompatible color definition on input line 508.
-
-
-Package xcolor Warning: Incompatible color definition on input line 508.
-
-
-Package xcolor Warning: Incompatible color definition on input line 508.
+Package xcolor Warning: Incompatible color definition on input line 504.
 
 
 Package xcolor Warning: Incompatible color definition on input line 508.
@@ -4635,7 +4554,25 @@ Package xcolor Warning: Incompatible color definition on input line 509.
 Package xcolor Warning: Incompatible color definition on input line 509.
 
 
-Package xcolor Warning: Incompatible color definition on input line 510.
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
+
+
+Package xcolor Warning: Incompatible color definition on input line 509.
 
 
 Package xcolor Warning: Incompatible color definition on input line 510.
@@ -4698,18 +4635,6 @@ Package xcolor Warning: Incompatible color definition on input line 510.
 Package xcolor Warning: Incompatible color definition on input line 510.
 
 
-Package xcolor Warning: Incompatible color definition on input line 510.
-
-
-Package xcolor Warning: Incompatible color definition on input line 510.
-
-
-Package xcolor Warning: Incompatible color definition on input line 510.
-
-
-Package xcolor Warning: Incompatible color definition on input line 510.
-
-
 Package xcolor Warning: Incompatible color definition on input line 511.
 
 
@@ -4785,19 +4710,10 @@ Package xcolor Warning: Incompatible color definition on input line 511.
 Package xcolor Warning: Incompatible color definition on input line 511.
 
 
-Package xcolor Warning: Incompatible color definition on input line 511.
+Package xcolor Warning: Incompatible color definition on input line 512.
 
 
-Package xcolor Warning: Incompatible color definition on input line 511.
-
-
-Package xcolor Warning: Incompatible color definition on input line 511.
-
-
-Package xcolor Warning: Incompatible color definition on input line 511.
-
-
-Package xcolor Warning: Incompatible color definition on input line 511.
+Package xcolor Warning: Incompatible color definition on input line 512.
 
 
 Package xcolor Warning: Incompatible color definition on input line 512.
@@ -4953,19 +4869,19 @@ Package xcolor Warning: Incompatible color definition on input line 513.
 Package xcolor Warning: Incompatible color definition on input line 513.
 
 
-Package xcolor Warning: Incompatible color definition on input line 514.
+Package xcolor Warning: Incompatible color definition on input line 513.
 
 
-Package xcolor Warning: Incompatible color definition on input line 514.
+Package xcolor Warning: Incompatible color definition on input line 513.
 
 
-Package xcolor Warning: Incompatible color definition on input line 514.
+Package xcolor Warning: Incompatible color definition on input line 513.
 
 
-Package xcolor Warning: Incompatible color definition on input line 514.
+Package xcolor Warning: Incompatible color definition on input line 513.
 
 
-Package xcolor Warning: Incompatible color definition on input line 514.
+Package xcolor Warning: Incompatible color definition on input line 513.
 
 
 Package xcolor Warning: Incompatible color definition on input line 514.
@@ -5091,43 +5007,34 @@ Package xcolor Warning: Incompatible color definition on input line 515.
 Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
-Package xcolor Warning: Incompatible color definition on input line 516.
-
-
-Package xcolor Warning: Incompatible color definition on input line 516.
-
-
-Package xcolor Warning: Incompatible color definition on input line 516.
-
-
-Package xcolor Warning: Incompatible color definition on input line 516.
+Package xcolor Warning: Incompatible color definition on input line 515.
 
 
 Package xcolor Warning: Incompatible color definition on input line 516.
@@ -5257,6 +5164,51 @@ Package xcolor Warning: Incompatible color definition on input line 517.
 
 
 Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 517.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+
+Package xcolor Warning: Incompatible color definition on input line 518.
 
 
 Package xcolor Warning: Incompatible color definition on input line 518.
@@ -5313,43 +5265,46 @@ Package xcolor Warning: Incompatible color definition on input line 519.
 Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
-Package xcolor Warning: Incompatible color definition on input line 520.
+Package xcolor Warning: Incompatible color definition on input line 519.
+
+
+Package xcolor Warning: Incompatible color definition on input line 519.
 
 
 Package xcolor Warning: Incompatible color definition on input line 520.
@@ -5363,76 +5318,2746 @@ Package xcolor Warning: Incompatible color definition on input line 521.
 
 Package xcolor Warning: Incompatible color definition on input line 521.
 
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 521.
+
+
+Package xcolor Warning: Incompatible color definition on input line 522.
+
+
+Package xcolor Warning: Incompatible color definition on input line 522.
+
+[8]
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 545.
+(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 550.
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 545.
-[8] [9] [10] (./report.aux) ) 
+(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 550.
+
+Overfull \hbox (80.5725pt too wide) in paragraph at lines 556--557
+[]\C70/gkai/bx/n/10/4f F \C70/gkai/bx/n/10/66 / \C70/gkai/m/n/10/96 d \C70/gkai
+/bx/n/10/4e † \C70/gkai/m/n/10/7b , \C70/gkai/bx/n/10/4e ^^@ \C70/gkai/bx/n/10/
+98 y \C70/gkai/bx/n/10/4e K \C70/gkai/m/n/10/59 ^^V \C70/gkai/bx/n/10/ff ^^L \C
+70/gkai/bx/n/10/54 ^^N \C70/gkai/bx/n/10/97 b \C70/gkai/bx/n/10/76 „\OT1/ppl/m/
+n/10 4\C70/gkai/bx/n/10/6b µ \C70/gkai/bx/n/10/53 : \C70/gkai/bx/n/10/57 ß \C70
+/gkai/bx/n/10/5b ž \C70/gkai/m/n/10/96 E \C70/gkai/bx/n/10/4e 
+ \C70/gkai/bx/n/10/66 / \C70/gkai/bx/n/10/4e ^^@ \C70/gkai/bx/n/10/6b µ \C70/gk
+ai/bx/n/10/8f Þ \C70/gkai/bx/n/10/7e í \C70/gkai/bx/n/10/51 … \C70/gkai/bx/n/10
+/5b X$\OT1/cmr/m/n/10 [[]\OML/cmm/m/it/10 ; []\OT1/cmr/m/n/10 )$\C70/gkai/bx/n/
+10/ff ^^L
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+
+Package xcolor Warning: Incompatible color definition on input line 582.
+
+[9] [10]
+
+Package xcolor Warning: Incompatible color definition on input line 633.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 634.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 635.
+
+
+Package xcolor Warning: Incompatible color definition on input line 636.
+
+
+Package xcolor Warning: Incompatible color definition on input line 636.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 637.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 638.
+
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 640.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 641.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 642.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 643.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 644.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 645.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 646.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 647.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 648.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 649.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 650.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 651.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 652.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 653.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 654.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 655.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 656.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 657.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 658.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 659.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 661.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 662.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 664.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 665.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 666.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 667.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 669.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 670.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 672.
+
+
+Package xcolor Warning: Incompatible color definition on input line 672.
+
+
+Package xcolor Warning: Incompatible color definition on input line 672.
+
+
+Package xcolor Warning: Incompatible color definition on input line 672.
+
+
+Package xcolor Warning: Incompatible color definition on input line 672.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 673.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 674.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 676.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 677.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 679.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 680.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 681.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 683.
+
+
+Package xcolor Warning: Incompatible color definition on input line 684.
+
+
+Package xcolor Warning: Incompatible color definition on input line 684.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 685.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 687.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 688.
+
+
+Package xcolor Warning: Incompatible color definition on input line 689.
+
+
+Package xcolor Warning: Incompatible color definition on input line 689.
+
+[11] [12] [13] (./report.aux) ) 
 Here is how much of TeX's memory you used:
- 19387 strings out of 493848
- 319499 string characters out of 1152823
- 1118174 words of memory out of 3000000
- 21908 multiletter control sequences out of 15000+50000
- 46401 words of font info for 153 fonts, out of 3000000 for 9000
+ 19769 strings out of 493848
+ 324356 string characters out of 1152822
+ 1146245 words of memory out of 3000000
+ 22190 multiletter control sequences out of 15000+50000
+ 40753 words of font info for 133 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
  54i,12n,116p,807b,1489s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/share/texmf-texlive/fonts/enc/dvips/base/8r.
-enc}</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/s
-hare/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-t
-exlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/type1/
-arphic/gkaiu/gkaiu30.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu4e.pfb
-></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu4f.pfb></usr/share/texmf/fonts
-/type1/arphic/gkaiu/gkaiu50.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkai
-u51.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu52.pfb></usr/share/texm
-f/fonts/type1/arphic/gkaiu/gkaiu53.pfb></usr/share/texmf/fonts/type1/arphic/gka
-iu/gkaiu54.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu55.pfb></usr/sha
-re/texmf/fonts/type1/arphic/gkaiu/gkaiu56.pfb></usr/share/texmf/fonts/type1/arp
-hic/gkaiu/gkaiu57.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu59.pfb></
-usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu5b.pfb></usr/share/texmf/fonts/ty
-pe1/arphic/gkaiu/gkaiu5c.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu5d
-.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu5e.pfb></usr/share/texmf/f
-onts/type1/arphic/gkaiu/gkaiu5f.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/
-gkaiu60.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu61.pfb></usr/share/
-texmf/fonts/type1/arphic/gkaiu/gkaiu62.pfb></usr/share/texmf/fonts/type1/arphic
-/gkaiu/gkaiu63.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu64.pfb></usr
-/share/texmf/fonts/type1/arphic/gkaiu/gkaiu65.pfb></usr/share/texmf/fonts/type1
-/arphic/gkaiu/gkaiu66.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu67.pf
-b></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu68.pfb></usr/share/texmf/font
-s/type1/arphic/gkaiu/gkaiu69.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gka
-iu6a.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu6b.pfb></usr/share/tex
-mf/fonts/type1/arphic/gkaiu/gkaiu6c.pfb></usr/share/texmf/fonts/type1/arphic/gk
-aiu/gkaiu6e.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu70.pfb></usr/sh
-are/texmf/fonts/type1/arphic/gkaiu/gkaiu71.pfb></usr/share/texmf/fonts/type1/ar
-phic/gkaiu/gkaiu72.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu73.pfb><
-/usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu74.pfb></usr/share/texmf/fonts/t
-ype1/arphic/gkaiu/gkaiu75.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7
-6.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu77.pfb></usr/share/texmf/
-fonts/type1/arphic/gkaiu/gkaiu78.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu
-/gkaiu79.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7a.pfb></usr/share
-/texmf/fonts/type1/arphic/gkaiu/gkaiu7b.pfb></usr/share/texmf/fonts/type1/arphi
-c/gkaiu/gkaiu7c.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7e.pfb></us
-r/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7f.pfb></usr/share/texmf/fonts/type
-1/arphic/gkaiu/gkaiu80.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu81.p
-fb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu82.pfb></usr/share/texmf/fon
-ts/type1/arphic/gkaiu/gkaiu86.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gk
-aiu88.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu89.pfb></usr/share/te
-xmf/fonts/type1/arphic/gkaiu/gkaiu8b.pfb></usr/share/texmf/fonts/type1/arphic/g
-kaiu/gkaiu8c.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu8d.pfb></usr/s
-hare/texmf/fonts/type1/arphic/gkaiu/gkaiu8f.pfb></usr/share/texmf/fonts/type1/a
-rphic/gkaiu/gkaiu90.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu91.pfb>
-</usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu94.pfb></usr/share/texmf/fonts/
-type1/arphic/gkaiu/gkaiu95.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu
-96.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu97.pfb></usr/share/texmf
-/fonts/type1/arphic/gkaiu/gkaiu98.pfb></usr/share/texmf/fonts/type1/arphic/gkai
-u/gkaiu99.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu9a.pfb></usr/shar
-e/texmf/fonts/type1/arphic/gkaiu/gkaiuff.pfb></usr/share/texmf-texlive/fonts/ty
-pe1/public/amsfonts/latxfont/lcircle1.pfb></usr/share/texmf-texlive/fonts/type1
-/urw/courier/ucrb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/courier/ucrr8
-a.pfb></usr/share/texmf-texlive/fonts/type1/urw/palatino/uplb8a.pfb></usr/share
-/texmf-texlive/fonts/type1/urw/palatino/uplr8a.pfb>
-Output written on report.pdf (10 pages, 627768 bytes).
+{/usr/share/texmf-texlive/fonts/enc/dvips/base/8
+r.enc}</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr
+/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf
+-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/type
+1/arphic/gkaiu/gkaiu30.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu4e.p
+fb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu4f.pfb></usr/share/texmf/fon
+ts/type1/arphic/gkaiu/gkaiu50.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gk
+aiu51.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu52.pfb></usr/share/te
+xmf/fonts/type1/arphic/gkaiu/gkaiu53.pfb></usr/share/texmf/fonts/type1/arphic/g
+kaiu/gkaiu54.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu55.pfb></usr/s
+hare/texmf/fonts/type1/arphic/gkaiu/gkaiu56.pfb></usr/share/texmf/fonts/type1/a
+rphic/gkaiu/gkaiu57.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu58.pfb>
+</usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu59.pfb></usr/share/texmf/fonts/
+type1/arphic/gkaiu/gkaiu5b.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu
+5c.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu5d.pfb></usr/share/texmf
+/fonts/type1/arphic/gkaiu/gkaiu5e.pfb></usr/share/texmf/fonts/type1/arphic/gkai
+u/gkaiu5f.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu60.pfb></usr/shar
+e/texmf/fonts/type1/arphic/gkaiu/gkaiu61.pfb></usr/share/texmf/fonts/type1/arph
+ic/gkaiu/gkaiu62.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu63.pfb></u
+sr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu64.pfb></usr/share/texmf/fonts/typ
+e1/arphic/gkaiu/gkaiu65.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu66.
+pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu67.pfb></usr/share/texmf/fo
+nts/type1/arphic/gkaiu/gkaiu68.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/g
+kaiu69.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu6a.pfb></usr/share/t
+exmf/fonts/type1/arphic/gkaiu/gkaiu6b.pfb></usr/share/texmf/fonts/type1/arphic/
+gkaiu/gkaiu6c.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu6d.pfb></usr/
+share/texmf/fonts/type1/arphic/gkaiu/gkaiu6e.pfb></usr/share/texmf/fonts/type1/
+arphic/gkaiu/gkaiu70.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu71.pfb
+></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu72.pfb></usr/share/texmf/fonts
+/type1/arphic/gkaiu/gkaiu73.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkai
+u74.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu75.pfb></usr/share/texm
+f/fonts/type1/arphic/gkaiu/gkaiu76.pfb></usr/share/texmf/fonts/type1/arphic/gka
+iu/gkaiu77.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu78.pfb></usr/sha
+re/texmf/fonts/type1/arphic/gkaiu/gkaiu79.pfb></usr/share/texmf/fonts/type1/arp
+hic/gkaiu/gkaiu7a.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7b.pfb></
+usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7c.pfb></usr/share/texmf/fonts/ty
+pe1/arphic/gkaiu/gkaiu7e.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu7f
+.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu80.pfb></usr/share/texmf/f
+onts/type1/arphic/gkaiu/gkaiu81.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/
+gkaiu82.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu86.pfb></usr/share/
+texmf/fonts/type1/arphic/gkaiu/gkaiu88.pfb></usr/share/texmf/fonts/type1/arphic
+/gkaiu/gkaiu89.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu8b.pfb></usr
+/share/texmf/fonts/type1/arphic/gkaiu/gkaiu8c.pfb></usr/share/texmf/fonts/type1
+/arphic/gkaiu/gkaiu8d.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu8f.pf
+b></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu90.pfb></usr/share/texmf/font
+s/type1/arphic/gkaiu/gkaiu91.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gka
+iu94.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu95.pfb></usr/share/tex
+mf/fonts/type1/arphic/gkaiu/gkaiu96.pfb></usr/share/texmf/fonts/type1/arphic/gk
+aiu/gkaiu97.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiu98.pfb></usr/sh
+are/texmf/fonts/type1/arphic/gkaiu/gkaiu99.pfb></usr/share/texmf/fonts/type1/ar
+phic/gkaiu/gkaiu9a.pfb></usr/share/texmf/fonts/type1/arphic/gkaiu/gkaiuff.pfb><
+/usr/share/texmf-texlive/fonts/type1/public/amsfonts/latxfont/lcircle1.pfb></us
+r/share/texmf-texlive/fonts/type1/urw/courier/ucrb8a.pfb></usr/share/texmf-texl
+ive/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texmf-texlive/fonts/type1/ur
+w/palatino/uplb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/palatino/uplr8a
+.pfb>
+Output written on report.pdf (13 pages, 694378 bytes).
 PDF statistics:
- 697 PDF objects out of 1000 (max. 8388607)
- 266 named destinations out of 1000 (max. 500000)
- 151 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 849 PDF objects out of 1000 (max. 8388607)
+ 364 named destinations out of 1000 (max. 500000)
+ 183 words of extra memory for PDF output out of 10000 (max. 10000000)
 
