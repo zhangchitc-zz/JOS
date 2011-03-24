@@ -482,11 +482,11 @@ page_init(void)
 	// Added by Chi Zhang (zhangchitc@gmail.com)
 	//
 	// There are several blocks of physical memory are in use
-	// 1)  [0, PGSIZE)                              : for real-mode IDT and BIOS
-	// 2)  [IOPHYSMEM, EXTPHYSMEM)                  : for IO hole (IOPHYSMEM = basemem)
-	// 3)  [EXTPHYSMEM, end)                        : for kernel
-	// 4)  [boot_pgdir, boot_pgdir + PGSIZE)        : for Page Directory
-	// 5)  [pages, pages + npage * sizeof (Page))   : for Page structs
+	// 1)  [0, PGSIZE)                                      : for real-mode IDT and BIOS
+	// 2)  [IOPHYSMEM, EXTPHYSMEM)                          : for IO hole (IOPHYSMEM = basemem)
+	// 3)  [EXTPHYSMEM, end)                                : for kernel
+	// 4)  [PADDR(boot_pgdir), PADDR(boot_pgdir) + PGSIZE)  : for Page Directory
+	// 5)  [PADDR(pages), boot_freemem)                     : for Page structs
 	// 
 	// Actually, the 2 ~ 5 items are consecutive memory space
 	// Starting from [IOPHYSMEM, boot_freemem)
