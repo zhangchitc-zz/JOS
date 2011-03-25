@@ -219,7 +219,7 @@ You probably want to work on boot_alloc(), then i386_vm_init(), then page_init()
 check_page_alloc() tests your physical page allocator. You should boot JOS and see whether check_page_alloc() reports success. Fix your code so that it passes. You may find it helpful to add your own assert()s to verify that your assumptions are correct.
 \end{lstlisting}
 
-这次实验的内容暂时和页面转换机制没有关系，我们需要重点关注的是物理页面的规划以及管理。主要需要关注JOS内核代码中的inc/queue.h文件以及kern/pmap.c文件。
+这部分实验的内容暂时和页面转换机制没有关系，我们需要重点关注的是物理页面的规划以及管理。主要需要关注JOS内核代码中的inc/queue.h文件以及kern/pmap.c文件。
 
 \subsection{Physical page and its data structure}
 
@@ -413,7 +413,7 @@ boot_alloc(uint32_t n, uint32_t align)
 
 这个函数的问题不大。
 
-看接下来的代码：
+看接下来的代码：\label{vpt}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
 	//////////////////////////////////////////////////////////////////////
@@ -699,8 +699,59 @@ QEMU's info mem command may also prove useful in the lab. We've also added an in
 \item[$[\mathrm{USTACKTOP},\mathrm{UPAGES})$] ：\newline
 这个也用不到，不用关注，后面的lab会用到。
 \item[$[\mathrm{UPAGES},\mathrm{UVPT})$] ：\newline
-在虚拟地址中这段内存就是对应的在\highlight{实际物理地址里pages数组}对应储存位置。（在后面的代码部分我们可以看到相应的操作语句）。可以看到这段地址在ULIM之下，也就是说操作系统开放pages数组便于让用户程序可以访问。为什么呢？比如说假如有的程序想要知道一个物理页面被引用了多少次，那么根据相应的pages[i].pp\_ref就可以知道了。我们看到这个区域在布局中分配了PTSIZE的大小，那么这个大小够么？因为我们知道在物理页面中pages所占用的大小为npage $\times$ sizeof (struct Page) = 12 $\times$ npage。我们看看PTSIZE的空间可以装struct Page的个数为1024 $\times$ 4KB / 12B = 4MB / 12B = $\frac{1}{3}$M。
+在虚拟地址中这段内存就是对应的在\highlight{实际物理地址里pages数组}对应储存位置。（在后面的代码部分我们可以看到相应的操作语句）。可以看到这段地址在ULIM之下，也就是说操作系统开放pages数组便于让用户程序可以访问。为什么呢？比如说假如有的程序想要知道一个物理页面被引用了多少次，那么根据相应的pages[i].pp\_ref就可以知道了。我们看到这个区域在布局中分配了PTSIZE的大小，那么这个大小够么？因为我们知道在物理页面中pages所占用的大小为npage $\times$ sizeof (struct Page) = 12B $\times$ npage。我们看看PTSIZE的空间可以装struct Page的个数为1024 $\times$ 4KB / 12B = 4MB / 12B = $\frac{1}{3}$M。一个Page结构对应一个实际大小为4KB的物理页面，所以这个PTSIZE大小的虚拟地址空间能够管理 $\frac{1}{3}$M $\times$ 4KB = 1.3GB的物理内存，这个对于我们的QEMU模拟器来讲应该还是足够了。
+\item[$[\mathrm{UVPT},\mathrm{ULIM})$和$[\mathrm{VPT},\mathrm{KERNBASE})$] ：\newline
+这两个地址映射的是同一个\highlight{系统页目录}，即原来在程序中看到的变量pgdir，开放给用户只读，可以使用户得到当前内存中\highlight{某个虚拟地址}对应的\highlight{物理页面地址}是多少。这段空间在虚拟地址上分配了PTSIZE，但是实际上只使用了物理页面上的PGSIZE个空间（可以回头去看看pgdir的空间分配参数是多少），所以这里很容易被误导和搞迷糊，请注意。还记得\ref{vpt} 中提到的那两句没有解释的语句么，我们现在回过头去看看:
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+    ////////////////////////////////////////////////////////////////////
+    // Recursively insert PD in itself as a page table, to form
+    // a virtual page table at virtual address VPT.
+    // (For now, you don't have understand the greater purpose of the
+    // following two lines.)
+
+    // Permissions: kernel RW, user NONE
+    pgdir[PDX(VPT)] = PADDR(pgdir)|PTE_W|PTE_P;
+
+    // same for UVPT
+    // Permissions: kernel R, user R 
+    pgdir[PDX(UVPT)] = PADDR(pgdir)|PTE_U|PTE_P;
+\end{lstlisting}
+
+我们只看UVPT好了。12行的语句字面来看是讲是将UVPT对应到的虚拟地址对应在系统页目录中的表项设置成它自己的物理地址。也就是说，如果一个用户程序想访问页目录的话，只要把对应的虚拟地址设置成UVPT即可。得到页目录有什么用？如果我们想查找一个\highlight{任意虚拟地址}所在的页面的\highlight{物理地址}和其对应的\highlight{二级页表物理地址}的话，只要有页目录地址就可以做到！具体来讲，如果要查询的虚拟地址是addr = PDX$\left|\right.$PTX$\left|\right.$OFFSET的话，显然只有PDX$\left|\right.$PTX决定了addr物理页面的地址。查找方法如下：
+
+\begin{description}
+\item[查找addr对应的物理页面地址]：\newline
+{构造虚拟地址vaddr = UVPT[31:22]$\left|\right.$PDX$\left|\right.$PTX$\left|\right.$00在虚拟内存空间里查询。根据两级页表翻译机制：
+\begin{enumerate}
+\item{系统首先取出vaddr的前10位，即UVPT[31:22]，去页目录里查询，根据
+\begin{lstlisting}[style=ccode, numbers=none]
+    pgdir[PDX(UVPT)] = PADDR(pgdir)|PTE_U|PTE_P;
+\end{lstlisting}
+注意UVPT[31:22]等价于PDX(UVPT)，所以得到的二级页表地址A0，还是页目录pgdir本身。
+\item{再取出vaddr的中间10位，即PDX，去二级页表中A0（即页目录），查找到的是addr所在\highlight{二级页表的物理地址A1}，注意！！不是addr的物理页面地址，是二级页表的地址！！}
+\item{最后取出vaddr的最后12位，即PTX$\left|\right.$00，去A1物理页中（即addr所在二级页表）查找，得到的就是addr最后所在页面的物理地址}
+
+}
+\end{enumerate}
+}
+\item[查找addr对应的二级页表物理地址]：\newline
+{构造虚拟地址vaddr = UVPT[31:22]$\left|\right.$UVPT[31:22]$\left|\right.$PDX$\left|\right.$00在虚拟内存空间里查询。注意这个地址等价于PDX(UVPT)$\left|\right.$PDX(UVPT)$\left|\right.$PDX$\left|\right.$00。
+\begin{enumerate}
+\item{根据上面的分析，我们可以知道页式转换的前两步，地址转换系统都会跳回到页目录本身}
+\item{最后一步取出vaddr的最后12位，即PDX$\left|\right.$00，去pgdir的物理页查询，查到的就是addr对应的二级页表物理地址}
+\end{enumerate}
+}
 \end{description}
+
+我自我感觉应该是说清楚了的\ldots \textbackslash (￣3￣)/
+
+相应的$[\mathrm{VPT},\mathrm{KERNBASE})$就一样了，只不过它和$[\mathrm{UVPT},\mathrm{ULIM})$权限不同，前者开放给操作系统，可读可写，后者只允许用户读。
+
+\item[$[\mathrm{KERNBASE},\mathrm{4GB})$] ：\newline
+这个部分映射实际物理内存中从0x00100000开始加载的操作系统内核和向上的所有内存区域。
+\end{description}
+
+从这个布局结构我们就可以看出来，实际上虚拟内存中分配给用户的只有$[0,\mathrm{ULIM})$大概3.7GB而非4GB的空间（ULIM = 0xef800000），其余的空间需要分配给操作系统。
 
 
 \subsection{Page Table Management}
@@ -764,25 +815,6 @@ QEMU's info mem command may also prove useful in the lab. We've also added an in
 
 
 
-
-\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=44, title={\scriptsize \ttfamily \bfseries boot/boot.S}]
-\end{lstlisting}
 
 
 
