@@ -755,49 +755,328 @@ QEMU's info mem command may also prove useful in the lab. We've also added an in
 
 
 \subsection{Page Table Management}
+\begin{lstlisting}[style=exercise]
+|Exercise 4|. In the file kern/pmap.c, you must implement code for the following functions.
+
+        pgdir_walk()
+        boot_map_segment()
+        page_lookup()
+        page_remove()
+        page_insert()
+	
+page_check(), called from i386_vm_init(), tests your page table management routines. You should make sure it reports success before proceeding.
+\end{lstlisting}
+
+现在开始我们就要开始真正的地址转换部分的编程了。在这之前，我们先看看定义在kern/pmap.h中一组好用的宏：
+
+\begin{lstlisting}[style=ccode, firstnumber=63, title={\scriptsize \ttfamily \bfseries kern/pmap.h}]
+static inline ppn_t
+page2ppn(struct Page *pp)
+{
+	return pp - pages;
+}
+
+static inline physaddr_t
+page2pa(struct Page *pp)
+{
+	return page2ppn(pp) << PGSHIFT;
+}
+
+static inline struct Page*
+pa2page(physaddr_t pa)
+{
+	if (PPN(pa) >= npage)
+		panic("pa2page called with invalid pa");
+	return &pages[PPN(pa)];
+}
+
+static inline void*
+page2kva(struct Page *pp)
+{
+	return KADDR(page2pa(pp));
+}
+\end{lstlisting}
+
+我们知道每个物理页面对应一个Page的struct和一个物理页号PPN和唯一的物理首地址，这组宏就是作这几个量之间的对应关系的，其中：
+
+\begin{itemize}
+\item{一个Page对应的PPN就是page2ppn (struct \hspace{0.5ex}Page)，而一个PPN对应的struct \hspace{0.5ex}Page则是pages[PPN]}
+\item{一个Page对应的物理地址是page2pa (struct \hspace{0.5ex}Page)，而一个物理地址对应的struct \hspace{0.5ex}Page则是pa2page (pa)}
+\end{itemize}
+
+最后还提供了一个页面到内核虚拟地址的转换宏page2kva，这个也很好用。根据Exercise的提示，我们先来看看要填写的第一个函数\funcname{pgdir\_walk()}
 
 
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: pgdir\_walk ()}]
+pte_t *
+pgdir_walk(pde_t *pgdir, const void *va, int create)
+{
+    pde_t *pt = pgdir + PDX(va);
+    void *pt_kva;
+
+    if (*pt & PTE_P) {
+        pt_kva = (void*) KADDR (PTE_ADDR (*pt));
+        return (pte_t*) pt_kva + PTX (va);
+    }
+
+    struct Page *newpt;
+
+    if (create == 1 && page_alloc (&newpt) == 0) {
+    
+        memset (page2kva (newpt), 0, PGSIZE);
+        newpt -> pp_ref = 1;
+
+        *pt = PADDR (page2kva (newpt))|PTE_U|PTE_W|PTE_P;
+        pt_kva = (void*) KADDR (PTE_ADDR (*pt));
+        return (pte_t*) pt_kva + PTX (va);
+    }
+
+    return NULL;
+}
+\end{lstlisting}
+
+简单说一下这个函数的作用，其实这个函数就是实现虚拟地址到实际物理地址的翻译过程。根据给出的虚拟地址，返回其二级页表中对应的页表项。根据参数create的值，如果等于1，则如果虚拟地址还没有对应的物理页面，则分配一个给它。
+
+代码中有几个地方需要注意：
+
+\begin{enumerate}
+\item{第7行代码：判断页目录中va对应二级页表是否存在应该看页目录的对应PDX(va)项最后一位状态位present是否为0，我一开始写成了if (*pt != 0)了，这样显然不对}
+\item{第16行代码：一定记得memset参数使用的是内核虚拟地址}
+\item{第19行代码：这里我们为新建的物理页设置页目录表项时，页目录后12位的权限位为什么是PTE\_U$\left|\right.$PTE\_W$\left|\right.$PTE\_P呢？}
+\end{enumerate}
+
+第三条提出的问题在注释中其实已经提示了，但是我还是查询了Intel x86的手册：在Reference里的{\ttfamily \bfseries IA-32 Intel Architecture Software Developer's Manuals}，其中的{\ttfamily \bfseries Volume 3A: System Programming Guide, Part 1}。在里面的{\ttfamily \bfseries \color{red} COMBINING PAGE AND SEGMENT PROTECTION}一节里，提到了分段分页保护机制的实现。当一个程序试图访问一个虚拟地址的数据时，x86系统的保护机制运行为：
+
+\begin{itemize}
+\item{先检查段权限位DPL，这个是所访问数据段或者Call gate的权限级别，和当前权限级别CPL进行比较，如果不够则产生权限异常（具体机制请参考手册，在这个问题上我们不用管它），否则进入下一步}
+\item{再检查页目录相应表项的访问权限，如果不够也产生异常}
+\item{最后检查二级页表相应表项的访问权限，不够就产生异常}
+\end{itemize}
+
+可以看到，在任意一次检查上违例了，那么访问失效。实际上我们知道页目录中一个表项代表的就是内存中的1024个物理页，这些页中很可能对访问的控制各不相同，比如有的可以给用户写权限，有的只能读，有的连读都不行。那么在无法提前知道这些需求的话，最明智的办法就是不在页目录这一环节限制太多，让最终的访问控制在二级页表这一环节上再去具体设置。
+
+实际上Intel手册上给出了一个页目录加页表的访问控制的组合控制效果：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.50]{/home/zhangchi/lab/report/screen.png}
+\end{figure}
+
+这个图应该是很容易看明白的，只有一个不太清楚的地方，就是为什么当最终组合效果的权限要求是内核态时，读写权限全部是可读也可写的？
+
+助教告诉我，因为在内核态下，内核想要写入任意地址都是可行的。即便内核在写入一个表项时发现该页表项权限只能允许它读的话，通过修改CR0.WP寄存器，内核也能最终写入这个地址，所以访问类型就显得没有意义了，感谢张顺廷师兄的解释！！
+
+接下来看看要填的第二个函数\funcname{boot\_map\_segment()}:
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_map\_segment ()}]
+static void
+boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int perm)
+{
+    int offset;
+    pte_t *pte;
+
+    for (offset = 0; offset < size; offset += PGSIZE) {
+        pte = pgdir_walk (pgdir, (void*)la, 1);
+
+        *pte = pa|perm|PTE_P;
+
+        pa += PGSIZE;
+        la += PGSIZE;
+    }
+}
+\end{lstlisting}
+
+这个函数的作用是将线性地址la开始的size大小的区域映射到物理页面pa开始的同样大小区域。代码很直接，没什么好说的。实现完这个函数后，我们可以回到\funcname{i386\_vm\_init ()}从上次停下的地方继续往下看：
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+	//////////////////////////////////////////////////////////////////////
+	// Now we set up virtual memory 
+	
+	//////////////////////////////////////////////////////////////////////
+	// Map 'pages' read-only by the user at linear address UPAGES
+	// Permissions:
+	//    - the new image at UPAGES -- kernel R, user R
+	//      (ie. perm = PTE_U | PTE_P)
+	//    - pages itself -- kernel RW, user NONE
+	// Your code goes here:
+	boot_map_segment (
+            pgdir, 
+            UPAGES, 
+            ROUNDUP (npage * sizeof (struct Page), PGSIZE), 
+            PADDR ((uintptr_t) pages), // PADDR returns a (void*)
+            PTE_U);
+
+	//////////////////////////////////////////////////////////////////////
+	// Use the physical memory that 'bootstack' refers to as the kernel
+	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
+	// We consider the entire range from [KSTACKTOP-PTSIZE, KSTACKTOP) 
+	// to be the kernel stack, but break this into two pieces:
+	//     * [KSTACKTOP-KSTKSIZE, KSTACKTOP) -- backed by physical memory
+	//     * [KSTACKTOP-PTSIZE, KSTACKTOP-KSTKSIZE) -- not backed; so if
+	//       the kernel overflows its stack, it will fault rather than
+	//       overwrite memory.  Known as a "guard page".
+	//     Permissions: kernel RW, user NONE
+	// Your code goes here:
+	//
+	boot_map_segment (
+            pgdir,
+            KSTACKTOP - KSTKSIZE,
+            KSTKSIZE, // 8 * PGSIZE
+            PADDR ((uintptr_t) bootstack),
+            PTE_W);
+
+	//////////////////////////////////////////////////////////////////////
+	// Map all of physical memory at KERNBASE. 
+	// Ie.  the VA range [KERNBASE, 2^32) should map to
+	//      the PA range [0, 2^32 - KERNBASE)
+	// We might not have 2^32 - KERNBASE bytes of physical memory, but
+	// we just set up the mapping anyway.
+	// Permissions: kernel RW, user NONE
+	// Your code goes here: 
+        boot_map_segment (
+            pgdir,
+            KERNBASE,
+            ~KERNBASE + 1, 
+            // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
+            (physaddr_t) 0,
+            PTE_W); 
+\end{lstlisting}
+
+按照注释的指示设置好映射关系即可，唯一需要留意的地方就是传参数的时候记住将内核虚拟地址的变量都用uintptr\_t转换一下类型。
+
+接下来的几个函数都不是很难：\funcname{page\_lookup ()} 查找一个虚拟地址对应的具体Page：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_lookup ()}]
+struct Page *
+page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
+{
+    pte_t *pte = pgdir_walk (pgdir, va, 0);
+
+    if (pte_store != 0) {
+        *pte_store = pte;
+    }
+
+    if (pte != NULL && (*pte & PTE_P)) {
+        return pa2page (PTE_ADDR (*pte));
+    }
+    
+	return NULL;
+}
+\end{lstlisting}
+
+\funcname{page\_lookup ()} 在页目录中删除一个虚拟地址对应的二级页表表项。
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_remove ()}]
+void
+page_remove(pde_t *pgdir, void *va)
+{
+    pte_t *pte;
+    struct Page *physpage = page_lookup (pgdir, va, &pte);
+
+    if (physpage != NULL) {
+        page_decref (physpage);
+        *pte = 0;
+        tlb_invalidate (pgdir, va);
+    }
+}
+\end{lstlisting}
+
+还有\funcname{page\_insert () }：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
+int
+page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm) 
+{
+    pte_t *pte = pgdir_walk (pgdir, va, 1);
+
+    if (pte == NULL) {
+        return -E_NO_MEM;
+    }
+
+    if (*pte & PTE_P) {
+        if (PTE_ADDR(*pte) == page2pa (pp)) {
+            tlb_invalidate (pgdir, va);
+            pp -> pp_ref --;
+        } else {
+            page_remove (pgdir, va);
+        }
+    }
+    
+    *pte = page2pa (pp)|perm|PTE_P;
+    pp -> pp_ref ++;
+
+    return 0;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+这个函数负责将一个虚拟地址映射到它实际对应的物理页面上去，这里有几种调用的情况：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+\begin{enumerate}
+\item{这个虚拟地址所在地址在二级页表上没有挂载页面，那么这时直接修改相应的二级页表表项即可}
+\item{如果已经挂载了页面，且页面和当前分配的物理页面不一样，那么就卸下原来的页面，再挂载新的页面。}
+\item{如果已经挂载了页面，而且已挂载页面和当前分配的物理页面是同样的，这是什么情况呢？这种情况非常普遍，就是当内核要修改一个页面的访问权限时，它会将同一个页面重新插入一次，传入不同的perm参数，即完成了权限修改。}
+\end{enumerate}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_alloc ()}]
-\end{lstlisting}
+所以注意第13行代码，修改权限并没有增加一个物理页面的引用数目，所以这里先减了1，方便后面加回来。第12行代码重置了TLB但第15行没有，因为\funcname{page\_remove ()}函数中已经将移除的物理页自动重置TLB了，这里就没有必要重复清空了。
 
-
-
+至此，我们已经把所有要求的函数填晚了，重新编译运行JOS，连同page\_check() 和 check\_boot\_pgdir() 应该都可以通过了。即我们提前把Part 3的内容也做完了。如命令行打印：
 
 \begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
+6828 decimal is 15254 octal!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
 \end{lstlisting}
 
 
+\section{Kernel Address Space}
 
+\subsection{Permissions and Fault Isolation}
 
+关于$[\mathrm{UTOP},\mathrm{ULIM})$的空间我们早已讨论过。
 
+\subsection{Initializing the Kernel Address Space}
 
 \begin{lstlisting}[style=exercise]
+|Exercise 5|. Fill in the missing code in i386_vm_init() after the call to page_check().
+
+Your code should now pass the check_boot_pgdir() check.
+\end{lstlisting}
+已完成
+
+\subsection{Address Space Layout Alternatives}
+
+
+
+
+\begin{lstlisting}[style=console]
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
+\begin{lstlisting}[style=console]
 \end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
+
+
+
+
+
 
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}
