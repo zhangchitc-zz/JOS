@@ -748,7 +748,7 @@ QEMU's info mem command may also prove useful in the lab. We've also added an in
 相应的$[\mathrm{VPT},\mathrm{KERNBASE})$就一样了，只不过它和$[\mathrm{UVPT},\mathrm{ULIM})$权限不同，前者开放给操作系统，可读可写，后者只允许用户读。
 
 \item[$[\mathrm{KERNBASE},\mathrm{4GB})$] ：\newline
-这个部分映射实际物理内存中从0x00100000开始加载的操作系统内核和向上的所有内存区域。
+这个部分映射实际物理内存中从0开始的中断向量表IDT、BIOS程序、IO端口以及操作系统内核等。即内核使用的虚拟地址KERNBASE $+$ x进入这段地址查找到实际上的物理地址就是它自身。所以这段空间是为操作系统准备的。这个在后面解释这段具体的代码和\ref{osmemarea}中关于Exercise的提问时还会提到。
 \end{description}
 
 从这个布局结构我们就可以看出来，实际上虚拟内存中分配给用户的只有$[0,\mathrm{ULIM})$大概3.7GB而非4GB的空间（ULIM = 0xef800000），其余的空间需要分配给操作系统。
@@ -889,7 +889,7 @@ boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int per
 }
 \end{lstlisting}
 
-这个函数的作用是将线性地址la开始的size大小的区域映射到物理页面pa开始的同样大小区域。代码很直接，没什么好说的。实现完这个函数后，我们可以回到\funcname{i386\_vm\_init ()}从上次停下的地方继续往下看：
+这个函数的作用是将线性地址la开始的size大小的区域映射到物理页面pa开始的同样大小区域。代码很直接，没什么好说的。实现完这个函数后，我们可以回到\funcname{i386\_vm\_init ()}从上次停下的地方继续往下看：\label{addrmapping}
 
 
 
@@ -946,6 +946,8 @@ boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int per
             (physaddr_t) 0,
             PTE_W); 
 \end{lstlisting}
+
+其中最后一段就是映射的KERNBASE以上的虚拟空间到物理地址操作系统本身。这个是为了将来打开页式转换以后操作系统也能使用统一的虚拟地址来访问其自身的数据。
 
 按照注释的指示设置好映射关系即可，唯一需要留意的地方就是传参数的时候记住将内核虚拟地址的变量都用uintptr\_t转换一下类型。
 
@@ -1024,7 +1026,7 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 
 所以注意第13行代码，修改权限并没有增加一个物理页面的引用数目，所以这里先减了1，方便后面加回来。第12行代码重置了TLB但第15行没有，因为\funcname{page\_remove ()}函数中已经将移除的物理页自动重置TLB了，这里就没有必要重复清空了。
 
-至此，我们已经把所有要求的函数填晚了，重新编译运行JOS，连同page\_check() 和 check\_boot\_pgdir() 应该都可以通过了。即我们提前把Part 3的内容也做完了。如命令行打印：
+至此，我们已经把所有要求的函数填完了，重新编译运行JOS，连同page\_check() 和 check\_boot\_pgdir() 应该都可以通过了。即我们提前把Part 3的内容也做完了。如命令行打印：
 
 \begin{lstlisting}[style=console]
 6828 decimal is 15254 octal!
@@ -1053,49 +1055,152 @@ Your code should now pass the check_boot_pgdir() check.
 \end{lstlisting}
 已完成
 
-\subsection{Address Space Layout Alternatives}
-
-
-
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-
-
-
-
-
-
-
+\vspace{2em}
 
 \begin{lstlisting}[style=exercise]
+|Question|
+
+|1.| What entries (rows) in the page directory have been filled in at this point? What addresses do they map and where do they point? In other words, fill out this table as much as possible:
+|Entry|	|Base Virtual Address|    |Points to (logically):|
+1023	?	                Page table for top 4MB of phys memory
+1022	?	                ?
+.	?	                ?
+.	?	                ?
+.	?	                ?
+2	0x00800000	        ?
+1	0x00400000	        ?
+0	0x00000000	        [see next question]
+
+|2.| After check_boot_pgdir(), i386_vm_init() maps the first four MB of virtual address space to the first four MB of physical memory, then deletes this mapping at the end of the function. Why is this mapping necessary? What would happen if it were omitted? Does this actually limit our kernel to be 4MB? What must be true if our kernel were larger than 4MB?
+|3.| (From Lecture 4) We have placed the kernel and user environment in the same address space. Why will user programs not be able to read or write the kernel's memory? What specific mechanisms protect the kernel memory
+|4.| What is the maximum amount of physical memory that this operating system can support? Why?
+|5.| How much space overhead is there for managing memory, if we actually had the maximum amount of physical memory? How is this overhead broken down?
 \end{lstlisting}
 
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+\label{osmemarea}
+
+\begin{enumerate}
+\item{具体的虚拟地址到物理地址的映射关系在\ref{addrmapping}中已经结合JOS代码详细解释过了}
+\item{我们来看看那段代码具体是如何作的：
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+	//////////////////////////////////////////////////////////////////
+	// On x86, segmentation maps a VA to a LA (linear addr) and
+	// paging maps the LA to a PA.  I.e. VA => LA => PA.  If paging is
+	// turned off the LA is used as the PA.  Note: there is no way to
+	// turn off segmentation.  The closest thing is to set the base
+	// address to 0, so the VA => LA mapping is the identity.
+
+	// Current mapping: VA KERNBASE+x => PA x.
+	//     (segmentation base=-KERNBASE and paging is off)
+
+	// From here on down we must maintain this VA KERNBASE + x => PA x
+	// mapping, even though we are turning on paging and reconfiguring
+	// segmentation.
+
+	// Map VA 0:4MB same as VA KERNBASE, i.e. to PA 0:4MB.
+	// (Limits our kernel to <4MB)
+	pgdir[0] = pgdir[PDX(KERNBASE)];
+
+	// Install page table.
+	lcr3(boot_cr3);
+
+	// Turn on paging.
+	cr0 = rcr0();
+	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_WP|CR0_NE|CR0_TS|CR0_EM|CR0_MP;
+	cr0 &= ~(CR0_TS|CR0_EM);
+	lcr0(cr0);
+
+	// Current mapping: KERNBASE+x => x => x.
+	// (x < 4MB so uses paging pgdir[0])
+
+	// Reload all segment registers.
+	asm volatile("lgdt gdt_pd");
+	asm volatile("movw %%ax,%%gs" :: "a" (GD_UD|3));
+	asm volatile("movw %%ax,%%fs" :: "a" (GD_UD|3));
+	asm volatile("movw %%ax,%%es" :: "a" (GD_KD));
+	asm volatile("movw %%ax,%%ds" :: "a" (GD_KD));
+	asm volatile("movw %%ax,%%ss" :: "a" (GD_KD));
+	asm volatile("ljmp %0,$1f\n 1:\n" :: "i" (GD_KT));  // reload cs
+	asm volatile("lldt %%ax" :: "a" (0));
+
+	// Final mapping: KERNBASE+x => KERNBASE+x => x.
+
+	// This mapping was only used after paging was turned on but
+	// before the segment registers were reloaded.
+	pgdir[0] = 0;
+
+	// Flush the TLB for good measure, to kill the pgdir[0] mapping.
+	lcr3(boot_cr3);
+}
+\end{lstlisting}
+
+这段代码中顺序有这么几个主要的操作：
+\begin{itemize}
+\item{第17行到第26行：重置页目录的第一项，并打开页表转换机制，\highlight{在这个之前，没有页式地址转换}，所以所有的虚拟地址经过一次段地址转换就直接得到物理地址了，即paddr $=$ laddr $=$ vaddr $-$ KERNBASE，laddr 到 paddr 是等价的。在这个之后，线性地址laddr到物理地址paddr的页式转换打开。注意，这个时候，\highlight{会操作内存的程序只有内核}，而内核访问内存的地址都是内核虚拟地址（$\geq$KERNBASE），且这个时候页表的第一项pgdir[0]被设置成了pgdir[PDX[KERNBASE]]，所以任意一个内核访问vaddr$=$KERNBASE $+$ x都先经过一次段式转换得到laddr $=$ vaddr $-$ KERNBASE $=$ x，然后laddr经过页式转换实际上等价于访问原来虚拟地址KERNBASE上面的同样地址，所以还是访问到内核自己的东西。把pgdir[0]重设的目的就是让内核地址在打开页式转换以后仍然能找到其自己所在的位置，因为后面如第33行内联汇编代码需要使用到内核中定义的常量GD\_UD等，内核在引用它们时都是使用的虚拟地址。}
+\item{第32行到39行：关闭段式地址转换，即把原来是-KERNBASE的段基址赋值为零即可。这个时候一个内核虚拟地址KERNBASE$+$x转化为的线性地址laddr就是KERNBASE $+$ x本身，那么这个时候进入页式转换，查找到的就是内核其自身的物理地址，这个前面已经解释过了。}
+\item{第45到第48行：内核已经能通过关闭段式转换只依靠页式转换实现正常访问其自身了，那么这时虚拟地址的低4MB的设置已经没用，需要还原清空，然后重置TLB}
+\end{itemize}
+}
+
+\item{用户当然不能写内核地址的数据\ldots，这个问题不予回答}
+\item{这个问题我们在前面已经分析过了，其中UPAGES存放的是系统pages的空间，系统分配的虚拟空间是PTSIZE，对应能管理的实际物理内存大概是1.3G左右}
+\item{管理物理内存实际的内存开销为1个页目录+1024个页表，即1025 $\times$ 4KB大概为4MB的样子。}
+\end{enumerate}
 
 \begin{lstlisting}[style=challenge]
+|Challenge!| We consumed many physical pages to hold the page tables for the KERNBASE mapping. Do a more space-efficient job using the PTE_PS ("Page Size") bit in the page directory entries. This bit was not supported in the original 80386, but is supported on more recent x86 processors. You will therefore have to refer to Volume 3 of the current Intel manuals. Make sure you design the kernel to use this optimization only on processors that support it!
 \end{lstlisting}
 
 \begin{lstlisting}[style=challenge]
+|Challenge!| Extend the JOS kernel monitor with commands to:
+
+* Display in a useful and easy-to-read format all of the physical page mappings (or lack thereof) that apply to a particular range of virtual/linear addresses in the currently active address space. For example, you might enter 'showmappings 0x3000 0x5000' to display the physical page mappings and corresponding permission bits that apply to the pages at virtual addresses 0x3000, 0x4000, and 0x5000.
+* Explicitly set, clear, or change the permissions of any mapping in the current address space.
+* Dump the contents of a range of memory given either a virtual or physical address range. Be sure the dump code behaves correctly when the range extends across page boundaries!
+* Do anything else that you think might be useful later for debugging the kernel. (There's a good chance it will be!)
+\end{lstlisting}
+
+\subsection{Address Space Layout Alternatives}
+
+\begin{lstlisting}[style=challenge]
+|Challenge!| Write up an outline of how a kernel could be designed to allow user environments unrestricted use of the full 4GB virtual and linear address space. Hint: the technique is sometimes known as "follow the bouncing kernel." In your design, be sure to address exactly what has to happen when the processor transitions between kernel and user modes, and how the kernel would accomplish such transitions. Also describe how the kernel would access physical memory and I/O devices in this scheme, and how the kernel would access a user environment's virtual address space during system calls and the like. Finally, think about and describe the advantages and disadvantages of such a scheme in terms of flexibility, performance, kernel complexity, and other factors you can think of.
 \end{lstlisting}
 
 \begin{lstlisting}[style=challenge]
+|Challenge!| Since our JOS kernel's memory management system only allocates and frees memory on page granularity, we do not have anything comparable to a general-purpose malloc/free facility that we can use within the kernel. This could be a problem if we want to support certain types of I/O devices that require physically contiguous buffers larger than 4KB in size, or if we want user-level environments, and not just the kernel, to be able to allocate and map 4MB superpages for maximum processor efficiency. (See the earlier challenge problem about PTE_PS.)
+Generalize the kernel's memory allocation system to support pages of a variety of power-of-two allocation unit sizes from 4KB up to some reasonable maximum of your choice. Be sure you have some way to divide larger allocation units into smaller ones on demand, and to coalesce multiple small allocation units back into larger units when possible. Think about the issues that might arise in such a system.
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+|Challenge!| Extend the JOS kernel monitor with commands to allocate and free pages explicitly, and display whether or not any given page of physical memory is currently allocated. For example:
+
+	K> alloc_page
+		0x13000
+	K> page_status 0x13000
+		allocated
+	K> free_page 0x13000
+	K> page_status 0x13000
+		free
+	
+Think of other commands or extensions to these commands that may be useful for debugging, and add them.
 \end{lstlisting}
 
 
+\begin{lstlisting}[style=console]
+\end{lstlisting}
 
+\begin{lstlisting}[style=console]
+\end{lstlisting}
 
+\begin{lstlisting}[style=console]
+\end{lstlisting}
 
-
+\begin{lstlisting}[style=console]
+\end{lstlisting}
 
 
 \clearpage
