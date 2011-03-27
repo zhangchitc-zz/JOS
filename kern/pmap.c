@@ -88,6 +88,7 @@ static void check_boot_pgdir(void);
 static void check_page_alloc();
 static void page_check(void);
 static void boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int perm);
+static void boot_map_KERNBASE(pde_t *pgdir);
 
 //
 // A simple physical memory allocator, used only a few times
@@ -242,15 +243,22 @@ i386_vm_init(void)
 	// Permissions: kernel RW, user NONE
 	// Your code goes here: 
 
-    boot_map_segment (
-        pgdir,
-        KERNBASE,
-        ~KERNBASE + 1, // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
-        (physaddr_t) 0,
-        PTE_W); 
+
+    // boot_map_segment (
+    //    pgdir,
+    //    KERNBASE,
+    //    ~KERNBASE + 1, // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
+    //    (physaddr_t) 0,
+    //    PTE_W); 
+
+    // for KERNBASE address
+    // changed into memory efficient page of 4MB
+    //
+    boot_map_KERNBASE (pgdir);
+
 
 	// Check that the initial page directory has been set up correctly.
-	check_boot_pgdir();
+	//check_boot_pgdir();
 
 	//////////////////////////////////////////////////////////////////////
 	// On x86, segmentation maps a VA to a LA (linear addr) and
@@ -266,6 +274,14 @@ i386_vm_init(void)
 	// mapping, even though we are turning on paging and reconfiguring
 	// segmentation.
 
+
+    // Added by Chi Zhang (zhangchitc@gmail.com)
+    // Turn on CR4_PSE for 4MB page
+    // cprintf ("original CR4: %x\n", rcr4 ()); 
+    lcr4 (rcr4 () | CR4_PSE);
+    // cprintf ("modified CR4: %x\n", rcr4 ());
+
+	
 	// Map VA 0:4MB same as VA KERNBASE, i.e. to PA 0:4MB.
 	// (Limits our kernel to <4MB)
 	pgdir[0] = pgdir[PDX(KERNBASE)];
@@ -276,8 +292,8 @@ i386_vm_init(void)
 	// Turn on paging.
 	cr0 = rcr0();
 	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_WP|CR0_NE|CR0_TS|CR0_EM|CR0_MP;
-	cr0 &= ~(CR0_TS|CR0_EM);
-	lcr0(cr0);
+    cr0 &= ~(CR0_TS|CR0_EM);
+    lcr0(cr0);
 
 	// Current mapping: KERNBASE+x => x => x.
 	// (x < 4MB so uses paging pgdir[0])
@@ -300,6 +316,8 @@ i386_vm_init(void)
 
 	// Flush the TLB for good measure, to kill the pgdir[0] mapping.
 	lcr3(boot_cr3);
+
+    //check_boot_pgdir ();
 }
 
 //
@@ -726,6 +744,35 @@ boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, physaddr_t pa, int per
         la += PGSIZE;
     }
 }
+
+
+
+//
+// Added by Chi Zhang (zhangchitc@gmail.com)
+// Use 4MB page mapping for KERNBASE space
+
+static void
+boot_map_KERNBASE (pde_t *pgdir)
+{
+    uint32_t offset;
+    uint32_t nspace = (~KERNBASE + 1);
+    uint32_t pagesz = PTSIZE;
+    uintptr_t la = KERNBASE;
+
+    pde_t *pde;
+
+    cprintf ("nspace =%x   pagesz=%x\n", nspace / 4096 , pagesz / 4096);
+    for (offset = 0; offset < nspace; offset += pagesz) {
+
+        pde = pgdir + PDX(la);
+        *pde = PADDR (la)|PTE_PS|PTE_W|PTE_P;
+       
+        cprintf ("la =%x   pa=%x\n", la, PADDR(la)); 
+        la += pagesz;
+    }
+}
+
+
 
 //
 // Return the page mapped at virtual address 'va'.
