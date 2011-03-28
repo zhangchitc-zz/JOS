@@ -7,6 +7,7 @@
 #include <inc/assert.h>
 #include <inc/x86.h>
 
+#include <kern/pmap.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
@@ -115,6 +116,34 @@ mon_showmappings (int argc, char **argv, struct Trapframe *tf)
         return 0;
     }
 
+    
+    pte_t *pte;
+    
+    while (lva < uva) {
+        pte = pgdir_walk (boot_pgdir, (void*) lva, 0);
+
+        cprintf ("0x%x - 0x%x     ", lva, lva + PGSIZE);
+
+        if (pte == NULL || !(*pte & PTE_P)) {
+            cprintf ("not mapped\n");
+        } else {
+            cprintf ("0x%x   ", PTE_ADDR (*pte));
+
+            if (*pte & PTE_U) 
+                cprintf ("user: ");
+            else
+                cprintf ("kernel: ");
+            
+            if (*pte & PTE_W) 
+                cprintf ("read/write");
+            else
+                cprintf ("read only");
+
+            cprintf ("\n");
+        }
+
+        lva += PGSIZE;
+    }
     
     return 0;
 }
