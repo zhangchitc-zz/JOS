@@ -1155,6 +1155,8 @@ Your code should now pass the check_boot_pgdir() check.
 |Challenge!| We consumed many physical pages to hold the page tables for the KERNBASE mapping. Do a more space-efficient job using the PTE_PS ("Page Size") bit in the page directory entries. This bit was not supported in the original 80386, but is supported on more recent x86 processors. You will therefore have to refer to Volume 3 of the current Intel manuals. Make sure you design the kernel to use this optimization only on processors that support it!
 \end{lstlisting}
 
+fda
+
 \begin{lstlisting}[style=challenge]
 |Challenge!| Extend the JOS kernel monitor with commands to:
 
@@ -1163,6 +1165,66 @@ Your code should now pass the check_boot_pgdir() check.
 * Dump the contents of a range of memory given either a virtual or physical address range. Be sure the dump code behaves correctly when the range extends across page boundaries!
 * Do anything else that you think might be useful later for debugging the kernel. (There's a good chance it will be!)
 \end{lstlisting}
+
+\begin{enumerate}
+\item{打印地}
+\end{enumerate}
+
+\begin{lstlisting}[style=console]
+(qemu) info pg
+PDE(001) ef000000-ef400000 00400000 urw
+ |-- PTE(000031) ef000000-ef031000 00031000 ur-
+PDE(001) ef400000-ef800000 00400000 ur-
+ |-- PTE(000001) ef7bc000-ef7bd000 00001000 urw
+ |-- PTE(000001) ef7bd000-ef7be000 00001000 ur-
+ |-- PTE(000001) ef7be000-ef7bf000 00001000 urw
+ |-- PTE(000001) ef7bf000-ef7c0000 00001000 -rw
+ |-- PTE(000040) ef7c0000-ef800000 00040000 urw
+PDE(001) ef800000-efc00000 00400000 -rw
+ |-- PTE(000008) efbf8000-efc00000 00008000 -rw
+PDE(001) efc00000-f0000000 00400000 -rw
+ |-- PTE(000001) effbc000-effbd000 00001000 urw
+ |-- PTE(000001) effbd000-effbe000 00001000 ur-
+ |-- PTE(000001) effbe000-effbf000 00001000 urw
+ |-- PTE(000001) effbf000-effc0000 00001000 -rw
+ |-- PTE(000040) effc0000-f0000000 00040000 urw
+PDE(040) f0000000-00000000 10000000 urw
+ |-- PTE(010000) f0000000-00000000 10000000 -rw
+setmappings 0 1 4096 ur
+Set memory mapping successfully!  The new mapping is:
+0x0 - 0x1000     0x1000   user: read only
+K> 
+info pg
+Unknown command 'info'
+K> (qemu) info pg
+PDE(001) 00000000-00400000 00400000 urw
+ |-- PTE(000001) 00000000-00001000 00001000 ur-
+PDE(001) ef000000-ef400000 00400000 urw
+ |-- PTE(000031) ef000000-ef031000 00031000 ur-
+PDE(001) ef400000-ef800000 00400000 ur-
+ |-- PTE(000001) ef400000-ef401000 00001000 urw
+ |-- PTE(000001) ef7bc000-ef7bd000 00001000 urw
+ |-- PTE(000001) ef7bd000-ef7be000 00001000 ur-
+ |-- PTE(000001) ef7be000-ef7bf000 00001000 urw
+ |-- PTE(000001) ef7bf000-ef7c0000 00001000 -rw
+ |-- PTE(000040) ef7c0000-ef800000 00040000 urw
+PDE(001) ef800000-efc00000 00400000 -rw
+ |-- PTE(000008) efbf8000-efc00000 00008000 -rw
+PDE(001) efc00000-f0000000 00400000 -rw
+ |-- PTE(000001) efc00000-efc01000 00001000 urw
+ |-- PTE(000001) effbc000-effbd000 00001000 urw
+ |-- PTE(000001) effbd000-effbe000 00001000 ur-
+ |-- PTE(000001) effbe000-effbf000 00001000 urw
+ |-- PTE(000001) effbf000-effc0000 00001000 -rw
+ |-- PTE(000040) effc0000-f0000000 00040000 urw
+PDE(040) f0000000-00000000 10000000 urw
+ |-- PTE(010000) f0000000-00000000 10000000 -rw
+(qemu) 
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
 
 \subsection{Address Space Layout Alternatives}
 
@@ -1190,11 +1252,6 @@ Think of other commands or extensions to these commands that may be useful for d
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
 
 \begin{lstlisting}[style=console]
 \end{lstlisting}

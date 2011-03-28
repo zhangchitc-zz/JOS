@@ -4,6 +4,7 @@
 #include <inc/stdio.h>
 #include <inc/string.h>
 #include <inc/memlayout.h>
+#include <inc/mmu.h>
 #include <inc/assert.h>
 #include <inc/x86.h>
 
@@ -26,7 +27,8 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
     { "backtrace", "Display information about the stack", mon_backtrace },
-    { "showmappings", "Display a easy-to-read format of physical page mapping", mon_showmappings }
+    { "showmappings", "Display a easy-to-read format of physical page mapping", mon_showmappings },
+    { "setmappings", "Modify virtual address to physical address mapping", mon_setmappings }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -96,27 +98,9 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
     return 0;
 }
 
-
-int
-mon_showmappings (int argc, char **argv, struct Trapframe *tf)
-{
-    if (argc != 3) {
-        cprintf ("Usage: showmappings [LOWER_ADDR] [UPPER_ADDR]\n");
-        cprintf ("Both address must be aligned in 4KB\n");
-        return 0;
-    }
-
-    uint32_t lva = strtol (argv[1], 0, 0);
-    uint32_t uva = strtol (argv[2], 0, 0);
-
-    if (lva != ROUNDUP (lva, PGSIZE) ||
-        uva != ROUNDUP (uva, PGSIZE) ||
-        lva > uva) {
-        mon_showmappings (0, argv, tf);
-        return 0;
-    }
-
-    
+int 
+showmappings (uint32_t lva, uint32_t uva)
+{    
     pte_t *pte;
     
     while (lva < uva) {
@@ -144,9 +128,112 @@ mon_showmappings (int argc, char **argv, struct Trapframe *tf)
 
         lva += PGSIZE;
     }
-    
+ 
     return 0;
 }
+
+int
+mon_showmappings (int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 3) {
+        cprintf ("Usage: showmappings [LOWER_ADDR] [UPPER_ADDR]\n");
+        cprintf ("Both address must be aligned in 4KB\n");
+        return 0;
+    }
+
+    uint32_t lva = strtol (argv[1], 0, 0);
+    uint32_t uva = strtol (argv[2], 0, 0);
+
+    if (lva != ROUNDUP (lva, PGSIZE) ||
+        uva != ROUNDUP (uva, PGSIZE) ||
+        lva > uva) {
+        cprintf ("showmappings: Invalid address\n");
+        return 0;
+    }
+
+    showmappings (lva, uva);
+
+    return 0;
+}
+
+
+
+int
+setmappings (uint32_t va, uint32_t memsize, uint32_t pa, int perm)
+{
+    uint32_t offset;
+
+    for (offset = 0; offset < memsize; offset += PGSIZE) {
+       page_insert (boot_pgdir, pa2page (pa + offset), (void *)va + offset, perm); 
+    }
+
+    return 0;
+}
+
+int
+mon_setmappings (int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 5) {
+        cprintf ("Usage: setmappings [VIRTUAL_ADDR] [PAGE_NUM] [PHYSICAL_ADDR] [PERMISSION]\n");
+        cprintf ("    Both virtual address and physical address must be aligned in 4KB\n");
+        cprintf ("    Permission is one of 4 options ('ur', 'uw', 'kr', 'kw')\n");
+        cprintf ("           u stands for user mode, k for kernel mode\n");
+
+        cprintf ("\n     Make sure that the physical memory space has already been mounted before\n");
+        return 0;
+    }
+
+
+    //
+    // Added by Chi Zhang (zhangchitc@gmail.com)
+    // Just for test use!!
+    // In the beginning, there is no physical page mounted
+    // (The KERNBASE above space is static mapping which did't affect the pp_ref
+    // so we need manually insert a page
+    // here I select the second physical page
+    // 
+    // page_insert (boot_pgdir, pages + 1, 0, 0);
+
+    uint32_t va = strtol (argv[1], 0, 0);
+    uint32_t pa = strtol (argv[3], 0, 0);
+    uint32_t perm = 0;
+    uint32_t memsize = strtol (argv[2], 0, 0) * PGSIZE;
+
+    if (va != ROUNDUP (va, PGSIZE) ||
+        pa != ROUNDUP (pa, PGSIZE) ||
+        va > ~0 - memsize) {
+        cprintf ("setmappings: Invalid address\n");
+        return 0;
+    }
+
+    uint32_t offset;
+    struct Page *pp;
+
+    for (offset = 0; offset < memsize; offset += PGSIZE) {
+        pp = pa2page (pa + offset);
+        if (pp -> pp_ref == 0) {
+            cprintf ("setmappings: Unmounted physical page: %x - %x\n", 
+                pa + offset, pa + offset + PGSIZE);
+            return 0;
+        }
+    }
+
+    if (argv[4][0] == 'u') {
+        perm |= PTE_U;
+    }
+    if (argv[4][1] == 'w') {
+        perm |= PTE_W;
+    }
+
+    setmappings (va, memsize, pa, perm);
+
+    cprintf ("Set memory mapping successfully!  The new mapping is:\n");
+    showmappings (va, va + memsize);
+
+
+    return 0;
+}
+
 
 /***** Kernel monitor command interpreter *****/
 
