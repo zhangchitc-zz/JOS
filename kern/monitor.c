@@ -99,7 +99,24 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 int
 mon_showmappings (int argc, char **argv, struct Trapframe *tf)
 {
-   return 0;
+    if (argc != 3) {
+        cprintf ("Usage: showmappings [LOWER_ADDR] [UPPER_ADDR]\n");
+        cprintf ("Both address must be aligned in 4KB\n");
+        return 0;
+    }
+
+    uint32_t lva = strtol (argv[1], 0, 0);
+    uint32_t uva = strtol (argv[2], 0, 0);
+
+    if (lva != ROUNDUP (lva, PGSIZE) ||
+        uva != ROUNDUP (uva, PGSIZE) ||
+        lva > uva) {
+        mon_showmappings (0, argv, tf);
+        return 0;
+    }
+
+    
+    return 0;
 }
 
 /***** Kernel monitor command interpreter *****/

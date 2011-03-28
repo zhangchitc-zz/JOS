@@ -244,23 +244,23 @@ i386_vm_init(void)
 	// Your code goes here: 
 
 
-    // boot_map_segment (
-    //    pgdir,
-    //    KERNBASE,
-    //    ~KERNBASE + 1, // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
-    //    (physaddr_t) 0,
-    //    PTE_W); 
+    boot_map_segment (
+        pgdir,
+        KERNBASE,
+        ~KERNBASE + 1, // 2^32 - KERNBASE = (2 ^ 32 - 1 - KERNBASE) + 1 = ~KERNBASE + 1
+        (physaddr_t) 0,
+        PTE_W); 
 
     //
     // Added by Chi Zhang (zhangchitc@gmail.com)
     // for KERNBASE address
     // changed into memory efficient page of 4MB
     //
-    boot_map_KERNBASE (pgdir);
+    // boot_map_KERNBASE (pgdir);
 
 
 	// Check that the initial page directory has been set up correctly.
-	//check_boot_pgdir();
+	check_boot_pgdir();
 
 	//////////////////////////////////////////////////////////////////////
 	// On x86, segmentation maps a VA to a LA (linear addr) and
@@ -281,7 +281,7 @@ i386_vm_init(void)
     // Added by Chi Zhang (zhangchitc@gmail.com)
     // Turn on CR4_PSE for 4MB page
     // cprintf ("original CR4: %x\n", rcr4 ()); 
-    lcr4 (rcr4 () | CR4_PSE);
+    // lcr4 (rcr4 () | CR4_PSE);
     // cprintf ("modified CR4: %x\n", rcr4 ());
 
 	
@@ -320,8 +320,6 @@ i386_vm_init(void)
 	// Flush the TLB for good measure, to kill the pgdir[0] mapping.
 	lcr3(boot_cr3);
 
-    cprintf ("4MB pages for KERNBASE space set up successfully!\n");
-    //check_boot_pgdir ();
 }
 
 //
