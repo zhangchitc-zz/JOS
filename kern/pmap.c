@@ -320,6 +320,7 @@ i386_vm_init(void)
 	// Flush the TLB for good measure, to kill the pgdir[0] mapping.
 	lcr3(boot_cr3);
 
+    cprintf ("4MB pages for KERNBASE space set up successfully!\n");
     //check_boot_pgdir ();
 }
 
@@ -764,13 +765,13 @@ boot_map_KERNBASE (pde_t *pgdir)
 
     pde_t *pde;
 
-    cprintf ("nspace =%x   pagesz=%x\n", nspace / 4096 , pagesz / 4096);
+    // cprintf ("nspace =%x   pagesz=%x\n", nspace / 4096 , pagesz / 4096);
     for (offset = 0; offset < nspace; offset += pagesz) {
 
         pde = pgdir + PDX(la);
         *pde = PADDR (la)|PTE_PS|PTE_W|PTE_P;
        
-        cprintf ("la =%x   pa=%x\n", la, PADDR(la)); 
+        //cprintf ("la =%x   pa=%x\n", la, PADDR(la)); 
         la += pagesz;
     }
 }
