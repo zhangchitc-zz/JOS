@@ -251,6 +251,8 @@ i386_vm_init(void)
     //    (physaddr_t) 0,
     //    PTE_W); 
 
+    //
+    // Added by Chi Zhang (zhangchitc@gmail.com)
     // for KERNBASE address
     // changed into memory efficient page of 4MB
     //
@@ -275,6 +277,7 @@ i386_vm_init(void)
 	// segmentation.
 
 
+    //
     // Added by Chi Zhang (zhangchitc@gmail.com)
     // Turn on CR4_PSE for 4MB page
     // cprintf ("original CR4: %x\n", rcr4 ()); 
