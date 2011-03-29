@@ -9,4 +9,4 @@
 \contentsline {section}{\numberline {4}Kernel Address Space}{20}{section.4}
 \contentsline {subsection}{\numberline {4.1}Permissions and Fault Isolation}{20}{subsection.4.1}
 \contentsline {subsection}{\numberline {4.2}Initializing the Kernel Address Space}{20}{subsection.4.2}
-\contentsline {subsection}{\numberline {4.3}Address Space Layout Alternatives}{24}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.3}Address Space Layout Alternatives}{29}{subsection.4.3}
