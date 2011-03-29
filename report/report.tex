@@ -1151,11 +1151,107 @@ Your code should now pass the check_boot_pgdir() check.
 \item{管理物理内存实际的内存开销为1个页目录+1024个页表，即1025 $\times$ 4KB大概为4MB的样子。}
 \end{enumerate}
 
+\vspace{4em}
+
 \begin{lstlisting}[style=challenge]
 |Challenge!| We consumed many physical pages to hold the page tables for the KERNBASE mapping. Do a more space-efficient job using the PTE_PS ("Page Size") bit in the page directory entries. This bit was not supported in the original 80386, but is supported on more recent x86 processors. You will therefore have to refer to Volume 3 of the current Intel manuals. Make sure you design the kernel to use this optimization only on processors that support it!
 \end{lstlisting}
 
-fda
+\vspace{4em}
+
+根据查询x86手册的{\ttfamily \bfseries CHAPTER 3 PROTECTED-MODE MEMORY MANAGEMENT} 中 {\ttfamily \bfseries 3.6 PAGING (VIRTUAL MEMORY) OVERVIEW} 可以查到，如果将CR4中的PSE位打开，那么就可以开启4MB物理页。那么对应使用该物理页的虚拟地址寻址方式变为：
+
+\vspace{4em}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/screen3.png}
+\end{figure}
+
+这个时候相应的页目录表项也要修改，要修改其PS位表明该表项对应的地址是4MB，不用再进行二级页表寻址了：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/screen4.png}
+\end{figure}
+
+但是这个时候会出现一个问题，就是设置了使用4MB页表以后，我们在前面程序中使用的那些二级页表查找和插入的过程就不能通用了，或者说都要相应的修改，比如\funcname{pgdir\_walk ()}, \funcname{page\_insert ()}等等。因为在后面的challenge中会要求提供命令手动对地址映射进行相应的修改和查询，所以为了简单，我没有把这个challenge和后面的结合起来，只是作为一个branch写了出来。相应的代码就是在kern/pmap.c中修改KERNBASE的地址映射时使用一个特别的映射过程：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: boot\_map\_KERNBASE ()}]
+}
+//
+// Added by Chi Zhang (zhangchitc@gmail.com)
+// Use 4MB page mapping for KERNBASE space
+
+static void
+boot_map_KERNBASE (pde_t *pgdir)
+{
+    uint32_t offset;
+    uint32_t nspace = (~KERNBASE + 1);
+    uint32_t pagesz = PTSIZE;
+    uintptr_t la = KERNBASE;
+
+    pde_t *pde;
+
+    for (offset = 0; offset < nspace; offset += pagesz) {
+
+        pde = pgdir + PDX(la);
+        *pde = PADDR (la)|PTE_PS|PTE_W|PTE_P;
+       
+        la += pagesz;
+    }
+}
+\end{lstlisting}
+
+然后在打开页式转换之前重设CR4：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+        //
+        // Added by Chi Zhang (zhangchitc@gmail.com)
+        // Turn on CR4_PSE for 4MB page
+        lcr4 (rcr4 () | CR4_PSE);
+	
+	// Map VA 0:4MB same as VA KERNBASE, i.e. to PA 0:4MB.
+	// (Limits our kernel to <4MB)
+	pgdir[0] = pgdir[PDX(KERNBASE)];
+
+	// Install page table.
+	lcr3(boot_cr3);
+
+	// Turn on paging.
+	cr0 = rcr0();
+	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_WP|CR0_NE|CR0_TS|CR0_EM|CR0_MP;
+        cr0 &= ~(CR0_TS|CR0_EM);
+        lcr0(cr0);
+\end{lstlisting}
+
+注意一点，这个时候对KERNBASE区域的二级寻址就失败了，因为在\funcname{check\_boot\_pgdir()} 有相应的KERNBASE的寻址检查，这样这个检查我们就通不过了，不过没有关系，如果页表设置正确，那么在打开4MB物理页以后，内核能正确完成kern/pmap.c接下来的基本寄存器重设的话，那么肯定寻址就是正确的，所以我们在\funcname{i386\_vm\_init()}的最后添加一条打印语句：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+
+\end{lstlisting}
+
+
+
+\vspace{4em}
+
 
 \begin{lstlisting}[style=challenge]
 |Challenge!| Extend the JOS kernel monitor with commands to:
@@ -1271,7 +1367,22 @@ Generalize the kernel's memory allocation system to support pages of a variety o
 Think of other commands or extensions to these commands that may be useful for debugging, and add them.
 \end{lstlisting}
 
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
 
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: i386\_vm\_init ()}]
+}
+\end{lstlisting}
 
 \begin{lstlisting}[style=console]
 \end{lstlisting}
@@ -1286,3 +1397,4 @@ Think of other commands or extensions to these commands that may be useful for d
 \end{document}
 	
 
+e
