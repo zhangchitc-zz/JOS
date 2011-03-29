@@ -28,7 +28,11 @@ static struct Command commands[] = {
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
     { "backtrace", "Display information about the stack", mon_backtrace },
     { "showmappings", "Display a easy-to-read format of physical page mapping", mon_showmappings },
-    { "setmappings", "Modify virtual address to physical address mapping", mon_setmappings }
+    { "setmappings", "Modify virtual address to physical address mapping", mon_setmappings },
+    { "dumpmem", "Dump the contents of a range of memory", mon_dumpmem },
+    { "alloc_page", "Allocate a physical page", mon_alloc_page },
+    { "page_status", "Check physical page status", mon_page_status },
+    { "free_page", "Free a physical page", mon_free_page }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -234,6 +238,123 @@ mon_setmappings (int argc, char **argv, struct Trapframe *tf)
     return 0;
 }
 
+
+
+
+int
+dumpmem (uint32_t lva, uint32_t uva)
+{
+    while (lva < uva) {
+        cprintf ("0x%x:  ", lva);
+        int i;
+        for (i = 0; i < 4 && lva < uva; i++, lva += 4) {
+            cprintf ("0x%x  ", *((uint32_t*) lva));
+        }
+        cprintf ("\n");
+    }
+
+    return 0;
+}
+
+
+int
+mon_dumpmem (int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 4) {
+        cprintf ("Usage: dumpmem [ADDR_TYPE] [LOWER_ADDR] [PRINT_DWORD]\n");
+        cprintf ("       Address must be aligned in 4B\n");
+        cprintf ("       Address type can only be 'v' or 'p'\n");
+        return 0;
+    }
+
+    uint32_t lva = strtol (argv[2], 0, 0);
+    uint32_t uva = strtol (argv[3], 0, 0) * 4 + lva;
+
+    if (lva != ROUNDUP (lva, 4) ||
+        uva != ROUNDUP (uva, 4) ||
+        lva > uva) {
+        cprintf ("dumpmem: Invalid address\n");
+        return 0;
+    }
+
+    if (argv[1][0] != 'v' && argv[1][0] != 'p') {
+        cprintf ("dumpmem: Invalid address type\n");
+        return 0;
+    }
+
+    if (argv[1][0] == 'p') {
+        lva += KERNBASE;
+        uva += KERNBASE;
+    }
+
+    dumpmem (lva, uva); 
+
+    return 0;
+}
+
+
+
+
+int 
+mon_alloc_page (int argc, char **argv, struct Trapframe *tf)
+{
+    struct Page *pp;
+
+    if (page_alloc (&pp) == 0) {
+        cprintf ("    0x%x\n", page2pa (pp));
+        pp -> pp_ref ++;
+    } else {
+        cprintf ("    Page allocation failed!\n");
+    }
+
+    return 0;
+}
+
+
+
+int 
+mon_page_status (int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 2) {
+        cprintf ("Usage: page_status [ADDR]\n");
+        cprintf ("    Address must be aligned in 4KB\n");
+        return 0;
+    }
+
+    uint32_t pa = strtol (argv[1], 0, 0);
+    struct Page *pp = pa2page (pa);
+
+    if (pp -> pp_ref > 0) {
+        cprintf ("    allocated\n");
+    } else {
+        cprintf ("    free\n");
+    }
+
+    return 0;
+}
+
+int mon_free_page (int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 2) {
+        cprintf ("Usage: free_page [ADDR]\n");
+        cprintf ("    Address must be aligned in 4KB\n");
+        cprintf ("    Please make sure that the page is currently mounted only 1 time\n");
+        return 0;
+    }
+
+    uint32_t pa = strtol (argv[1], 0, 0);
+    struct Page *pp = pa2page (pa);
+
+    if (pp -> pp_ref == 1) {
+        page_decref (pp);
+        cprintf ("    Page freed successfully!\n");
+    } else {
+        cprintf ("    Failed!\n");
+    }
+
+   
+    return 0;
+}
 
 /***** Kernel monitor command interpreter *****/
 
