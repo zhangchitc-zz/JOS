@@ -74,9 +74,10 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 
 // 
 // Add by Chi Zhang (zhangchitc@gmail.com
-// The declaration is for testing use of the last code in env_init ()
+// The declaration is for testing use of the last several lines in env_init ()
 // After test, it may be commented out
 // static int env_setup_vm (struct Env *e);
+
 
 void
 env_init(void)
@@ -267,6 +268,31 @@ segment_alloc(struct Env *e, void *va, size_t len)
 	// Hint: It is easier to use segment_alloc if the caller can pass
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round len up.
+	
+
+
+    // Add by Chi Zhang (zhangchitc@gmail.com
+    // Refer to boot_map_segment () in kern/pmap.c
+    // DIFFERENCES:
+    //    1. boot_map_segment manipulate boot_pgdir, here is e->env_pgdir
+    //    2. boot_map_segment estabilish static mapping,
+    //       while in segment_alloc the mapping affect pp_ref
+
+    va = ROUNDDOWN (va, PGSIZE);
+    len = ROUNDUP (len, PGSIZE);
+
+    struct Page *pp;
+    int r;
+
+    for (; len > 0; len -= PGSIZE, va += PGSIZE) {
+        r = page_alloc (&pp);
+
+        if (r != 0) {
+            panic ("segment_alloc: %e", r);
+        }
+
+        page_insert (e->env_pgdir, pp, va, PTE_U);  
+    } 
 }
 
 //
