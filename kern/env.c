@@ -70,6 +70,14 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 // Insert in reverse order, so that the first call to env_alloc()
 // returns envs[0].
 //
+
+
+// 
+// Add by Chi Zhang (zhangchitc@gmail.com
+// The declaration is for testing use of the last code in env_init ()
+// After test, it may be commented out
+// static int env_setup_vm (struct Env *e);
+
 void
 env_init(void)
 {
@@ -84,9 +92,17 @@ env_init(void)
 		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
 	}
 
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // Test case
+    // Attention!! these lines must be commented before handin!!
+    //
+/*
     struct Env *env_store;
     assert (env_alloc (&env_store, 0) == 0);
     assert (env_store == envs);
+*/
+    // test env_setup_vm;
+    //env_setup_vm (env_store);
 }
 
 //
@@ -129,11 +145,50 @@ env_setup_vm(struct Env *e)
 
 	// LAB 3: Your code here.
 
+    e->env_pgdir = page2kva (p);
+    e->env_cr3 = page2pa (p);
+
+
+    //
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // because all the virtual space above UTOP is the same for all envs
+    // so it's no need to allocate new page
+    // just copying mapping from boot_pgdir is enough
+    //
+    memmove (e->env_pgdir, boot_pgdir, PGSIZE);
+    memset (e->env_pgdir, 0, PDX(UTOP) * sizeof (pde_t));
+   
+    // increase env_pgdir's pp_ref 
+    p->pp_ref ++;
+
+
 	// VPT and UVPT map the env's own page table, with
 	// different permissions.
 	e->env_pgdir[PDX(VPT)]  = e->env_cr3 | PTE_P | PTE_W;
 	e->env_pgdir[PDX(UVPT)] = e->env_cr3 | PTE_P | PTE_U;
 
+
+    //
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // testing the env_pgdir
+    // after testing, please remove the following code
+/*
+    int va;
+    cprintf ("UTOP = 0x%x\n", UTOP);
+    for (i = 0, va = 0; i < NPDENTRIES; i++, va += PTSIZE) {
+       cprintf ("pdx = %d, va = 0x%x  env:0x%x   pgdir:0x%x\n", i, va, e->env_pgdir[i], boot_pgdir[i]);
+
+        if (va == VPT || va == UVPT) {
+            continue;
+        }
+
+        if (va < UTOP) {
+            assert (e->env_pgdir[i] == 0);
+        } else {
+            assert (e->env_pgdir[i] == boot_pgdir[i]);
+        }
+    }
+*/
 	return 0;
 }
 
