@@ -74,6 +74,19 @@ void
 env_init(void)
 {
 	// LAB 3: Your code here.
+	
+	int i;
+
+	LIST_INIT(&env_free_list);
+	for (i = NENV - 1; i >= 0; i--) {
+		envs[i].env_id = 0;
+ 
+		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
+	}
+
+    struct Env *env_store;
+    assert (env_alloc (&env_store, 0) == 0);
+    assert (env_store == envs);
 }
 
 //
