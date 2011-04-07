@@ -89,7 +89,7 @@ env_init(void)
 	LIST_INIT(&env_free_list);
 	for (i = NENV - 1; i >= 0; i--) {
 		envs[i].env_id = 0;
- 
+        envs[i].env_status = ENV_FREE; 
 		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
 	}
 
@@ -278,8 +278,12 @@ segment_alloc(struct Env *e, void *va, size_t len)
     //    2. boot_map_segment estabilish static mapping,
     //       while in segment_alloc the mapping affect pp_ref
 
+    //cprintf ("va = 0x%x, len = 0x%x\n", va, len);
+
     va = ROUNDDOWN (va, PGSIZE);
     len = ROUNDUP (len, PGSIZE);
+
+    //cprintf ("va = 0x%x, len = 0x%x\n", va, len);
 
     struct Page *pp;
     int r;
@@ -288,10 +292,14 @@ segment_alloc(struct Env *e, void *va, size_t len)
         r = page_alloc (&pp);
 
         if (r != 0) {
-            panic ("segment_alloc: %e", r);
+            panic ("segment_alloc: physical page allocation failed  %e", r);
         }
 
-        page_insert (e->env_pgdir, pp, va, PTE_U|PTE_W);  
+        r = page_insert (e->env_pgdir, pp, va, PTE_U|PTE_W);
+
+        if (r != 0) {
+            panic ("segment_alloc: page mapping failed  %e", r);
+        }
     } 
 }
 
@@ -356,22 +364,43 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// is this a valid ELF?
 	if (ELFHDR->e_magic != ELF_MAGIC)
 		panic ("load_icode: Not a valid ELF");
+    
+    //cprintf ("%Credload_icode: failed%Cwht\n");
+
 
 	// load each program segment (ignores ph flags)
 	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
 	eph = ph + ELFHDR->e_phnum;
+
+    //
+    // Attention!!
+    // In the following lines of code
+    // we need access env's virtual address space to complete initialization
+    // so pgdir switch is needed
+    //
+    lcr3 (e->env_cr3);
 	for (; ph < eph; ph++) {
         if (ph->p_type == ELF_PROG_LOAD) {
             
             // Attention !! 
             // before loading ELF content
             // allocating physical memory is crucial!!
+      
+            //cprintf ("%Credload_icode: before segment_alloc%Cwht\n");
             segment_alloc (e, (void*) ph->p_va, ph->p_memsz);
-
+     
+            //cprintf ("%Credload_icode: before memset%Cwht\n");
+            //cprintf ("va = 0x%x, size=0x%x\n", ph->p_va, ph->p_memsz);
             memset ((void *)ph->p_va, 0, ph->p_memsz);
-            memmove ((void *)ph->p_va, (void*) binary + ph->p_offset, ph->p_filesz);
-        }
+
+            //cprintf ("%Credload_icode: before memmove%Cwht\n");
+            memmove ((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+     
+            //cprintf ("%Credload_icode: failed in loading program header%Cwht\n");
+       }
     }
+    lcr3 (boot_cr3);
+
 
     // Attention !!
     // before switch to the new Environment, we need to set up new CS and EIP
@@ -385,7 +414,8 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// at virtual address USTACKTOP - PGSIZE.
 
 	// LAB 3: Your code here.
-    segment_alloc (e, USTACKTOP - PGSIZE, PGSIZE);
+    segment_alloc (e, (void*) (USTACKTOP - PGSIZE), PGSIZE);
+    //cprintf ("%Credload_icode: finished%Cwht\n");
 }
 
 //
@@ -408,7 +438,11 @@ env_create(uint8_t *binary, size_t size)
     if (r < 0)
         panic ("env_create: %e", r);
 
+    //cprintf ("%Credenv_create: before load_icode%Cwht\n");
+
     load_icode (e, binary, size);
+
+    //cprintf ("%Credenv_create: finished%Cwht\n");
 }
 
 //
@@ -487,6 +521,7 @@ env_destroy(struct Env *e)
 void
 env_pop_tf(struct Trapframe *tf)
 {
+    //cprintf ("enter pop trap frame\n");
 	__asm __volatile("movl %0,%%esp\n"
 		"\tpopal\n"
 		"\tpopl %%es\n"
@@ -520,6 +555,15 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	
 	// LAB 3: Your code here.
+    
+
+    if (curenv != e) {
+        curenv = e;
+        curenv->env_runs ++;
+        lcr3 (curenv->env_cr3);
+    }
+
+    env_pop_tf (&curenv->env_tf);
 
 
     // Add by Chi Zhang (zhangchitc@gmail.com
