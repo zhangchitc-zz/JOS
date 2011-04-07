@@ -291,7 +291,7 @@ segment_alloc(struct Env *e, void *va, size_t len)
             panic ("segment_alloc: %e", r);
         }
 
-        page_insert (e->env_pgdir, pp, va, PTE_U);  
+        page_insert (e->env_pgdir, pp, va, PTE_U|PTE_W);  
     } 
 }
 
@@ -349,11 +349,43 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
+	
+    struct Elf *ELFHDR = (struct Elf*) binary;
+	struct Proghdr *ph, *eph;
+
+	// is this a valid ELF?
+	if (ELFHDR->e_magic != ELF_MAGIC)
+		panic ("load_icode: Not a valid ELF");
+
+	// load each program segment (ignores ph flags)
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
+	eph = ph + ELFHDR->e_phnum;
+	for (; ph < eph; ph++) {
+        if (ph->p_type == ELF_PROG_LOAD) {
+            
+            // Attention !! 
+            // before loading ELF content
+            // allocating physical memory is crucial!!
+            segment_alloc (e, (void*) ph->p_va, ph->p_memsz);
+
+            memset ((void *)ph->p_va, 0, ph->p_memsz);
+            memmove ((void *)ph->p_va, (void*) binary + ph->p_offset, ph->p_filesz);
+        }
+    }
+
+    // Attention !!
+    // before switch to the new Environment, we need to set up new CS and EIP
+    // so that the system can jump to the right code
+    // CS has been rightly setuped in env_alloc ()
+    // pay attention to env_alloc, it helped a lot to understand the workflow
+    e->env_tf.tf_eip = ELFHDR->e_entry;
+
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 
 	// LAB 3: Your code here.
+    segment_alloc (e, USTACKTOP - PGSIZE, PGSIZE);
 }
 
 //
@@ -367,6 +399,16 @@ void
 env_create(uint8_t *binary, size_t size)
 {
 	// LAB 3: Your code here.
+    
+    struct Env *e;
+    int r;
+
+    r = env_alloc (&e, 0);
+
+    if (r < 0)
+        panic ("env_create: %e", r);
+
+    load_icode (e, binary, size);
 }
 
 //
@@ -478,6 +520,14 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	
 	// LAB 3: Your code here.
+
+
+    // Add by Chi Zhang (zhangchitc@gmail.com
+    // cr3 stands for the physical address of page directory (user mode)
+    // the env's cr3 has been set in env_setup_vm () when allocating environment page
+    //
+
+
 
 	panic("env_run not yet implemented");
 }
