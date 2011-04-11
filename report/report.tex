@@ -975,17 +975,432 @@ Triple fault.  Halting for inspection via QEMU monitor.
 
 \subsection{Handling Interrupts and Exceptions}
 
+\begin{lstlisting}[style=exercise]
+|Exercise 3|. Read Chapter 9, Exceptions and Interrupts in the 80386 Programmer's Manual (or Chapter 5 of the IA-32 Developer's Manual), if you haven't already.
+\end{lstlisting}
+
+一定要读！尤其是 {\ttfamily \bfseries  Chapter 9, Exceptions and Interrupts } ，因为IA-32的开发手册实在是太长没法看，但是前面这个HTML的说明不长不短，刚好能大致完整的介绍一下中断的机制。
+
+在{\ttfamily \bfseries 9.5 IDT Descriptors} 中提到了IDT中一共有三种类型的门描述符
+
+\begin{itemize}
+\item{Task gates}
+\item{Interrupt gates}
+\item{Trap gates}
+\end{itemize}
+
+后来我在查找资料时在IA32-3A.pdf里看到了x86中关于门描述符的综合介绍（详见{\ttfamily \bfseries 4.8.2 Gate Descriptors}），发现还有一个Call gates，然后我就晕了，不知道这4种门都是干什么的，然后为什么IDT只有其中三种。
+
+尽管在{\ttfamily \bfseries 9.6 Interrupt Tasks and Interrupt Procedures} 中稍微解释了一下，但是我觉得它没有讲清楚\highlight{为什么要区别开来这四种门，它们各自的不同分别对应什么样的应用场景等等}。我找到了一个中文版的说明：\burl{http://www.mouseos.com/arch/gate_descriptor.html} ，比前面那个网页版要详细一点，但是仍没有说到点子上。后来我终于找到StackOverflow上一个相关的问题，我觉得讲的很好：\burl{http://stackoverflow.com/questions/3425085/ the-difference-between-call-gate-interrupt-gate-trap-gate}。这里我就按照我的理解把上面的资料总结一下：
+
+首先复习一下预备知识，通用寄存器EFLAGS保存的是CPU的执行状态和控制信息，如下图，其中我们只需要关注两个寄存器：\highlight{IF和TF}。
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/EFLAGS.png}
+\end{figure}
+
+
+
+\begin{description}
+\item[TF(Trap Flag)] :\\
+跟踪标志。置1 则开启单步执行调试模式，置0 则关闭。在单步执行模式下，处理器在每条指令后产生一个调试异常，这样在每条指令执行后都可以查看执行程序的状态。
+\item[IF (Interrupt enable)] :\\
+中断许可标志。控制处理器对可屏蔽硬件中断请求的响应。置1 则开启可屏蔽硬件中断响应，置0 则关闭可屏蔽硬件中断响应。IF 标志不影响异常和不可屏蔽中断（NMI）的产生。
+\end{description}
+
+
+\vspace{1em}
+
+\hrule
+
+\vspace{1em}
+
+门用来实现从一段代码跳转到另一段代码（可能在不同的代码段，不同特权级）时的保护机制问题。
+
+其中\highlight{Interrupt gate和trap gate和另外两个的区别}是，他们用来专门处理处理器异常或者中断(Exception or interrupt)，而另外两种一般处理用户的软件切换。
+
+
+\begin{description}
+\item[Interrupt gate 和 Trap gate的区别]: \\
+我们可以看到这两者的描述符基本没有区别，而实际上它们的执行工作也基本类似，除了一点！就是\highlight{Interrupt gate会修改IF}，会对中断响应屏蔽，即不再响应接下来的中断了
+
+这个不同在处理什么情况时候会导致差别呢？上面链接中的网友提供了一个很好的实例，比如操作系统捕获了一个硬件中断正在处理，又来了另一个。如果用trap gate，那么第一个处理就被打断了，这样会造成数据崩溃。所以必须屏蔽掉第二个处理。这样的话可以使一次硬件操作成为\highlight{原子操作}，保证处理的正确和完整。（当然，如果是NMI，那就另说了）
+
+
+还有一个是断点异常的处理，这个中断必须暴露给用户程序进行调用。但是又要区别于中断，所以使用trap gate来处理。所以一般情况下，interrupt gate用于处理意外发生的错误，而trap gate用来处理人为制造的软件中断比如page fault、调试中断等等
+
+\item[Call gate 和 Task gate的区别]: \\
+首先x86中引入了Task的概念，具体请看IA32-3A.pdf的 {\ttfamily \bfseries CHAPTER 6 TASK MANAGEMENT } 一章，简单来说，task就是一个具体的可运行的单位，可以运行，挂起，重启等等，然后在这个单位上可以保存其状态到TSS(Task-state segment)去。我们可以通过一个CALL或者JMP指令来具体的调用一个task程序。
+
+call gate和task gate都可以用来切换到一个task，\highlight{但是task gate的寻址需要经过一个TSS找到code selector}（具体见task gate descriptor）。当然这样显然比call gate麻烦，但是这样带来的好处是：
+
+\begin{itemize}
+\item{切换到时候原来task的上下文环境被自动保存(TSS)}
+\item{如果使用task gate来处理中断例程，那么可以使程序和其他例程分开，使其具有独立的地址空间比如页表等等}
+\end{itemize}
+
+\end{description}
+
+x86手册第一章有幅图能大致总结一下以上四种切换机制的具体细节：
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/IDT.png}
+\end{figure}
 
 \subsection{Basics of Protected Control Transfer}
+
+这里开始提到IDT和TSS的具体构造，这里我主要想谈一谈TSS。
+
+在IA32-3A.pdf的{\ttfamily \bfseries 6.2.1 Task-State Segment (TSS) } 有对其的详细描述，简而言之，为了能保存和恢复一个task的执行状态而引入了TSS的概念。TSS描述了一个task在执行中的状态信息。
+
+但是我看到TSS的就想起了前面的struct Env结构，这两个东西不同样都是保存状态信息的么，有什么区别？
+
+Env对应的是一个用户进程的状态，这里的进程是一个抽象程度较高的概念，而不仅仅是一段程序代码而已。它有独立的PCB，地址空间等等。所以对比struct Env和struct Taskstate的详细结构就可以知道，Env中有 env\_pgdir 和 env\_cr3 这种页表相关的成员，表示它不仅要保存CPU的即时运行状态，还要保存其空间页表的信息。
+
+相比之下，TSS对应的则不是进程，而是比较底层的概念，是一段汇编代码中的过程。它比struct Env多出的像ESP0，SS0，ESP1，SS1这样的结构，重在描述代码切换之间权限的转换。
+
+\highlight{综上，TSS侧重权限，主要用于保护机制，而Env则主要用于保持用户进程的独立}。两者适用的对象不同，目的和侧重点更不同。
+
 
 \subsection{Types of Exceptions and Interrupts}
 
 \subsection{An Example}
 
+主要注意弄清处理器在捕获中断以后的执行过程。注意当前如何切换到内核栈以及切换过去后处理器在内核栈中放了一些什么东西。这个MIT的材料里已经讲的非常清楚，不再赘述。
+
 \subsection{Nested Exceptions and Interrupts}
 
 \subsection{Setting Up the IDT}
 
+具体实现的部分涉及到几个MIT材料里没有提到的东西：
+
+首先IDT的数据结构，定义在kern/trap.c中：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c}]
+struct Gatedesc idt[256] = { { 0 } };
+struct Pseudodesc idt_pd = {
+	sizeof(idt) - 1, (uint32_t) idt
+};
+\end{lstlisting}
+
+idt\_pd是系统寄存器IDTR的对应结构，门描述符数据结构struct Gatedesc定义在inc/mmu.h中：
+
+\begin{lstlisting}[style=ccode, firstnumber=257, title={\scriptsize \ttfamily \bfseries inc/mmu.h}]
+// Gate descriptors for interrupts and traps
+struct Gatedesc {
+	unsigned gd_off_15_0 : 16;   // low 16 bits of offset in segment
+	unsigned gd_ss : 16;         // segment selector
+	unsigned gd_args : 5;        // # args, 0 for interrupt/trap gates
+	unsigned gd_rsv1 : 3;        // reserved(should be zero I guess)
+	unsigned gd_type : 4;        // type(STS_{TG,IG32,TG32})
+	unsigned gd_s : 1;           // must be 0 (system)
+	unsigned gd_dpl : 2;         // descriptor(meaning new) privilege level
+	unsigned gd_p : 1;           // Present
+	unsigned gd_off_31_16 : 16;  // high bits of offset in segment
+};
+
+// Set up a normal interrupt/trap gate descriptor.
+// - istrap: 1 for a trap (= exception) gate, 0 for an interrupt gate.
+    //   see section 9.6.1.3 of the i386 reference: "The difference between
+    //   an interrupt gate and a trap gate is in the effect on IF (the
+    //   interrupt-enable flag). An interrupt that vectors through an
+    //   interrupt gate resets IF, thereby preventing other interrupts from
+    //   interfering with the current interrupt handler. A subsequent IRET
+    //   instruction restores IF to the value in the EFLAGS image on the
+    //   stack. An interrupt through a trap gate does not change IF."
+// - sel: Code segment selector for interrupt/trap handler
+// - off: Offset in code segment for interrupt/trap handler
+// - dpl: Descriptor Privilege Level -
+//	  the privilege level required for software to invoke
+//	  this interrupt/trap gate explicitly using an int instruction.
+#define SETGATE(gate, istrap, sel, off, dpl)			\
+{								\
+	(gate).gd_off_15_0 = (uint32_t) (off) & 0xffff;		\
+	(gate).gd_ss = (sel);					\
+	(gate).gd_args = 0;					\
+	(gate).gd_rsv1 = 0;					\
+	(gate).gd_type = (istrap) ? STS_TG32 : STS_IG32;	\
+	(gate).gd_s = 0;					\
+	(gate).gd_dpl = (dpl);					\
+	(gate).gd_p = 1;					\
+	(gate).gd_off_31_16 = (uint32_t) (off) >> 16;		\
+}
+\end{lstlisting}
+
+其中提供一个很好用的宏SETGATE用来设置一个特定的描述符。其中dpl参数是我们要重点注意的，这个在后面程序中会提到：
+
+\vspace{3em}
+
+\hrule
+
+\vspace{3em}
+
+好了，这个exercise的流程分为两步
+
+\begin{enumerate}
+\item{在kern/trapentry.S中定义好每个中断对应的中断处理程序}
+\item{在kern/trap.c的\funcname{idt\_init()} 中将那些第一步定义好的中断处理程序安装进IDT}
+\end{enumerate}
+
+
+首先开始定义中断处理程序，根据MIT的材料，每个interrupt handler都必须要作的事就是在内核栈中设置好一个Trapframe的布局结构，然后将这个结构传给\funcname{trap()}进行进一步处理，最后在\funcname{trap\_dispatch()}中进行具体中断处理程序的分发。
+
+在kern/trapentry.S中JOS提供了两个很好用的宏给我们：
+
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+/* The TRAPHANDLER macro defines a globally-visible function for handling
+ * a trap.  It pushes a trap number onto the stack, then jumps to _alltraps.
+ * Use TRAPHANDLER for traps where the CPU automatically pushes an error code.
+ */ 
+#define TRAPHANDLER(name, num)						\
+	.globl name;		/* define global symbol for 'name' */	\
+	.type name, @function;	/* symbol type is function */		\
+	.align 2;		/* align function definition */		\
+	name:			/* function starts here */		\
+	pushl $(num);							\
+	jmp _alltraps
+
+/* Use TRAPHANDLER_NOEC for traps where the CPU doesn't push an error code.
+ * It pushes a 0 in place of the error code, so the trap frame has the same
+ * format in either case.
+ */
+#define TRAPHANDLER_NOEC(name, num)					\
+	.globl name;							\
+	.type name, @function;						\
+	.align 2;							\
+	name:								\
+	pushl $0;							\
+	pushl $(num);							\
+	jmp _alltraps
+
+.text
+\end{lstlisting}
+
+他们的功能就是接受一个函数名和对应处理的中断向量编号，然后定义出一个相应的以该函数名命名的中断处理程序。这样的中断向量程序的执行流程就是向栈里压入相关错误码和中断号，然后跳转到\funcname{\_alltraps} 来执行共有的部分（把Trapframe剩下的那些结构在栈中设置好）
+
+具体代码如下：
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+.text
+
+/*
+ * Lab 3: Your code here for generating entry points for the different traps.
+ */
+
+    TRAPHANDLER_NOEC(routine_divide, T_DIVIDE)
+    TRAPHANDLER_NOEC(routine_debug, T_DEBUG)
+    TRAPHANDLER_NOEC(routine_nmi, T_NMI)
+    TRAPHANDLER_NOEC(routine_brkpt, T_BRKPT)
+    TRAPHANDLER_NOEC(routine_oflow, T_OFLOW)
+    TRAPHANDLER_NOEC(routine_bound, T_BOUND)
+    TRAPHANDLER_NOEC(routine_illop, T_ILLOP)
+    TRAPHANDLER_NOEC(routine_device, T_DEVICE)
+    TRAPHANDLER(routine_dblflt, T_DBLFLT)
+    TRAPHANDLER(routine_tss, T_TSS)
+    TRAPHANDLER(routine_segnp, T_SEGNP)
+    TRAPHANDLER(routine_stack, T_STACK)
+    TRAPHANDLER(routine_gpflt, T_GPFLT)
+    TRAPHANDLER(routine_pgflt, T_PGFLT)
+    TRAPHANDLER_NOEC(routine_fperr, T_FPERR)
+    TRAPHANDLER(routine_align, T_ALIGN)
+    TRAPHANDLER_NOEC(routine_mchk, T_MCHK)
+    TRAPHANDLER_NOEC(routine_simderr, T_SIMDERR)
+
+
+/*
+ * Lab 3: Your code here for _alltraps
+ */
+_alltraps:
+
+    pushw    $0x0
+    pushw    %ds
+    pushw    $0x0
+    pushw    %es
+    pushal
+
+    movl     $GD_KD, %eax
+    
+    movw     %ax, %ds
+    movw     %ax, %es
+
+    pushl    %esp
+
+    call trap
+\end{lstlisting}
+
+按照注释和材料的提示即可完成，关于每个中断是否有错误码请参考邵老师的讲义Chapter 05中的第5.4.2中的那张图，其他的话在压栈时注意数据的长度大小选择对应的指令，其他就没有什么需要注意的。
+
+把中断服务程序定义好以后，我们开始安装IDT表，看到kern/trap.c中的\funcname{idt\_init()}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: idt\_init()}]
+void
+idt_init(void)
+{
+	extern struct Segdesc gdt[];
+	
+	// LAB 3: Your code here.
+
+        extern void routine_divide ();
+        extern void routine_debug ();
+        extern void routine_nmi ();
+        extern void routine_brkpt ();
+        extern void routine_oflow ();
+        extern void routine_bound ();
+        extern void routine_illop ();
+        extern void routine_device ();
+        extern void routine_dblflt ();
+        extern void routine_tss ();
+        extern void routine_segnp ();
+        extern void routine_stack ();
+        extern void routine_gpflt ();
+        extern void routine_pgflt ();
+        extern void routine_fperr ();
+        extern void routine_align ();
+        extern void routine_mchk ();
+        extern void routine_simderr ();
+
+
+        SETGATE (idt[T_DIVIDE], 0, GD_KT, routine_divide, 0);
+        SETGATE (idt[T_DEBUG], 0, GD_KT, routine_debug, 0);
+        SETGATE (idt[T_NMI], 0, GD_KT, routine_nmi, 0);
+
+        // break point needs no kernel mode privilege
+        SETGATE (idt[T_BRKPT], 0, GD_KT, routine_brkpt, 3);
+
+        SETGATE (idt[T_OFLOW], 0, GD_KT, routine_oflow, 0);
+        SETGATE (idt[T_BOUND], 0, GD_KT, routine_bound, 0);
+        SETGATE (idt[T_ILLOP], 0, GD_KT, routine_illop, 0);
+        SETGATE (idt[T_DEVICE], 0, GD_KT, routine_device, 0);
+        SETGATE (idt[T_DBLFLT], 0, GD_KT, routine_dblflt, 0);
+        SETGATE (idt[T_TSS], 0, GD_KT, routine_tss, 0);
+        SETGATE (idt[T_SEGNP], 0, GD_KT, routine_segnp, 0);
+        SETGATE (idt[T_STACK], 0, GD_KT, routine_stack, 0);
+        SETGATE (idt[T_GPFLT], 0, GD_KT, routine_gpflt, 0);
+        SETGATE (idt[T_PGFLT], 0, GD_KT, routine_pgflt, 0);
+        SETGATE (idt[T_FPERR], 0, GD_KT, routine_fperr, 0);
+        SETGATE (idt[T_ALIGN], 0, GD_KT, routine_align, 0);
+        SETGATE (idt[T_MCHK], 0, GD_KT, routine_mchk, 0);
+        SETGATE (idt[T_SIMDERR], 0, GD_KT, routine_simderr, 0);
+
+	// Setup a TSS so that we get the right stack
+	// when we trap to the kernel.
+	ts.ts_esp0 = KSTACKTOP;
+	ts.ts_ss0 = GD_KD;
+
+	// Initialize the TSS field of the gdt.
+	gdt[GD_TSS >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
+					sizeof(struct Taskstate), 0);
+	gdt[GD_TSS >> 3].sd_s = 0;
+
+	// Load the TSS
+	ltr(GD_TSS);
+
+	// Load the IDT
+	asm volatile("lidt idt_pd");
+}
+\end{lstlisting}
+
+这段程序中唯一值得留意的地方就是SETGATE宏里两个参数的设置：
+
+\begin{enumerate}
+\item{第三个参数cs，记得设置为内核的代码段GD\_KT}
+\item{最后一个用户特权级的设置，一开始我就搞错了。怎么设置？就拿除零为例,你肯定不想让用户int 0这么毫无意义的调用。所以0号中断只能由level 0的内核产生（运行时抛出），但是调试是例外，应该能让用户自发调用}
+\end{enumerate}
+
+\vspace{2em}
+
+\hrule
+
+\vspace{2em}
+
+到这里，我们的中断响应机制就建立起来了。根据代码，如果一个除零中断被捕获，会转到kern/trapentry.S中的\funcname{routine\_divide()}，然后跳转到\funcname{\_alltraps}，然后是kern/trap.c中的\funcname{trap()}:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c}]
+static void
+trap_dispatch(struct Trapframe *tf)
+{
+	// Handle processor exceptions.
+	// LAB 3: Your code here.
+	
+
+	// Unexpected trap: The user process or the kernel has a bug.
+	print_trapframe(tf);
+	if (tf->tf_cs == GD_KT)
+		panic("unhandled trap in kernel");
+	else {
+		env_destroy(curenv);
+		return;
+	}
+}
+
+void
+trap(struct Trapframe *tf)
+{
+	// The environment may have set DF and some versions
+	// of GCC rely on DF being clear
+	asm volatile("cld" ::: "cc");
+
+	// Check that interrupts are disabled.  If this assertion
+	// fails, DO NOT be tempted to fix it by inserting a "cli" in
+	// the interrupt path.
+	assert(!(read_eflags() & FL_IF));
+
+	cprintf("Incoming TRAP frame at %p\n", tf);
+
+	if ((tf->tf_cs & 3) == 3) {
+		// Trapped from user mode.
+		// Copy trap frame (which is currently on the stack)
+		// into 'curenv->env_tf', so that running the environment
+		// will restart at the trap point.
+		assert(curenv);
+		curenv->env_tf = *tf;
+		// The trapframe on the stack should be ignored from here on.
+		tf = &curenv->env_tf;
+	}
+	
+	// Dispatch based on what type of trap occurred
+	trap_dispatch(tf);
+
+	// Return to the current environment, which should be runnable.
+	assert(curenv && curenv->env_status == ENV_RUNNABLE);
+	env_run(curenv);
+}
+
+\end{lstlisting}
+
+
+从代码中可以看到，最终程序会进入\funcname{trap\_dispatch()} 打印出寄存器信息，那么我们尝试着运行一个有除零错误的用户程序试试，将kern/init.c中载入的第一个程序设置为user\_divzero:
+
+\begin{lstlisting}[style=ccode, firstnumber=44, title={\scriptsize \ttfamily \bfseries kern/init.c: i386\_init()}]
+	// Temporary test code specific to LAB 3
+#if defined(TEST)
+	// Don't touch -- used by grading script!
+	ENV_CREATE2(TEST, TESTSIZE);
+#else
+	// Touch all you want.
+	//ENV_CREATE(user_hello);
+        ENV_CREATE(user_divzero);
+#endif // TEST*
+
+	// We only have one user environment for now, so just run it.
+	env_run(&envs[0]);
+\end{lstlisting}
+
+接下来编译启动QEMU，可以看到正确的处理画面：
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/idt_setup.png}
+\end{figure}
+
+至此Part A就全部完成了，欢呼一下！
+
 \begin{lstlisting}[style=console]
 \end{lstlisting}
 
@@ -995,6 +1410,10 @@ Triple fault.  Halting for inspection via QEMU monitor.
 
 
 
+
+
+
+
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
 \end{lstlisting}
 
@@ -1010,8 +1429,6 @@ Triple fault.  Halting for inspection via QEMU monitor.
 
 
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
 
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}
