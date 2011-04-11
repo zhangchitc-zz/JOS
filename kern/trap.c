@@ -60,6 +60,48 @@ idt_init(void)
 	
 	// LAB 3: Your code here.
 
+    extern void routine_divide ();
+    extern void routine_debug ();
+    extern void routine_nmi ();
+    extern void routine_brkpt ();
+    extern void routine_oflow ();
+    extern void routine_bound ();
+    extern void routine_illop ();
+    extern void routine_device ();
+    extern void routine_dblflt ();
+    extern void routine_tss ();
+    extern void routine_segnp ();
+    extern void routine_stack ();
+    extern void routine_gpflt ();
+    extern void routine_pgflt ();
+    extern void routine_fperr ();
+    extern void routine_align ();
+    extern void routine_mchk ();
+    extern void routine_simderr ();
+
+
+    SETGATE (idt[T_DIVIDE], 0, 0, routine_divide, 0);
+    SETGATE (idt[T_DEBUG], 0, 0, routine_debug, 0);
+    SETGATE (idt[T_NMI], 0, 0, routine_nmi, 0);
+
+    // break point needs no kernel mode privilege
+    SETGATE (idt[T_BRKPT], 0, 0, routine_brkpt, 3);
+
+    SETGATE (idt[T_OFLOW], 0, 0, routine_oflow, 0);
+    SETGATE (idt[T_BOUND], 0, 0, routine_bound, 0);
+    SETGATE (idt[T_ILLOP], 0, 0, routine_illop, 0);
+    SETGATE (idt[T_DEVICE], 0, 0, routine_device, 0);
+    SETGATE (idt[T_DBLFLT], 0, 0, routine_dblflt, 0);
+    SETGATE (idt[T_TSS], 0, 0, routine_tss, 0);
+    SETGATE (idt[T_SEGNP], 0, 0, routine_segnp, 0);
+    SETGATE (idt[T_STACK], 0, 0, routine_stack, 0);
+    SETGATE (idt[T_GPFLT], 0, 0, routine_gpflt, 0);
+    SETGATE (idt[T_PGFLT], 0, 0, routine_pgflt, 0);
+    SETGATE (idt[T_FPERR], 0, 0, routine_fperr, 0);
+    SETGATE (idt[T_ALIGN], 0, 0, routine_align, 0);
+    SETGATE (idt[T_MCHK], 0, 0, routine_mchk, 0);
+    SETGATE (idt[T_SIMDERR], 0, 0, routine_simderr, 0);
+
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
 	ts.ts_esp0 = KSTACKTOP;
