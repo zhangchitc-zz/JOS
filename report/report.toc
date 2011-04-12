@@ -9,9 +9,9 @@
 \contentsline {subsection}{\numberline {2.7}An Example}{19}{subsection.2.7}
 \contentsline {subsection}{\numberline {2.8}Nested Exceptions and Interrupts}{19}{subsection.2.8}
 \contentsline {subsection}{\numberline {2.9}Setting Up the IDT}{19}{subsection.2.9}
-\contentsline {section}{\numberline {3}Page Faults, Breakpoints Exceptions, and System Calls}{26}{section.3}
-\contentsline {subsection}{\numberline {3.1}Handling Page Faults}{26}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}The Breakpoint Exception}{26}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}System calls}{26}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}User-mode startup}{26}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}Page faults and memory protection}{26}{subsection.3.5}
+\contentsline {section}{\numberline {3}Page Faults, Breakpoints Exceptions, and System Calls}{30}{section.3}
+\contentsline {subsection}{\numberline {3.1}Handling Page Faults}{30}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}The Breakpoint Exception}{30}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}System calls}{30}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}User-mode startup}{30}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}Page faults and memory protection}{30}{subsection.3.5}

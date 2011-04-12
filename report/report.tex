@@ -1076,9 +1076,23 @@ Env对应的是一个用户进程的状态，这里的进程是一个抽象程�
 
 \subsection{Setting Up the IDT}
 
-具体实现的部分涉及到几个MIT材料里没有提到的东西：
+\begin{lstlisting}[style=exercise]
+|Exercise 4|. Edit trapentry.S and trap.c and implement the features described above. The macros TRAPHANDLER and TRAPHANDLER_NOEC in trapentry.S should help you, as well as the T_* defines in inc/trap.h. You will need to add an entry point in trapentry.S (using those macros) for each trap defined in inc/trap.h, and you'll have to provide _alltraps which the TRAPHANDLER macros refer to. You will also need to modify idt_init() to initialize the idt to point to each of these entry points defined in trapentry.S; the SETGATE macro will be helpful here.
 
-首先IDT的数据结构，定义在kern/trap.c中：
+Your _alltraps should:
+
+    1. push values to make the stack look like a struct Trapframe
+    2. load GD_KD into %ds and %es
+    3. pushl %esp to pass a pointer to the Trapframe as an argument to trap()
+    4. call trap (can trap ever return?)
+
+Consider using the pushal instruction; it fits nicely with the layout of the struct Trapframe.
+
+Test your trap handling code using some of the test programs in the user directory that cause exceptions before making any system calls, such as user/divzero. You should be able to get |make grade| to succeed on the divzero, softint, and badsegment tests at this point.
+\end{lstlisting}
+
+
+具体实现的部分涉及到几个MIT材料里没有提到的东西：首先IDT的数据结构，定义在kern/trap.c中：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c}]
 struct Gatedesc idt[256] = { { 0 } };
@@ -1183,7 +1197,10 @@ struct Gatedesc {
 
 他们的功能就是接受一个函数名和对应处理的中断向量编号，然后定义出一个相应的以该函数名命名的中断处理程序。这样的中断向量程序的执行流程就是向栈里压入相关错误码和中断号，然后跳转到\funcname{\_alltraps} 来执行共有的部分（把Trapframe剩下的那些结构在栈中设置好）
 
-具体代码如下：
+这里牵涉到一个重要的问题，就是\highlight{错误代码}，如果是系统运行中产生的中断，根据不同的中断类型，在切换完栈以后，处理器会向栈中放入一个错误代码。比如8号中断Double Fault，但是比如0号Divide Zero就不会放。特别注意，当用户使用int指令手动调用中断时，\highlight{处理器是不会放入错误代码的}（很明显，你不会故意想错误的调用一个中断把），这个细节在后面会用到。
+
+所以在系统没有放入错误码时，我们的中断处理程序就要手动补齐这个空间了。\funcname{TRAPHANDLER\_NOEC}宏就是帮我们完成这个事情的，具体中断处理程序生成代码如下：
+
 
 \begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
 .text
@@ -1399,100 +1416,263 @@ trap(struct Trapframe *tf)
 \includegraphics[scale=0.40]{/home/zhangchi/lab/report/idt_setup.png}
 \end{figure}
 
-至此Part A就全部完成了，欢呼一下！
+我们来测试一下，调用评分：make grade
 
 \begin{lstlisting}[style=console]
+make[1]: Leaving directory `/home/zhangchi/lab'
+sh ./grade-lab3.sh
+make[1]: Entering directory `/home/zhangchi/lab'
+make[1]: Nothing to be done for `all'.
+make[1]: Leaving directory `/home/zhangchi/lab'
+divzero: OK (1.5s)
+softint: OK (1.2s)
+badsegment: OK (1.2s)
+Part A score: 30/30
+
+faultread: missing '.00001000. user fault va 00000000 ip 008.....'
+WRONG (1.2s)
+faultreadkernel: missing '.00001000. user fault va f0100000 ip 008.....'
+WRONG (1.2s)
+faultwrite: missing '.00001000. user fault va 00000000 ip 008.....'
+WRONG (1.2s)
+faultwritekernel: missing '.00001000. user fault va f0100000 ip 008.....'
+WRONG (1.2s)
+breakpoint: got unexpected line '.00001000. free env 00001000'
+WRONG (1.2s)
+testbss: missing 'Making sure bss works right...'
+missing 'Yes, good.  Now doing a wild write off the end...'
+missing '.00001000. user fault va 00c..... ip 008.....'
+missing '.00001000. free env 00001000'
+WRONG (1.2s)
+hello: missing 'hello, world'
+missing 'i am environment 00001000'
+missing '.00001000. exiting gracefully'
+WRONG (1.2s)
+buggyhello: missing '.00001000. user_mem_check assertion failure for va 00000001'
+WRONG (1.2s)
+buggyhello2: missing '.00001000. user_mem_check assertion failure for va 0....000'
+WRONG (1.2s)
+evilhello: missing '.00001000. user_mem_check assertion failure for va f0100...'
+WRONG (1.2s)
+Part B score: 0/50
+
+Score: 30/80
+make: *** [grade] Error 1
+zhangchi@zhangchi-vostro1400:~/lab$ 
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
+可以看到Part A的分数都拿到了，至此Part A就全部完成了，欢呼一下！
 
-
-
-
-
-
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-
-
-
+\vspace{4em}
 
 \begin{lstlisting}[style=exercise]
+|Questions|
+
+Answer the following questions in your answers-lab3.txt:
+
+1. What is the purpose of having an individual handler function for each exception/interrupt? (i.e., if all exceptions/interrupts were delivered to the same handler, what feature that exists in the current implementation could not be provided?)
+
+2. Did you have to do anything to make the user/softint program behave correctly? The grade script expects it to produce a general protection fault (trap 13), but softint's code says int $14. Why should this produce interrupt vector 13? What happens if the kernel actually allows softint's int $14 instruction to invoke the kernel's page fault handler (which is interrupt vector 14)?
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-
-
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
+\begin{enumerate}
+\item{现在JOS的中断处理程序在真正的处理之前要将中断号放入内核栈以组织成Trapframe的结构，但是如果所有中断都跳到同一个处理程序，那么就无法区分是哪个中断调用进来的，也就无法正确设置它们的中断号了}
+\item{现在我们在中断向量里设置的14号Page fault的调用权限是0，即只能内核抛出，所以直接在softint中用int指令调用肯定产生的General Protection Fault权限错误，如下图所示：
 
 \begin{lstlisting}[style=console]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffbc
+TRAP frame at 0xf01af000
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdfd0
+  oesp 0xefbfffdc
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0x00000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x0000000d General Protection
+  err  0x00000072
+  eip  0x00800037
+  cs   0x----001b
+  flag 0x00000046
+  esp  0xeebfdfd0
+  ss   0x----0023
+[00001000] free env 00001000
+Destroyed the only environment - nothing more to do!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
+\vspace{2em}
+
+如果将14号Page fault权限打开，即中断向量中权限设置为3给用户调用，这样可以试试，QEMU成功抛出了Page Fault：
+
+\begin{lstlisting}[style=console, numbers=left]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffc0
+TRAP frame at 0xefbfffc0
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdfd0
+  oesp 0xefbfffe0
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0x00000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x0000000e Page Fault
+  err  0x00800039
+  eip  0x0000001b
+  cs   0x----0046
+  flag 0xeebfdfd0
+  esp  0x00000023
+  ss   0x----0000
+[00001000] free env 00001000
+Destroyed the only environment - nothing more to do!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
+\highlight{\large 但是，不要高兴太早！} 
+
+查阅中断向量的描述我们就可以知道Page fault中断是需要压入错误代码的！但是前面我们已经说过，用户用int指令调用中断是不会压入错误代码的。可是我们在kern/trapentry.S中为Page fault指定的中断处理程序默认认为系统为我们放入了错误码，所以不会补齐。那么当我们用int调用中断处理程序造成的后果是什么？\highlight{栈中没有放入错误码！！！} \\
+
+请注意上面打印出信息的第22行关于err开始，其实就发生了错位，err是原本eip的值0x00800039（是不是很眼熟？）后面都是依次错位的。 \\
+
+还记得前面说过内核栈的压入结构要对应Trapframe么？如果少了一个成员，我们再把这个Trapframe传到trap ()中进行处理，那么在访问Trapframe中的最后一个DWORD（也就是访问ss寄存器时），肯定就\highlight{访问到KSTACKTOP之上的空间上去了}！！那么为什么打印ss时候还可以正常打印出东西呢？\\
+
+在inc/memlayout.h中可以看到，KSTACKTOP上的空间为VPT，即系统页目录。如果以VPT的虚拟地址来访问内存，VPT的PDX会找到系统页目录，PTX为0，会找到页目录中第0个页表的物理地址，然后OFFSET为0，访问的是第0个页表的第0个页表项。因为我们知道，JOS在载入softint时会分配物理页放入elf文件，我们可以查看一下user/user.ld中关于文件中stab节的链接地址
+
+\begin{lstlisting}[style=ccode, language=make, firstnumber=39, title={\scriptsize \ttfamily \bfseries user/user.ld}]
+    /* Place debugging symbols so that they can be found by
+     * the kernel debugger.
+     * Specifically, the four words at 0x200000 mark the beginning of
+     * the stabs, the end of the stabs, the beginning of the stabs
+     * string table, and the end of the stabs string table, respectively.
+     */
+
+    .stab_info 0x200000 : {
+        LONG(__STAB_BEGIN__);
+        LONG(__STAB_END__);
+        LONG(__STABSTR_BEGIN__);
+        LONG(__STABSTR_END__);
+    }
+
+    .stab : {
+        __STAB_BEGIN__ = DEFINED(__STAB_BEGIN__) ? __STAB_BEGIN__ : .;
+        *(.stab);
+        __STAB_END__ = DEFINED(__STAB_END__) ? __STAB_END__ : .;
+        BYTE(0)        /* Force the linker to allocate space
+                   for this section */
+    }
+
+    .stabstr : {
+        __STABSTR_BEGIN__ = DEFINED(__STABSTR_BEGIN__) ? __STABSTR_BEGIN__ : .;
+        *(.stabstr);
+        __STABSTR_END__ = DEFINED(__STABSTR_END__) ? __STABSTR_END__ : .;
+        BYTE(0)        /* Force the linker to allocate space
+                   for this section */
+    }
+
+    /DISCARD/ : {
+        *(.eh_frame .note.GNU-stack .comment)
+    }
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
+可以看到这个调试信息被映射到了0x200000地址，实际上这段信息就是我们刚才在越过KSTACKTOP后访问到的信息，如果我们尝试在user/user.ld中删除这段，重新编译运行JOS的话，会看到：
 
 \begin{lstlisting}[style=console]
+qemu -nographic -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffc0
+TRAP frame at 0xefbfffc0
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdfd0
+  oesp 0xefbfffe0
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0x00000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x0000000e Page Fault
+  err  0x00800039
+  eip  0x0000001b
+  cs   0x----0046
+  flag 0xeebfdfd0
+  esp  0x00000023
+Incoming TRAP frame at 0xefbfff30
+TRAP frame at 0xefbfff30
+  edi  0x00000000
+  esi  0xefbfffc0
+  ebp  0xefbfff84
+  oesp 0xefbfff50
+  ebx  0xefbfffc0
+  edx  0x000003d5
+  ecx  0x000003d5
+  eax  0x00000000
+  es   0x----0010
+  ds   0x----0010
+  trap 0x0000000e Page Fault
+  err  0x00000000
+  eip  0xf0103c4f
+  cs   0x----0008
+  flag 0x00000092
+  esp  0xf0106bba
+  ss   0x----0023
+kernel panic at kern/trap.c:174: unhandled trap in kernel
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
+
 \end{lstlisting}
+
+可以看到，在第一个Page fault处理程序中（由softint中使用int指令调用），在打印最后一个ss时，又发生了Page fault中断（由系统产生），因为去掉softint的stab节映射以后，\highlight{VPT上就没有相应的映射页了}，这样就发生了第二次Page fault了。
+
+
+\highlight{\Huge 谢谢实验室的张顺廷师兄的热心指导！！！！}
+
+}
+\end{enumerate}
+
+
+
 
 
 \section{Page Faults, Breakpoints Exceptions, and System Calls}
 
 \subsection{Handling Page Faults}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 5|. Modify trap_dispatch() to dispatch page fault exceptions to page_fault_handler(). You should now be able to get make grade to succeed on the faultread, faultreadkernel, faultwrite, and faultwritekernel tests. If any of them don't work, figure out why and fix them. Remember that you can boot JOS into a particular user program using make run-x or make run-x-nox.
+\end{lstlisting}
 
 \subsection{The Breakpoint Exception}
 
@@ -1501,6 +1681,103 @@ trap(struct Trapframe *tf)
 \subsection{User-mode startup}
 
 \subsection{Page faults and memory protection}
+
+
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
+\end{lstlisting}
+
+
+
+
+
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+
+
+
+\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=challenge]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
 
 
 \clearpage
