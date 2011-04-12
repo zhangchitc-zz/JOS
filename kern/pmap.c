@@ -543,7 +543,7 @@ page_init(void)
 	//
 	int i;
     int lower_ppn = PPN (IOPHYSMEM);
-    int upper_ppn = PPN (ROUNDUP (boot_freemem, PGSIZE));
+    int upper_ppn = PPN (ROUNDUP (PADDR (boot_freemem), PGSIZE));
 
 	LIST_INIT(&page_free_list);
 	for (i = 0; i < npage; i++) {
@@ -587,7 +587,7 @@ page_alloc(struct Page **pp_store)
 	// Fill this function in
 
     // cprintf ("%CgrnDEBUG:%Cwht LIST_EMPTY = %d\n", LIST_EMPTY (&page_free_list));
- 	
+
     if (!LIST_EMPTY (&page_free_list)) {
         *pp_store = LIST_FIRST (&page_free_list);
         LIST_REMOVE (LIST_FIRST (&page_free_list), pp_link);
