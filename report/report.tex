@@ -1674,7 +1674,53 @@ K>
 |Exercise 5|. Modify trap_dispatch() to dispatch page fault exceptions to page_fault_handler(). You should now be able to get make grade to succeed on the faultread, faultreadkernel, faultwrite, and faultwritekernel tests. If any of them don't work, figure out why and fix them. Remember that you can boot JOS into a particular user program using make run-x or make run-x-nox.
 \end{lstlisting}
 
+加一句话就好：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: trap\_dispatch()}]
+static void
+trap_dispatch(struct Trapframe *tf)
+{
+    if (tf->tf_trapno == T_PGFLT) 
+        page_fault_handler (tf);
+        
+    // Unexpected trap: The user process or the kernel has a bug.
+    print_trapframe(tf);
+\end{lstlisting}
+
+
 \subsection{The Breakpoint Exception}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 6|. Modify trap_dispatch() to make breakpoint exceptions invoke the kernel monitor. You should now be able to get make grade to succeed on the breakpoint test.
+\end{lstlisting}
+
+同样加一句话就好：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: trap\_dispatch()}]
+static void
+trap_dispatch(struct Trapframe *tf)
+{
+    if (tf->tf_trapno == T_PGFLT) 
+        page_fault_handler (tf);
+
+    if (tf->tf_trapno == T_BRKPT)
+        monitor (tf);
+\end{lstlisting}
+
+\vspace{4em}
+
+\begin{lstlisting}[style=exercise]
+|Questions|
+
+1. The break point test case will either generate a break point exception or a general protection fault depending on how you initialized the break point entry in the IDT (i.e., your call to SETGATE from idt_init). Why? How did you need to set it in order to get the breakpoint exception to work as specified above?
+
+2. What do you think is the point of these mechanisms, particularly in light of what the user/softint test program does?
+\end{lstlisting}
+
+\begin{enumerate}
+\item{权限问题，在\funcname{idt\_init()} 中已经说明过了}
+\item{关于softint的执行过程也已经说明过了}
+\end{enumerate}
 
 \subsection{System calls}
 
@@ -1699,8 +1745,6 @@ K>
 
 
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
 \end{lstlisting}
@@ -1717,11 +1761,7 @@ K>
 
 
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
 
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}

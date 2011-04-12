@@ -79,6 +79,8 @@ idt_init(void)
     extern void routine_mchk ();
     extern void routine_simderr ();
 
+    extern void routine_syscall ();
+
 
     SETGATE (idt[T_DIVIDE], 0, GD_KT, routine_divide, 0);
     SETGATE (idt[T_DEBUG], 0, GD_KT, routine_debug, 0);
@@ -101,6 +103,12 @@ idt_init(void)
     SETGATE (idt[T_ALIGN], 0, GD_KT, routine_align, 0);
     SETGATE (idt[T_MCHK], 0, GD_KT, routine_mchk, 0);
     SETGATE (idt[T_SIMDERR], 0, GD_KT, routine_simderr, 0);
+
+
+    // set IDT for system call
+    SETGATE (idt[T_SYSCALL], 0, GD_KT, routine_syscall, 3);
+
+
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
@@ -153,7 +161,33 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-	
+    //
+
+    if (tf->tf_trapno == T_PGFLT) 
+        page_fault_handler (tf);
+
+    if (tf->tf_trapno == T_BRKPT)
+        monitor (tf);
+
+    int r;
+
+    if (tf->tf_trapno == T_SYSCALL) {
+        
+        //cprintf ("zhangchi: eax = %d\n", tf->tf_regs.reg_eax);
+        r = syscall (
+                tf->tf_regs.reg_eax, 
+                tf->tf_regs.reg_edx, 
+                tf->tf_regs.reg_ecx, 
+                tf->tf_regs.reg_ebx, 
+                tf->tf_regs.reg_edi, 
+                tf->tf_regs.reg_esi); 
+        if (r < 0)
+            panic ("trap_dispatch: The System Call number is invalid");
+
+        tf->tf_regs.reg_eax = r;
+
+        return;
+    }
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);

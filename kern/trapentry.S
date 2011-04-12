@@ -60,6 +60,7 @@
     TRAPHANDLER_NOEC(routine_mchk, T_MCHK)
     TRAPHANDLER_NOEC(routine_simderr, T_SIMDERR)
 
+    TRAPHANDLER_NOEC(routine_syscall, T_SYSCALL)
 
 /*
  * Lab 3: Your code here for _alltraps
