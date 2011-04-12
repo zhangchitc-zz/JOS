@@ -1724,84 +1724,335 @@ trap_dispatch(struct Trapframe *tf)
 
 \subsection{System calls}
 
+
+\begin{lstlisting}[style=exercise]
+|Exercise 7|. Add a handler in the kernel for interrupt vector T_SYSCALL. You will have to edit kern/trapentry.S and kern/trap.c's idt_init(). You also need to change trap_dispatch() to handle the system call interrupt by calling syscall() (defined in kern/syscall.c) with the appropriate arguments, and then arranging for the return value to be passed back to the user process in %eax. Finally, you need to implement syscall() in kern/syscall.c. Make sure syscall() returns -E_INVAL if the system call number is invalid. You should read and understand lib/syscall.c (especially the inline assembly routine) in order to confirm your understanding of the system call interface. You may also find it helpful to read inc/syscall.h.
+
+Run the user/hello program under your kernel (make run-hello). It should print "hello, world" on the console and then cause a page fault in user mode. If this does not happen, it probably means your system call handler isn't quite right. You should also now be able to get make grade to succeed on the testbss test.
+\end{lstlisting}
+
+这个Exercise让我们可以开始处理系统中断，根据提示，首先修改kern/trap.c中的\funcname{idt\_init()}以及kern/trapentry.S添加相应的中断服务程序和中断向量，然后修改kern/trap.c
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: trap\_dispatch()}]
+    if (tf->tf_trapno == T_PGFLT) 
+        page_fault_handler (tf);
+
+    if (tf->tf_trapno == T_BRKPT)
+        monitor (tf);
+
+    int r;
+
+    if (tf->tf_trapno == T_SYSCALL) {
+        
+        r = syscall (
+                tf->tf_regs.reg_eax, 
+                tf->tf_regs.reg_edx, 
+                tf->tf_regs.reg_ecx, 
+                tf->tf_regs.reg_ebx, 
+                tf->tf_regs.reg_edi, 
+                tf->tf_regs.reg_esi); 
+        if (r < 0)
+            panic ("trap_dispatch: The System Call number is invalid");
+
+        tf->tf_regs.reg_eax = r;
+
+        return;
+    }
+\end{lstlisting}
+
+然后接着完成kern/syscall.c
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c: syscall()}]
+// Dispatches to the correct kernel function, passing the arguments.
+int32_t
+syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
+{
+    int32_t r = 0;
+
+    switch (syscallno) {
+        case SYS_cputs: 
+            sys_cputs ((const char*) a1, (size_t)a2); break;              
+        case SYS_cgetc: 
+            r = sys_cgetc (); break;
+        case SYS_getenvid:
+            r = sys_getenvid (); break;
+        case SYS_env_destroy:
+            r = sys_env_destroy ((envid_t) a1); break;
+        default:
+            r = -E_INVAL;
+    }
+   
+    return r;
+
+    panic("syscall not implemented");
+}
+
+\end{lstlisting}
+
+然后运行测试可以通过testbss测试。没有什么值得注意的地方，按照提示一步一步写就好了
+
 \subsection{User-mode startup}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 8|. Add the required code to the user library, then boot your kernel. You should see user/hello print "hello, world" and then print "i am environment 00000800". user/hello then attempts to "exit" by calling sys_env_destroy() (see lib/libmain.c and lib/exit.c). Since the kernel currently only supports one user environment, it should report that it has destroyed the only environment and then drop into the kernel monitor. You should be able to get make grade to succeed on the hello test.
+\end{lstlisting}
+
+改一句话即可：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/libmain.c: libmain()}]
+void
+libmain(int argc, char **argv)
+{
+	// set env to point at our env structure in envs[].
+	// LAB 3: Your code here.
+	env = envs + ENVX(sys_getenvid ());
+\end{lstlisting}
+
+其中\funcname{sys\_getenvid()} 是lib中包装好的函数，在其内部是使用调用系统中断实现的。这个时候在运行make run-hello，可以看到已经正常运行了：
+
+\begin{lstlisting}[style=console]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffbc
+Incoming TRAP frame at 0xefbfffbc
+hello, world
+Incoming TRAP frame at 0xefbfffbc
+i am environment 00001000
+Incoming TRAP frame at 0xefbfffbc
+[00001000] exiting gracefully
+[00001000] free env 00001000
+Destroyed the only environment - nothing more to do!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
+
+\end{lstlisting}
 
 \subsection{Page faults and memory protection}
 
+\begin{lstlisting}[style=exercise]
+|Exercise 9|. Change kern/trap.c to panic if a page fault happens in kernel mode.
 
+Hint: to determine whether a fault happened in user mode or in kernel mode, check the low bits of the tf_cs.
 
+Read user_mem_assert in kern/pmap.c and implement user_mem_check in that same file.
+
+Change kern/syscall.c to sanity check arguments to system calls.
+
+Boot your kernel, running user/buggyhello. The environment should be destroyed, and the kernel should not panic. You should see:
+
+	[00001000] user_mem_check assertion failure for va 00000001
+	[00001000] free env 00001000
+	Destroyed the only environment - nothing more to do!
+	
+Finally, change debuginfo_eip in kern/kdebug.c to call user_mem_check on usd, stabs, and stabstr. If you now run user/breakpoint, you should be able to run backtrace from the kernel monitor and see the backtrace traverse into lib/libmain.c before the kernel panics with a page fault. What causes this page fault? You don't need to fix it, but you should understand why it happens.
+\end{lstlisting}
+
+照着直接改代码，没有啥好注意的，我直接贴代码了。
+
+首先是在 \funcname{ page\_fault\_handler() } 中处理内核态中抛出页面错误：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: page\_fault\_handler()}]
+void
+page_fault_handler(struct Trapframe *tf)
+{
+	uint32_t fault_va;
+
+	// Read processor's CR2 register to find the faulting address
+	fault_va = rcr2();
+
+	// Handle kernel-mode page faults.
+        if ((tf->tf_cs & 3) == 0)
+            panic ("kernel-mode page faults");
+ 
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+
+	// Destroy the environment that caused the fault.
+	cprintf("[%08x] user fault va %08x ip %08x\n",
+		curenv->env_id, fault_va, tf->tf_eip);
+	print_trapframe(tf);
+	env_destroy(curenv);
+}
+\end{lstlisting}
+
+然后是检测线性地址的页面是否有效：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: user\_mem\_check()}]
+int
+user_mem_check(struct Env *env, const void *va, size_t len, int perm)
+{
+	// LAB 3: Your code here. 
+    
+    uintptr_t lva = (uintptr_t) va;
+    uintptr_t rva = (uintptr_t) va + len - 1;
+
+    perm = perm|PTE_U|PTE_P;
+
+    pte_t *pte;
+    uintptr_t idx_va;
+
+    for (idx_va = lva; idx_va <= rva; idx_va += PGSIZE) {
+
+        if (idx_va >= ULIM) {
+            user_mem_check_addr = idx_va;
+            return -E_FAULT;
+        }
+
+        pte = pgdir_walk (env->env_pgdir, (void*)idx_va, 0);
+
+        if (pte == NULL || (*pte & perm) != perm) {  
+            user_mem_check_addr = idx_va;
+            return -E_FAULT;
+        }
+
+        idx_va = ROUNDDOWN (idx_va, PGSIZE);
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+然后在\funcname{sys\_cputs()}中加入相应对用户空间地址的检查：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c: sys\_cputs()}]
+static void
+sys_cputs(const char *s, size_t len)
+{
+	// Check that the user has permission to read memory [s, s+len).
+	// Destroy the environment if not.
+	
+	// LAB 3: Your code here.
+        user_mem_assert (curenv, s, len, PTE_U);
+
+	// Print the string supplied by the user.
+	cprintf("%.*s", len, s);
+}
+\end{lstlisting}
+
+做到这里，我们运行user/buggyhello已经可以得到正确的结果。接下来再改一下kern/kdebug.c中完成对stab的检查就大功告成了！
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/kdebug.c: debuginfo\_eip()}]
+	// Make sure this memory is valid.
+	// Return -1 if it is not.  Hint: Call user_mem_check.
+	// LAB 3: Your code here.
+        
+        if (user_mem_check (curenv, usd, sizeof (struct UserStabData), PTE_U) < 0)
+            return -1;
+
+	stabs = usd->stabs;
+	stab_end = usd->stab_end;
+	stabstr = usd->stabstr;
+	stabstr_end = usd->stabstr_end;
+
+	// Make sure the STABS and string table memory is valid.
+	// LAB 3: Your code here.
+
+        if (user_mem_check (curenv, stabs, stab_end - stabs, PTE_U) < 0
+        || user_mem_check (curenv, stabstr, stabstr_end - stabstr, PTE_U) < 0) 
+            return -1;
+\end{lstlisting}
+
+启动make run-breakpoint，使用backtrace命令页面溢出了：
 
 \begin{lstlisting}[style=console]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffbc
+Incoming TRAP frame at 0xefbfffbc
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+TRAP frame at 0xf01b0000
+  edi  0x00000000
+  esi  0x00000000
+  ebp  0xeebfdfd0
+  oesp 0xefbfffdc
+  ebx  0x00000000
+  edx  0x00000000
+  ecx  0x00000000
+  eax  0xeec00000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000003 Breakpoint
+  err  0x00000000
+  eip  0x00800038
+  cs   0x----001b
+  flag 0x00000046
+  esp  0xeebfdfd0
+  ss   0x----0023
+K> backtrace
+Stack backtrace:
+  ebp efbfff10  eip f01008ea  args 00000001 efbfff28 f01b0000 00000000 f017d960
+         kern/monitor.c:419: monitor+274
+  ebp efbfff80  eip f0103e54  args f01b0000 efbfffbc 00000000 00000000 00000000
+         kern/trap.c:174: trap+71
+  ebp efbfffb0  eip f0103f9e  args efbfffbc 00000000 00000000 eebfdfd0 efbfffdc
+         kern/trapentry.S:83: <unknown>+0
+  ebp eebfdfd0  eip 0080007c  args 00000000 00000000 00000000 00000000 00000000
+         lib/libmain.c:26: libmain+64
+Incoming TRAP frame at 0xefbffe6c
+kernel panic at kern/trap.c:249: kernel-mode page faults
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
+通过跟踪发现是访问libmain外层的函数，从ebp中取出eip时页面错误了，这个我懒得查栈结构了。
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-
-
-
-
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_create()}]
-\end{lstlisting}
-
-
-
-
-
-
-
-
+\vspace{2em}
 
 \begin{lstlisting}[style=exercise]
+|Exercise 10|. Boot your kernel, running user/evilhello. The environment should be destroyed, and the kernel should not panic. You should see:
+
+	[00000000] new env 00001000
+	[00001000] user_mem_check assertion failure for va f0100020
+	[00001000] free env 00001000
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
+我们可以看看user/evilhello
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries user/evilhello.c}]
+#include <inc/lib.h>
+
+void
+umain(void)
+{
+	// try to print the kernel entry point as a string!  mua ha ha!
+	sys_cputs((char*)0xf010000c, 100);
+}
 \end{lstlisting}
 
+我的输出结果和它的地址不太一样，应该是一访问内核第一个入口地址就出错了阿，不太清楚，这个是我的输出结果：
 
-
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, firstnumber=165, title={\scriptsize \ttfamily \bfseries inc/queue.h}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
-\end{lstlisting}
-
-\begin{lstlisting}[style=challenge]
+\begin{lstlisting}[style=console]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+[00000000] new env 00001000
+Incoming TRAP frame at 0xefbfffbc
+Incoming TRAP frame at 0xefbfffbc
+[00001000] user_mem_check assertion failure for va f010000c
+[00001000] free env 00001000
+Destroyed the only environment - nothing more to do!
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> 
 \end{lstlisting}
 
 \begin{lstlisting}[style=console]
@@ -1810,14 +2061,8 @@ trap_dispatch(struct Trapframe *tf)
 \begin{lstlisting}[style=console]
 \end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
 
 
 \clearpage

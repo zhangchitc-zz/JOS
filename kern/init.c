@@ -47,8 +47,8 @@ i386_init(void)
 	ENV_CREATE2(TEST, TESTSIZE);
 #else
 	// Touch all you want.
-	//ENV_CREATE(user_hello);
-    ENV_CREATE(user_testbss);
+	ENV_CREATE(user_hello);
+    //ENV_CREATE(user_testbss);
 #endif // TEST*
 
 	// We only have one user environment for now, so just run it.
