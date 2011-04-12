@@ -12,6 +12,6 @@
 \contentsline {section}{\numberline {3}Page Faults, Breakpoints Exceptions, and System Calls}{30}{section.3}
 \contentsline {subsection}{\numberline {3.1}Handling Page Faults}{30}{subsection.3.1}
 \contentsline {subsection}{\numberline {3.2}The Breakpoint Exception}{30}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}System calls}{30}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}User-mode startup}{30}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}Page faults and memory protection}{30}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.3}System calls}{31}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}User-mode startup}{32}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}Page faults and memory protection}{33}{subsection.3.5}
