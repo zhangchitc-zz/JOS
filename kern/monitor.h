@@ -15,5 +15,12 @@ void monitor(struct Trapframe *tf);
 int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
+int mon_showmappings (int argc, char **argv, struct Trapframe *tf);
+int mon_setmappings (int argc, char **argv, struct Trapframe *tf);
+int mon_dumpmem (int argc, char **argv, struct Trapframe *tf);
+int mon_alloc_page (int argc, char **argv, struct Trapframe *tf);
+int mon_page_status (int argc, char **argv, struct Trapframe *tf);
+int mon_free_page (int argc, char **argv, struct Trapframe *tf);
+
 
 #endif	// !JOS_KERN_MONITOR_H

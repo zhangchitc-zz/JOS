@@ -1,0 +1,17 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}
+\BOOKMARK [1][-]{section.2}{User Environments and Exception Handling}{}
+\BOOKMARK [2][-]{subsection.2.1}{Environment State}{section.2}
+\BOOKMARK [2][-]{subsection.2.2}{Allocating the Environments Array}{section.2}
+\BOOKMARK [2][-]{subsection.2.3}{Creating and Running Environments}{section.2}
+\BOOKMARK [2][-]{subsection.2.4}{Handling Interrupts and Exceptions}{section.2}
+\BOOKMARK [2][-]{subsection.2.5}{Basics of Protected Control Transfer}{section.2}
+\BOOKMARK [2][-]{subsection.2.6}{Types of Exceptions and Interrupts}{section.2}
+\BOOKMARK [2][-]{subsection.2.7}{An Example}{section.2}
+\BOOKMARK [2][-]{subsection.2.8}{Nested Exceptions and Interrupts}{section.2}
+\BOOKMARK [2][-]{subsection.2.9}{Setting Up the IDT}{section.2}
+\BOOKMARK [1][-]{section.3}{Page Faults, Breakpoints Exceptions, and System Calls}{}
+\BOOKMARK [2][-]{subsection.3.1}{Handling Page Faults}{section.3}
+\BOOKMARK [2][-]{subsection.3.2}{The Breakpoint Exception}{section.3}
+\BOOKMARK [2][-]{subsection.3.3}{System calls}{section.3}
+\BOOKMARK [2][-]{subsection.3.4}{User-mode startup}{section.3}
+\BOOKMARK [2][-]{subsection.3.5}{Page faults and memory protection}{section.3}

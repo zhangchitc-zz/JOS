@@ -71,10 +71,40 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 // Insert in reverse order, so that the first call to env_alloc()
 // returns envs[0].
 //
+
+
+// 
+// Add by Chi Zhang (zhangchitc@gmail.com
+// The declaration is for testing use of the last several lines in env_init ()
+// After test, it may be commented out
+// static int env_setup_vm (struct Env *e);
+
+
 void
 env_init(void)
 {
 	// LAB 3: Your code here.
+	
+	int i;
+
+	LIST_INIT(&env_free_list);
+	for (i = NENV - 1; i >= 0; i--) {
+		envs[i].env_id = 0;
+        envs[i].env_status = ENV_FREE; 
+		LIST_INSERT_HEAD(&env_free_list, &envs[i], env_link);
+	}
+
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // Test case
+    // Attention!! these lines must be commented before handin!!
+    //
+/*
+    struct Env *env_store;
+    assert (env_alloc (&env_store, 0) == 0);
+    assert (env_store == envs);
+*/
+    // test env_setup_vm;
+    //env_setup_vm (env_store);
 }
 
 //
@@ -117,11 +147,50 @@ env_setup_vm(struct Env *e)
 
 	// LAB 3: Your code here.
 
+    e->env_pgdir = page2kva (p);
+    e->env_cr3 = page2pa (p);
+
+
+    //
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // because all the virtual space above UTOP is the same for all envs
+    // so it's no need to allocate new page
+    // just copying mapping from boot_pgdir is enough
+    //
+    memmove (e->env_pgdir, boot_pgdir, PGSIZE);
+    memset (e->env_pgdir, 0, PDX(UTOP) * sizeof (pde_t));
+   
+    // increase env_pgdir's pp_ref 
+    p->pp_ref ++;
+
+
 	// VPT and UVPT map the env's own page table, with
 	// different permissions.
 	e->env_pgdir[PDX(VPT)]  = e->env_cr3 | PTE_P | PTE_W;
 	e->env_pgdir[PDX(UVPT)] = e->env_cr3 | PTE_P | PTE_U;
 
+
+    //
+    // Add by Chi Zhang (zhangchitc@gmail.com)
+    // testing the env_pgdir
+    // after testing, please remove the following code
+/*
+    int va;
+    cprintf ("UTOP = 0x%x\n", UTOP);
+    for (i = 0, va = 0; i < NPDENTRIES; i++, va += PTSIZE) {
+       cprintf ("pdx = %d, va = 0x%x  env:0x%x   pgdir:0x%x\n", i, va, e->env_pgdir[i], boot_pgdir[i]);
+
+        if (va == VPT || va == UVPT) {
+            continue;
+        }
+
+        if (va < UTOP) {
+            assert (e->env_pgdir[i] == 0);
+        } else {
+            assert (e->env_pgdir[i] == boot_pgdir[i]);
+        }
+    }
+*/
 	return 0;
 }
 
@@ -209,6 +278,39 @@ segment_alloc(struct Env *e, void *va, size_t len)
 	// Hint: It is easier to use segment_alloc if the caller can pass
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round len up.
+	
+
+
+    // Add by Chi Zhang (zhangchitc@gmail.com
+    // Refer to boot_map_segment () in kern/pmap.c
+    // DIFFERENCES:
+    //    1. boot_map_segment manipulate boot_pgdir, here is e->env_pgdir
+    //    2. boot_map_segment estabilish static mapping,
+    //       while in segment_alloc the mapping affect pp_ref
+
+    //cprintf ("va = 0x%x, len = 0x%x\n", va, len);
+
+    va = ROUNDDOWN (va, PGSIZE);
+    len = ROUNDUP (len, PGSIZE);
+
+    //cprintf ("va = 0x%x, len = 0x%x\n", va, len);
+
+    struct Page *pp;
+    int r;
+
+    for (; len > 0; len -= PGSIZE, va += PGSIZE) {
+        r = page_alloc (&pp);
+
+        if (r != 0) {
+            panic ("segment_alloc: physical page allocation failed  %e", r);
+        }
+
+        r = page_insert (e->env_pgdir, pp, va, PTE_U|PTE_W);
+
+        if (r != 0) {
+            panic ("segment_alloc: page mapping failed  %e", r);
+        }
+    } 
 }
 
 //
@@ -265,11 +367,65 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
+	
+    struct Elf *ELFHDR = (struct Elf*) binary;
+	struct Proghdr *ph, *eph;
+
+	// is this a valid ELF?
+	if (ELFHDR->e_magic != ELF_MAGIC)
+		panic ("load_icode: Not a valid ELF");
+    
+    //cprintf ("%Credload_icode: failed%Cwht\n");
+
+
+	// load each program segment (ignores ph flags)
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
+	eph = ph + ELFHDR->e_phnum;
+
+    //
+    // Attention!!
+    // In the following lines of code
+    // we need access env's virtual address space to complete initialization
+    // so pgdir switch is needed
+    //
+    lcr3 (e->env_cr3);
+	for (; ph < eph; ph++) {
+        if (ph->p_type == ELF_PROG_LOAD) {
+            
+            // Attention !! 
+            // before loading ELF content
+            // allocating physical memory is crucial!!
+      
+            //cprintf ("%Credload_icode: before segment_alloc%Cwht\n");
+            segment_alloc (e, (void*) ph->p_va, ph->p_memsz);
+     
+            //cprintf ("%Credload_icode: before memset%Cwht\n");
+            //cprintf ("va = 0x%x, size=0x%x\n", ph->p_va, ph->p_memsz);
+            memset ((void *)ph->p_va, 0, ph->p_memsz);
+
+            //cprintf ("%Credload_icode: before memmove%Cwht\n");
+            memmove ((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+     
+            //cprintf ("%Credload_icode: failed in loading program header%Cwht\n");
+       }
+    }
+    lcr3 (boot_cr3);
+
+
+    // Attention !!
+    // before switch to the new Environment, we need to set up new CS and EIP
+    // so that the system can jump to the right code
+    // CS has been rightly setuped in env_alloc ()
+    // pay attention to env_alloc, it helped a lot to understand the workflow
+    e->env_tf.tf_eip = ELFHDR->e_entry;
+
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 
 	// LAB 3: Your code here.
+    segment_alloc (e, (void*) (USTACKTOP - PGSIZE), PGSIZE);
+    //cprintf ("%Credload_icode: finished%Cwht\n");
 }
 
 //
@@ -283,6 +439,20 @@ void
 env_create(uint8_t *binary, size_t size)
 {
 	// LAB 3: Your code here.
+    
+    struct Env *e;
+    int r;
+
+    r = env_alloc (&e, 0);
+
+    if (r < 0)
+        panic ("env_create: %e", r);
+
+    //cprintf ("%Credenv_create: before load_icode%Cwht\n");
+
+    load_icode (e, binary, size);
+
+    //cprintf ("%Credenv_create: finished%Cwht\n");
 }
 
 //
@@ -364,6 +534,7 @@ env_destroy(struct Env *e)
 void
 env_pop_tf(struct Trapframe *tf)
 {
+    //cprintf ("enter pop trap frame\n");
 	__asm __volatile("movl %0,%%esp\n"
 		"\tpopal\n"
 		"\tpopl %%es\n"
@@ -397,6 +568,23 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	
 	// LAB 3: Your code here.
+    
+
+    if (curenv != e) {
+        curenv = e;
+        curenv->env_runs ++;
+        lcr3 (curenv->env_cr3);
+    }
+
+    env_pop_tf (&curenv->env_tf);
+
+
+    // Add by Chi Zhang (zhangchitc@gmail.com
+    // cr3 stands for the physical address of page directory (user mode)
+    // the env's cr3 has been set in env_setup_vm () when allocating environment page
+    //
+
+
 
 	panic("env_run not yet implemented");
 }

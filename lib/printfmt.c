@@ -8,6 +8,19 @@
 #include <inc/stdarg.h>
 #include <inc/error.h>
 
+
+#define COLOR_WHT 7;
+#define COLOR_BLK 1;
+#define COLOR_GRN 2;
+#define COLOR_RED 4;
+#define COLOR_GRY 8;
+#define COLOR_YLW 15;
+#define COLOR_ORG 12;
+#define COLOR_PUR 6;
+#define COLOR_CYN 11;
+
+int ch_color = COLOR_WHT;
+
 /*
  * Space or zero padding and a field width are supported for the numeric
  * formats only. 
@@ -89,7 +102,7 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 	register int ch, err;
 	unsigned long long num;
 	int base, lflag, width, precision, altflag;
-	char padc;
+	char padc, sel_c[4];
 
 	while (1) {
 		while ((ch = *(unsigned char *) fmt++) != '%') {
@@ -163,6 +176,39 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 			putch(va_arg(ap, int), putdat);
 			break;
 
+
+        // color control
+        case 'C':
+            // void* memmove (void *dst, const void *src, size_t len) is declared in inc/string.h
+            // it could be used to replace memcpy ()
+
+            memmove (sel_c, fmt, sizeof(unsigned char) * 3);
+            sel_c[3] = '\0';
+            fmt += 3;
+
+            if (sel_c[0] >= '0' && sel_c[0] <= '9') {
+                // it is a color specifier
+                // JOS provide no atoi (), so we can only convert char* to int all by ourselves
+           
+                ch_color = ((sel_c[0] - '0') * 10 + sel_c[1] - '0') * 10 + sel_c[2] - '0';
+
+            } else {
+                // it is a explicit color selector
+                
+                // strcmp (const char *s1, const char *s2) is declared in inc/string.h
+                if (strcmp (sel_c, "wht") == 0) ch_color = COLOR_WHT else
+                if (strcmp (sel_c, "blk") == 0) ch_color = COLOR_BLK else
+                if (strcmp (sel_c, "grn") == 0) ch_color = COLOR_GRN else
+                if (strcmp (sel_c, "red") == 0) ch_color = COLOR_RED else
+                if (strcmp (sel_c, "gry") == 0) ch_color = COLOR_GRY else
+                if (strcmp (sel_c, "ylw") == 0) ch_color = COLOR_YLW else
+                if (strcmp (sel_c, "org") == 0) ch_color = COLOR_ORG else
+                if (strcmp (sel_c, "pur") == 0) ch_color = COLOR_PUR else
+                if (strcmp (sel_c, "cyn") == 0) ch_color = COLOR_CYN else
+                    ch_color = COLOR_WHT;
+            }
+            break;
+
 		// error message
 		case 'e':
 			err = va_arg(ap, int);
@@ -208,12 +254,10 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 
 		// (unsigned) octal
 		case 'o':
-			// Replace this with your code.
-			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
+            num = getuint(&ap, lflag);
+            base = 8;
 
+            goto number;
 		// pointer
 		case 'p':
 			putch('0', putdat);
