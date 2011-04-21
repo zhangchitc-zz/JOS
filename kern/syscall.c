@@ -298,6 +298,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
         case SYS_env_destroy:
             //cprintf ("zhangchi: SYS_env_destroy\n");
             r = sys_env_destroy ((envid_t) a1); break;
+        case SYS_yield:
+            sys_yield (); break;
         default:
             //cprintf ("zhangchi: default\n");
             r = -E_INVAL;

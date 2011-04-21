@@ -568,7 +568,8 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	
 	// LAB 3: Your code here.
-    
+   
+    cprintf ("zhangchi: e ptr = %x, KERNBASE = %x\n", e, KERNBASE);
 
     if (curenv != e) {
         curenv = e;
