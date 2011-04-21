@@ -523,7 +523,7 @@ page_init(void)
 
     int i;
     int lower_ppn = PPN (IOPHYSMEM);
-    int upper_ppn = PPN (ROUNDUP (boot_freemem, PGSIZE));
+    int upper_ppn = PPN (ROUNDUP (PADDR (boot_freemem), PGSIZE));
 
     LIST_INIT(&page_free_list);
     for (i = 0; i < npage; i++) {
