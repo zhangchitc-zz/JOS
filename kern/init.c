@@ -48,9 +48,6 @@ i386_init(void)
 
 	// Should always have an idle process as first one.
 	ENV_CREATE(user_idle);
-    ENV_CREATE(user_yield);
-    ENV_CREATE(user_yield);
-    ENV_CREATE(user_yield);
 
 #if defined(TEST)
 	// Don't touch -- used by grading script!

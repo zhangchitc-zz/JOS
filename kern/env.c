@@ -569,8 +569,6 @@ env_run(struct Env *e)
 	
 	// LAB 3: Your code here.
    
-    cprintf ("zhangchi: e ptr = %x, KERNBASE = %x\n", e, KERNBASE);
-
     if (curenv != e) {
         curenv = e;
         curenv->env_runs ++;
