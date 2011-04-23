@@ -1,17 +1,13 @@
 \contentsline {section}{\numberline {1}Introduction}{2}{section.1}
-\contentsline {section}{\numberline {2}User Environments and Exception Handling}{2}{section.2}
-\contentsline {subsection}{\numberline {2.1}Environment State}{2}{subsection.2.1}
-\contentsline {subsection}{\numberline {2.2}Allocating the Environments Array}{2}{subsection.2.2}
-\contentsline {subsection}{\numberline {2.3}Creating and Running Environments}{3}{subsection.2.3}
-\contentsline {subsection}{\numberline {2.4}Handling Interrupts and Exceptions}{16}{subsection.2.4}
-\contentsline {subsection}{\numberline {2.5}Basics of Protected Control Transfer}{19}{subsection.2.5}
-\contentsline {subsection}{\numberline {2.6}Types of Exceptions and Interrupts}{19}{subsection.2.6}
-\contentsline {subsection}{\numberline {2.7}An Example}{19}{subsection.2.7}
-\contentsline {subsection}{\numberline {2.8}Nested Exceptions and Interrupts}{19}{subsection.2.8}
-\contentsline {subsection}{\numberline {2.9}Setting Up the IDT}{19}{subsection.2.9}
-\contentsline {section}{\numberline {3}Page Faults, Breakpoints Exceptions, and System Calls}{30}{section.3}
-\contentsline {subsection}{\numberline {3.1}Handling Page Faults}{30}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}The Breakpoint Exception}{30}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}System calls}{31}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}User-mode startup}{32}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}Page faults and memory protection}{33}{subsection.3.5}
+\contentsline {section}{\numberline {2}User-level Environment Creation and Cooperative Multitasking}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}Round-Robin Scheduling}{2}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}System Calls for Environment Creation}{5}{subsection.2.2}
+\contentsline {section}{\numberline {3}Copy-on-Write Fork}{9}{section.3}
+\contentsline {subsection}{\numberline {3.1}User-level page fault handling}{9}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Setting the Page Fault Handler}{9}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Normal and Exception Stacks in User Environments}{10}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Invoking the User Page Fault Handler}{13}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}User-mode Page Fault Entrypoint}{16}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Testing}{21}{subsection.3.6}
+\contentsline {subsection}{\numberline {3.7}Implementing Copy-on-Write Fork}{21}{subsection.3.7}
+\contentsline {section}{\numberline {4}Preemptive Multitasking and Inter-Process communication (IPC)}{22}{section.4}

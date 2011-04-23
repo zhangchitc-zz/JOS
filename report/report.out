@@ -1,17 +1,13 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}
-\BOOKMARK [1][-]{section.2}{User Environments and Exception Handling}{}
-\BOOKMARK [2][-]{subsection.2.1}{Environment State}{section.2}
-\BOOKMARK [2][-]{subsection.2.2}{Allocating the Environments Array}{section.2}
-\BOOKMARK [2][-]{subsection.2.3}{Creating and Running Environments}{section.2}
-\BOOKMARK [2][-]{subsection.2.4}{Handling Interrupts and Exceptions}{section.2}
-\BOOKMARK [2][-]{subsection.2.5}{Basics of Protected Control Transfer}{section.2}
-\BOOKMARK [2][-]{subsection.2.6}{Types of Exceptions and Interrupts}{section.2}
-\BOOKMARK [2][-]{subsection.2.7}{An Example}{section.2}
-\BOOKMARK [2][-]{subsection.2.8}{Nested Exceptions and Interrupts}{section.2}
-\BOOKMARK [2][-]{subsection.2.9}{Setting Up the IDT}{section.2}
-\BOOKMARK [1][-]{section.3}{Page Faults, Breakpoints Exceptions, and System Calls}{}
-\BOOKMARK [2][-]{subsection.3.1}{Handling Page Faults}{section.3}
-\BOOKMARK [2][-]{subsection.3.2}{The Breakpoint Exception}{section.3}
-\BOOKMARK [2][-]{subsection.3.3}{System calls}{section.3}
-\BOOKMARK [2][-]{subsection.3.4}{User-mode startup}{section.3}
-\BOOKMARK [2][-]{subsection.3.5}{Page faults and memory protection}{section.3}
+\BOOKMARK [1][-]{section.2}{User-level Environment Creation and Cooperative Multitasking}{}
+\BOOKMARK [2][-]{subsection.2.1}{Round-Robin Scheduling}{section.2}
+\BOOKMARK [2][-]{subsection.2.2}{System Calls for Environment Creation}{section.2}
+\BOOKMARK [1][-]{section.3}{Copy-on-Write Fork}{}
+\BOOKMARK [2][-]{subsection.3.1}{User-level page fault handling}{section.3}
+\BOOKMARK [2][-]{subsection.3.2}{Setting the Page Fault Handler}{section.3}
+\BOOKMARK [2][-]{subsection.3.3}{Normal and Exception Stacks in User Environments}{section.3}
+\BOOKMARK [2][-]{subsection.3.4}{Invoking the User Page Fault Handler}{section.3}
+\BOOKMARK [2][-]{subsection.3.5}{User-mode Page Fault Entrypoint}{section.3}
+\BOOKMARK [2][-]{subsection.3.6}{Testing}{section.3}
+\BOOKMARK [2][-]{subsection.3.7}{Implementing Copy-on-Write Fork}{section.3}
+\BOOKMARK [1][-]{section.4}{Preemptive Multitasking and Inter-Process communication \(IPC\)}{}

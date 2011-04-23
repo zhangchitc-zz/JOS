@@ -99,7 +99,7 @@
 \lstdefinestyle{acode}
 { 
     language=,
-    morekeywords=[1]{mov, movl, movb, movw, orl, xorw, cli, cld, inb, testb, test, jnz, push, pop, jmp, call, lea, add, sub, ret, jle, outb, ljmp, lgdt, cmp, jne, popal, int, jns},
+    morekeywords=[1]{mov, movl, movb, movw, orl, xorw, cli, cld, inb, testb, test, jnz, push, pop, jmp, call, lea, add, sub, ret, jle, outb, ljmp, lgdt, cmp, jne, popal, int, jns, pushw, pushal, pushl, popfl, addl, subl},
     morekeywords=[2]{ax, bx, cx, dx, eax, ebx, ecx, edx, cr0, cr1, cr2, cr3, al, ds, es, ss, esp, ebp, esi, edi}, 
     morekeywords=[3]{data, text, bss},
     morekeywords=[4]{long, align, p2align, ascii, fill, globl, space, set, rept, byte, word},
@@ -188,7 +188,7 @@
 
 \lhead{操作系统实习报告}
 \rhead{张弛, 00848231}
-\title{操作系统JOS实习第三次报告}
+\title{操作系统JOS实习第四次报告}
 \author{张弛 \hspace{1ex} 00848231, \\
         zhangchitc@gmail.com}
 
@@ -638,45 +638,699 @@ Type 'help' for a list of commands.
 和程序的预期逻辑是一致的。
 
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-
-
-
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/}]
-\end{lstlisting}
-
-
-
 \section{Copy-on-Write Fork}
+
+\subsection{User-level page fault handling}
+
+\subsection{Setting the Page Fault Handler}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 3.| Implement the sys_env_set_pgfault_upcall system call. Be sure to enable permission checking when looking up the environment ID of the target environment, since this is a "dangerous" system call.
+\end{lstlisting}
+
+很简单:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c: sys\_env\_set\_pgfault\_upcall()}]
+static int
+sys_env_set_pgfault_upcall(envid_t envid, void *func)
+{
+    struct Env *e;
+    if (envid2env (envid, &e, 1) < 0)
+        return -E_BAD_ENV;
+
+    e->env_pgfault_upcall = func;
+
+    return 0;
+}
+\end{lstlisting}
+
+
+\subsection{Normal and Exception Stacks in User Environments}
+
+首先梳理一下几个栈之间的关系。根据inc/memlayout.h中对于虚拟地址空间的描述，他们的布局如下：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries inc/memlayout.h}]
+/*
+ * Virtual memory map:                                Permissions
+ *                                                    kernel/user
+ *
+ *    4 Gig -------->  +------------------------------+
+ *                     |                              | RW/--
+ *                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *                     :              .               :
+ *                     :              .               :
+ *                     :              .               :
+ *                     |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| RW/--
+ *                     |                              | RW/--
+ *                     |   Remapped Physical Memory   | RW/--
+ *                     |                              | RW/--
+ *    KERNBASE ----->  +------------------------------+ 0xf0000000
+ *                     |  Cur. Page Table (Kern. RW)  | RW/--  PTSIZE
+ *    VPT,KSTACKTOP--> +------------------------------+ 0xefc00000      --+
+ *                     |         Kernel Stack         | RW/--  KSTKSIZE   |
+ *                     | - - - - - - - - - - - - - - -|                 PTSIZE
+ *                     |      Invalid Memory (*)      | --/--             |
+ *    ULIM     ------> +------------------------------+ 0xef800000      --+
+ *                     |  Cur. Page Table (User R-)   | R-/R-  PTSIZE
+ *    UVPT      ---->  +------------------------------+ 0xef400000
+ *                     |          RO PAGES            | R-/R-  PTSIZE
+ *    UPAGES    ---->  +------------------------------+ 0xef000000
+ *                     |           RO ENVS            | R-/R-  PTSIZE
+ * UTOP,UENVS ------>  +------------------------------+ 0xeec00000
+ * UXSTACKTOP -/       |     User Exception Stack     | RW/RW  PGSIZE
+ *                     +------------------------------+ 0xeebff000
+ *                     |       Empty Memory (*)       | --/--  PGSIZE
+ *    USTACKTOP  --->  +------------------------------+ 0xeebfe000
+ *                     |      Normal User Stack       | RW/RW  PGSIZE
+ *                     +------------------------------+ 0xeebfd000
+ *                     |                              |
+ *                     |                              |
+ *                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *                     .                              .
+ *                     .                              .
+ *                     .                              .
+ *                     |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+ *                     |     Program Data & Heap      |
+ *    UTEXT -------->  +------------------------------+ 0x00800000
+\end{lstlisting}
+
+一共有三个栈：
+
+\begin{description}
+\item[$ [\mathrm{KSTACKTOP}, \mathrm{KSTACKTOP} - \mathrm{KSTKSIZE}) $] ：\newline
+内核态系统栈
+
+\item[$ [\mathrm{UXSTACKTOP}, \mathrm{UXSTACKTOP} - \mathrm{PGSIZE}) $] ：\newline
+用户态错误处理栈
+
+\item[$ [\mathrm{USTACKTOP}, \mathrm{UTEXT}) $] ：\newline
+用户态运行栈
+
+\end{description}
+
+他们之间的几个区别是：
+
+\begin{itemize}
+\item{\highlight{内核态系统栈}运行的是内核的相关程序，在这里我们关注的仅仅是\highlight{在有中断被触发以后}，CPU会将自动将栈切换到内核栈上来。我们是在kern/trap.c的\funcname{idt\_init()}中进行相应设置的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: idt\_init()}]
+	// Setup a TSS so that we get the right stack
+	// when we trap to the kernel.
+	ts.ts_esp0 = KSTACKTOP;
+	ts.ts_ss0 = GD_KD;
+
+	// Initialize the TSS field of the gdt.
+	gdt[GD_TSS >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
+					sizeof(struct Taskstate), 0);
+	gdt[GD_TSS >> 3].sd_s = 0;
+
+	// Load the TSS
+	ltr(GD_TSS);
+
+	// Load the IDT
+	asm volatile("lidt idt_pd");
+\end{lstlisting}
+
+那么当一个中断被触发进入kern/trapentry.S中定义的中断服务程序时，所处在的栈就已经是内核栈了：
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+/*
+ * Lab 3: Your code here for _alltraps
+ */
+_alltraps:
+
+    pushw    $0x0
+    pushw    %ds
+    pushw    $0x0
+    pushw    %es
+    pushal
+
+    movl     $GD_KD, %eax
+    
+    movw     %ax, %ds
+    movw     %ax, %es
+
+    pushl    %esp
+
+    call trap
+\end{lstlisting}
+
+这里push的指令全都是写入KSTACKTOP以下的空间的，为了形成一个Trapframe的内存结构，最后一个pushl \%esp是为了按照C Convention传入一个参数的句柄，因为trap 函数的定义为
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c}]
+void trap (struct Trapframe *tf) 
+\end{lstlisting}
+
+需要一个参数句柄。
+}
+\item{\highlight{用户运行栈}则是用户程序运行中使用的栈，初始是在创建用户进程初始时设置的，在kern/env.c的\funcname{env\_alloc()}中可以看到：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_alloc()}]
+	// Set up appropriate initial values for the segment registers.
+	// GD_UD is the user data segment selector in the GDT, and 
+	// GD_UT is the user text segment selector (see inc/memlayout.h).
+	// The low 2 bits of each segment register contains the
+	// Requestor Privilege Level (RPL); 3 means user mode.
+	e->env_tf.tf_ds = GD_UD | 3;
+	e->env_tf.tf_es = GD_UD | 3;
+	e->env_tf.tf_ss = GD_UD | 3;
+	e->env_tf.tf_esp = USTACKTOP;
+	e->env_tf.tf_cs = GD_UT | 3;
+	// You will set e->env_tf.tf_eip later.
+\end{lstlisting}
+
+这个时候其实其虚拟地址对应的地方只有一页的物理地址，在载入ELF文件时分配的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: load\_icode()}]
+    // LAB 3: Your code here.
+    segment_alloc (e, (void*) (USTACKTOP - PGSIZE), PGSIZE);
+\end{lstlisting}
+
+如果用到了更多的空间，那么就会触发缺页中断，而转到内核栈上去运行中断处理程序。
+
+注意用户运行栈是一边用一边分配的，而内核栈则固定了大小，而下面的用户态错误栈也是固定大小的。
+}
+
+\item{\highlight{用户态错误栈}是用户自己定义相应的中断处理程序后，相应处理程序运行时的栈。当用户进程调用前面的\funcname{sys\_env\_set\_pgfault\_upcall()}向系统注册缺页中断处理程序后，当用户程序触发缺页中断，那么
+\begin{enumerate}
+\item{首先系统陷入内核态，栈位置从\highlight{用户运行栈}切换到\highlight{内核栈}，进入trap ()处理中断分发，进入page\_fault\_handler ()}
+\item{当确认是用户程序而不是内核触发了缺页中断后，（内核的话就直接panic了），为其在用户错误栈里分配一个UTrapframe的大小（但是这时仍在\highlight{内核栈}，我们只是在对应的页表空间里作的这样的操作）}
+\item{把栈切换到\highlight{用户错误栈}，运行相应的用户中断处理程序}
+\item{最后返回用户程序，栈恢复到\highlight{用户运行栈}}
+\end{enumerate}
+
+那么这个栈是在哪里被指定的呢？\highlight{注意，只有注册了自己的缺页中断服务程序的用户进程才会分配用户错误栈}，具体代码看到lib/pgfault.c中：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/pgfault.c: set\_pgfault\_handler()}]
+void
+set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
+{
+	int r;
+
+	if (_pgfault_handler == 0) {
+		// First time through!
+		// LAB 4: Your code here.
+		panic("set_pgfault_handler not implemented");
+	}
+
+	// Save handler pointer for assembly to call.
+	_pgfault_handler = handler;
+}
+\end{lstlisting}
+
+在设置中断服务程序时，要作的工作之一就是为该进程的用户错误栈分配物理页面。只有这样，在进入内核的trap()中在错误栈里放置相应信息才不会触发缺页中断（细节在下节马上就会说到）
+
+所以这个栈是自己创建的。
+}
+\end{itemize}
+
+弄清楚这些栈的切换和设置关系对于我们下面要实现的系统调用非常重要。
+
+
+
+
+\subsection{Invoking the User Page Fault Handler}
+
+
+\begin{lstlisting}[style=exercise]
+|Exercise 4.| Implement the code in page_fault_handler in kern/trap.c required to dispatch page faults to the user-mode handler. Be sure to take appropriate precautions when writing into the exception stack. (What happens if the user environment runs out of space on the exception stack?)
+\end{lstlisting}
+
+\funcname{page\_fault\_handler()} 在lab3中我们已经完成了对内核态触发的页错误的处理（如果在内核发生页错误，那么直接panic，以免发生更大的问题），这次的任务是完成在用户态中发生的页错误的处理。
+
+
+有两种可能会造成缺页中断：
+
+\begin{enumerate}
+\item{用户程序正常运行中访问到一个错误地址，触发页错误中断}
+\item{用户自己定义的页错误处理程序在运行时访问到错误地址，同样也会触发页错误中断}
+\end{enumerate}
+
+\highlight{注意！}有可能从第1种开始进入中断处理，然后2又触发2，又触发2 \ldots 造成中断处理的\highlight{递归}。
+
+
+简单的来说，在\funcname{page\_fault\_handler()}要做的事情，就是将触发页错误的进程信息（可能是正常的用户程序，也可能是用户定义的页错误处理程序）以UTrapframe的形式压入用户的错误栈，然后进入用户的页错误处理程序开始运行。（用户的页错误处理程序会负责回到原来触发错误的地方重新开始执行，在后面我们马上会涉及到）
+
+在处理中有几个东西需要注意的：
+
+\begin{description}
+\item[运行栈的切换]：\\
+\begin{itemize}
+\item{当正常用户进程执行出现页错误时，栈的切换轨迹是，\highlight{用户运行栈} $\longrightarrow$内核态系统栈 （中断被操作系统捕捉到）$\longrightarrow$用户错误栈（开始错误处理）}
+\item{当错误处理程序执行出现页错误时，栈的切换轨迹是，\highlight{用户错误栈} $\longrightarrow$内核态系统栈 $\longrightarrow$用户错误栈}
+\end{itemize}
+
+虽然错误处理程序在本质上仍是用户进程，但是它们的运行栈不同！具体细节稍候在代码中解释。
+
+\item[UTrapframe]：\\
+
+
+UTrapframe放置在用户错误栈中，保存触发页错误中断的进程上下文信息，便于页错误处理程序结束后返回原程序继续运行。那么为什么要提出一个新结构而不用原来的Trapframe呢？我们来看看他们之间的区别：
+
+\begin{lstlisting}[style=ccode, firstnumber=56, title={\scriptsize \ttfamily \bfseries inc/trap.h}]
+struct Trapframe {
+	struct PushRegs tf_regs;
+	uint16_t tf_es;
+	uint16_t tf_padding1;
+	uint16_t tf_ds;
+	uint16_t tf_padding2;
+	uint32_t tf_trapno;
+	/* below here defined by x86 hardware */
+	uint32_t tf_err;
+	uintptr_t tf_eip;
+	uint16_t tf_cs;
+	uint16_t tf_padding3;
+	uint32_t tf_eflags;
+	/* below here only when crossing rings, such as from user to kernel */
+	uintptr_t tf_esp;
+	uint16_t tf_ss;
+	uint16_t tf_padding4;
+} __attribute__((packed));
+
+struct UTrapframe {
+	/* information about the fault */
+	uint32_t utf_fault_va;	/* va for T_PGFLT, 0 otherwise */
+	uint32_t utf_err;
+	/* trap-time return state */
+	struct PushRegs utf_regs;
+	uintptr_t utf_eip;
+	uint32_t utf_eflags;
+	/* the trap-time stack to return to */
+	uintptr_t utf_esp;
+} __attribute__((packed));
+\end{lstlisting}
+
+通过结构可以观察到这么几个不同：
+
+\begin{itemize}
+\item{UTrapframe是特别设计给\highlight{用户自定义的中断错误处理程序的（不一定是页错误中断处理程序）}的，用以保存错误发生之前的环境信息，所以UTrapframe有了一个特殊的成员fault\_va，表示访问出错的指令涉及的具体地址, 当然如果不是页错误处理程序，那么这个成员设置成0即可}
+\item{UTrapframe和Trapframe相比少了es, ds, ss等段寄存器信息。因为根据刚才提到栈切换的不同，无论是两种情况的哪种，都是从用户态$\longrightarrow$内核态$\longrightarrow$用户态，因为\highlight{两个用户态程序实际上是同一个用户进程}，所以我们从后面的中断错误处理程序切换到前面的触发程序就不会涉及到段的切换，自然也不需要保存它们了。}
+\end{itemize}
+
+以上是结构上最大的两点不同，而\highlight{实际使用上}，Trapframe用于保存进程的完整信息，在中断后被中断程序自动保留下来，并且作为数据结构在操作系统内各个函数中传递，而UTrapframe只是为了有效的组织起触发错误进程的状态放置在错误栈里，以便恢复运行，并没有在操作系统的其他地方使用到。
+
+\end{description}
+
+好，上面已经说明了需要注意的事项，我们来看看具体的代码：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: page\_fault\_handler()}]
+void
+page_fault_handler(struct Trapframe *tf)
+{
+    uint32_t fault_va;
+
+    // Read processor's CR2 register to find the faulting address
+    fault_va = rcr2();
+
+    // Handle kernel-mode page faults.
+    // LAB 3: Your code here.
+
+    if ((tf->tf_cs & 3) == 0)
+        panic ("kernel-mode page faults");
+ 
+
+    // LAB 4: Your code here.
+    if (curenv->env_pgfault_upcall != NULL) {
+
+        struct UTrapframe *utf;
+
+        if (UXSTACKTOP - PGSIZE <= tf->tf_esp && tf->tf_esp < UXSTACKTOP)
+            utf = (struct UTrapframe *) 
+                        (tf->tf_esp - sizeof (struct UTrapframe) - 4);
+        else
+            utf = (struct UTrapframe *) 
+                        (UXSTACKTOP - sizeof (struct UTrapframe));
+
+        user_mem_assert (
+            curenv, 
+            (void*) utf, 
+            sizeof (struct UTrapframe), 
+            PTE_U|PTE_W); 
+
+        utf->utf_eflags = tf->tf_eflags;
+        utf->utf_eip = tf->tf_eip;
+        utf->utf_err = tf->tf_err;
+        utf->utf_esp = tf->tf_esp;
+        utf->utf_fault_va = fault_va;
+        utf->utf_regs = tf->tf_regs;
+
+        curenv->env_tf.tf_eip = (uint32_t) curenv->env_pgfault_upcall;
+        curenv->env_tf.tf_esp = (uint32_t) utf;
+        env_run (curenv);
+    }
+
+    // Destroy the environment that caused the fault.
+    cprintf("[%08x] user fault va %08x ip %08x\n",
+        curenv->env_id, fault_va, tf->tf_eip);
+    print_trapframe(tf);
+    env_destroy(curenv);
+}
+\end{lstlisting}
+
+从上到下解释：
+
+\begin{enumerate}
+\item{第21行：判断发生页错误的原进程是否已经运行在用户错误栈上，如果是，则是中断递归，需要在错误栈中压入一个空字（用处在后面揭晓）和一个UTrapframe，否则的话，则是正常的用户进程发生页错误，则在错误栈的栈顶放入一个UTrapframe即可}
+\item{第28行：检查新需要的错误栈空间是否已经被按照用户可写的权限正确映射。还记得原来提到用户错误栈是什么时候被申请的么？是用户自己在运行之前注册中断错误处理程序时申请的！所以到了 \funcname{ page\_fault\_handler() } 这里应该是已经按照映射好了的，但是因为错误栈大小被固定，所以有可能溢出，需要检查}
+\item{第34行：将发生错误的进程的运行时信息保存在UTrapframe中。还记得前面提到的Trapframe和UTrapframe在使用上的区别么？所以我们在这里可以看到是将tf中的信息放入utf}
+\item{第41行：准备切换到用户定义的中断错误处理程序开始运行，还记得前面我们提到过中断处理程序实际上和出错的用户进程是同一程序么？所以它们对应的环境是同一个！需要改变的只有栈顶位置和指令的入口而已，然后就可以直接使用\funcname{env\_run()} 来跳转到错误处理程序了。}
+\end{enumerate}
+
+
+
+\subsection{User-mode Page Fault Entrypoint}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 5.| Implement the _pgfault_upcall routine in lib/pfentry.S. The interesting part is returning to the original point in the user code that caused the page fault. You'll return directly there, without going back through the kernel. The hard part is simultaneously switching stacks and re-loading the EIP.
+\end{lstlisting}
+
+\_pgfault\_upcall是\highlight{所有用户页错误处理程序的入口}，由这里调用用户自定义的处理程序，并在处理完成后，从错误栈中保存的UTrapframe中恢复相应信息，然后跳回到发生错误之前的指令，恢复原来的进程运行。
+
+这段代码非常的有技巧性，因为数据都存储在栈中，如何同时做到恢复EIP和ESP的呢？我是在参考了张磊同学的代码后才知道这么作的原理，所以这里直接结合代码来叙述：
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+.text
+.globl _pgfault_upcall
+_pgfault_upcall:
+        # Call the C page fault handler.
+        pushl %esp			# function argument: pointer to UTF
+        movl _pgfault_handler, %eax
+        call *%eax
+        addl $4, %esp			# pop function argument
+	
+
+        # Add by Chi Zhang (zhangchitc@gmail.com)
+        # subtract 4 from old esp for the storage of old eip(later use for return)
+        movl     0x30(%esp), %eax
+        subl     $0x4, %eax
+        movl     %eax, 0x30(%esp)
+
+
+        # put old eip in the pre-reserved 4 bytes space
+        movl     0x28(%esp), %ebx
+        movl     %ebx, (%eax)
+
+    
+        # restore all general-purpose registers
+        addl     $0x8, %esp
+        popal
+
+
+        # Restore eflags from the stack.  After you do this, you can
+        # no longer use arithmetic operations or anything else that
+        # modifies eflags.
+        # LAB 4: Your code here.
+
+        addl     $0x4, %esp
+        popfl
+
+        # Switch back to the adjusted trap-time stack.
+        # LAB 4: Your code here.
+
+        pop     %esp
+
+        # Return to re-execute the instruction that faulted.
+        # LAB 4: Your code here.
+
+        ret
+\end{lstlisting}
+
+我们从第8行开始看起：
+
+\begin{enumerate}
+\item{这时已从用户自定义错误处理程序中返回，那么观察用户错误栈，应该是和调用前一样的形式：
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |      Reserved 4 bytes        |
+     |------------------------------|  
+     |        trap-time esp         | 
+     +------------------------------+ 
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+  <-----  start of struct PushRegs
+     |        trap-time eax         | 
+     +------------------------------+ 
+     |        trap-time ecx         | 
+     +------------------------------+ 
+     :              .               :
+     :              .               :
+     :              .               :
+     +------------------------------+ 
+     |        trap-time edi         | 
+     +------------------------------+  <-----  end of struct PushRegs
+     |     tf_err (error code)      | 
+     +------------------------------+ 
+     |          fault_va            | 
+     +------------------------------+  <-----  %esp when handler is run
+     |                              |
+     |                              |
+\end{verbatim}
+}
+
+注意这里trap-time esp上的空间，我留出了一个4 bytes保留空间，为了说明这是一个中断递归的情形，有可能没有，那么就是用户进程直接出错了，这个不妨碍说明。
+}
+\item{第13行，将栈中的trap-time esp减去4，同时传递给GPR eax以便下面的使用:
+
+\begin{lstlisting}[style=acode, firstnumber=11, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        movl     0x30(%esp), %eax
+        subl     $0x4, %eax
+        movl     %eax, 0x30(%esp)
+\end{lstlisting}
+        
+当执行完以后栈情况如下图，当是中断递归的情况，如图，trap-time esp减去4就是Reserved 4 bytes的首地址；如果不是，那么trap-time esp则是原来用户运行栈的栈顶。
+
+
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |      Reserved 4 bytes        |
+     |------------------------------|  <-----  %eax, namely trap-time ESP - 4
+     |      trap-time esp - 4       | 
+     +------------------------------+ 
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+ 
+\end{verbatim}
+}
+}
+\item{第18行，将原出错程序的EIP（即trap-time eip)放入留出的4字节空白区域，以便\highlight{后来恢复运行}，这个地方是最巧妙的地方！也是留出这个4字节的意义所在。稍候我们便会看到它是如何神奇的使我们同时恢复ESP和EIP两个寄存器的。
+
+\begin{lstlisting}[style=acode, firstnumber=18, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        movl     0x28(%esp), %ebx
+        movl     %ebx, (%eax)
+\end{lstlisting}
+
+执行以后栈布局变成：
+
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |        trap-time eip         |
+     |------------------------------|  <-----  %eax, namely trap-time ESP - 4
+     |      trap-time esp - 4       | 
+     +------------------------------+ 
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+ 
+\end{verbatim}
+}
+}
+\item{第24行，恢复所有通用寄存器。从这句话完成以后开始所有的通用寄存器就不能再使用了
+\begin{lstlisting}[style=acode, firstnumber=24, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        addl     $0x8, %esp
+        popal
+\end{lstlisting}
+}
+\item{第33行，恢复EFLAGS标志寄存器，从这句话以后就不能使用会修改EFLAGS操作的指令了，比如算数指令add, sub或者mov和int等等：
+
+\begin{lstlisting}[style=acode, firstnumber=33, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        addl     $0x4, %esp
+        popfl
+\end{lstlisting}
+
+执行完以后这时栈的指针和布局为：
+
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |        trap-time eip         |
+     |------------------------------|  
+     |      trap-time esp - 4       | 
+     +------------------------------+  <-----  %esp
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+ 
+\end{verbatim}
+}
+}
+\item{第39行，切换回原来出错的程序运行栈：
+
+\begin{lstlisting}[style=acode, firstnumber=39, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        pop     %esp
+\end{lstlisting}
+
+栈的情况如图：
+
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |        trap-time eip         |
+     |------------------------------|  <-----  %esp  
+     |      trap-time esp - 4       | 
+     +------------------------------+ 
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+ 
+\end{verbatim}
+}
+
+这个情况看起来挺二的，我们用一个pop命令实现的仅仅是将栈指针上移4个bytes，其实这里有两点原因：
+
+\begin{enumerate}
+\item{前面我们说过，所有算数指令都不能使用了，所以不能直接移动esp}
+\item{上图仅仅是中断递归的情况，如果是用户程序直接出错的话，那么这下pop出的值就是\highlight{用户栈}的栈顶 - 4，那么就从错误栈切换到了用户栈}
+\end{enumerate}
+}
+\item{最后，使用ret返回出错程序：
+\begin{lstlisting}[style=acode, firstnumber=44, title={\scriptsize \ttfamily \bfseries lib/pfentry.S}]
+        ret
+\end{lstlisting}
+
+在lab3中我们就知道，一条ret指令的意义相当于就是pop \%eip，那么结合上面栈的布局图：
+
+{\scriptsize \bfseries
+\begin{verbatim}
+     +------------------------------+  <-----  UXSTACKTOP
+     |                              | 
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     :              .               :
+     :              .               :
+     :              .               :
+     + - - - - - - - - - - - - - - -+  <-----  trap-time ESP
+     |        trap-time eip         |
+     |------------------------------|  <-----  %esp  
+     |      trap-time esp - 4       | 
+     +------------------------------+ 
+     |      trap-time eflags        |
+     +------------------------------+ 
+     |        trap-time eip         |
+     +------------------------------+ 
+\end{verbatim}
+}
+
+那么执行完以后，eip被正确赋值成了trap-time eip，而esp也正好得到了trap-time esp！！
+
+}
+\end{enumerate}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 6.| Finish set_pgfault_handler() in lib/pgfault.c.
+\end{lstlisting}
+
+这个函数即我们在前面提到了很多次的，用户在运行前注册自己的页错误处理程序，里面做的最重要的事情就是申请用户错误栈空间：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/pgfault.c}]
+void
+set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
+{
+    int r;
+
+    if (_pgfault_handler == 0) {
+        if ((r = sys_page_alloc (0, (void*) (UXSTACKTOP - PGSIZE), PTE_U|PTE_P|PTE_W)) < 0)
+            panic ("set_pgfault_handler: %e", r);
+
+        sys_env_set_pgfault_upcall (0, _pgfault_upcall);
+    }
+
+    // Save handler pointer for assembly to call.
+    _pgfault_handler = handler;
+}
+\end{lstlisting}
+
+当然记得在kern/syscall.c中添加对应的系统调用号分配程序，这样我们的代码就全部完成了！！
+
+
+\subsection{Testing}
+
+测试全部顺利通过！
+
+\subsection{Implementing Copy-on-Write Fork}
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+
+
+
+
+
+
+
+
 
 \section{Preemptive Multitasking and Inter-Process communication (IPC)}
 
