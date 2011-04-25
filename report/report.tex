@@ -1296,6 +1296,128 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 
 \subsection{Implementing Copy-on-Write Fork}
 
+这一部分的MIT材料非常的重要，提到了很多实现上的细节。
+
+首先来看看页错误处理程序 \funcname{pgfault()}，这个函数在材料中提到了需要找到用户程序访问的地址对应页表项来查看它的权限，用户程序要如何访问页目录和页表呢？这就涉及到lab2中的细节了。
+
+请阅读我lab2报告中3.2 Reference counting一节关于$[\mathrm{UVPT}, \mathrm{ULIM})$这段内存区域的详细说明，里面讲述的给定一个虚拟地址，如何构造新的虚拟地址来得到它对应的\highlight{页目录表项}和\highlight{页表表项}的具体方法。这里稍微总结一下：
+
+假设需要查询的虚拟地址为addr = PDX$\left|\right.$PTX$\left|\right.$OFFSET的话
+\begin{itemize}
+\item{如果要得到对应页目录表项：令vaddr = UVPT[31:22]$\left|\right.$UVPT[31:22]$\left|\right.$PDX$\left|\right.$00}
+\item{如果要得到对应页表表项：令vaddr = UVPT[31:22]$\left|\right.$PDX$\left|\right.$PTX$\left|\right.$00}
+\end{itemize}
+
+那么利用vaddr查询到的值就是相应所需要的数据。在具体代码中，有两处地方使用到了这样的技巧，首先是定义这两处地址，在lib/entry.S中，\highlight{每个用户程序都会和此文件进行链接}：
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries lib/entry.S}]
+#include <inc/mmu.h>
+#include <inc/memlayout.h>
+
+.data
+
+
+// Define the global symbols 'envs', 'pages', 'vpt', and 'vpd'
+// so that they can be used in C as if they were ordinary global arrays.
+	.globl envs
+	.set envs, UENVS
+	.globl pages
+	.set pages, UPAGES
+	.globl vpt
+	.set vpt, UVPT
+	.globl vpd
+	.set vpd, (UVPT+(UVPT>>12)*4)
+
+\end{lstlisting}
+
+可以看到其中定义的两个变量：
+
+\begin{itemize}
+\item{vpt: 指向UVPT}
+\item{vpd: $(\mathrm{UVPT}+(\mathrm{UVPT}>>12)*4)$}，实际上就是把UVPT的前10位复制到了第11到20位，正好对应上面提到页目录表项地址的构造方法。
+\end{itemize}
+
+后面我们看到在inc/memlayout.h中是怎么描述这两个变量的：
+
+\begin{lstlisting}[style=ccode, firstnumber=137, title={\scriptsize \ttfamily \bfseries inc/memlayout.h}]
+/*
+ * The page directory entry corresponding to the virtual address range
+ * [VPT, VPT + PTSIZE) points to the page directory itself.  Thus, the page
+ * directory is treated as a page table as well as a page directory.
+ *
+ * One result of treating the page directory as a page table is that all PTEs
+ * can be accessed through a "virtual page table" at virtual address VPT (to
+ * which vpt is set in entry.S).  The PTE for page number N is stored in
+ * vpt[N].  (It's worth drawing a diagram of this!)
+ *
+ * A second consequence is that the contents of the current page directory
+ * will always be available at virtual address (VPT + (VPT >> PGSHIFT)), to
+ * which vpd is set in entry.S.
+ */
+typedef uint32_t pte_t;
+typedef uint32_t pde_t;
+
+extern volatile pte_t vpt[];     // VA of "virtual page table"
+extern volatile pde_t vpd[];     // VA of current page directory
+\end{lstlisting}
+
+里面提到，假设需要查询的虚拟地址为va，则
+\begin{itemize}
+\item{其对应的页目录表项为：vpd[VPD(va)]，其中VPD等价于PDX宏}
+\item{其对应的页表表项为：vpt[VPN(va)]，其中VPN等价于PPN宏}
+\end{itemize}
+
+因为用数组 $\mathrm{base}[\mathrm{offset}]$ 的方式访问内存其实就是访问$\mathrm{base} + \mathrm{offset} \times \mathrm{sizeof(base)}$，例如上面的页表表项，
+
+\begin{align}
+vpt[VPN(va)] &= vpt + VPN(va) << 2 \notag \\
+             &= vpt + (va >> 12) << 2 \notag \\
+             &= vpt + (va >> 10) \notag \\
+             &= UVPT + (va >> 10) \notag  
+\end{align}
+
+即我们前面说到的页表表项地址构造方法！页目录的方法也类似。
+
+
+好了有了这个的铺垫，我们可以开始看看实际的代码了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/pgfault.c}]
+static void
+pgfault(struct UTrapframe *utf)
+{
+    void *addr = (void *) utf->utf_fault_va;
+    uint32_t err = utf->utf_err;
+    int r;
+
+    if ((err & FEC_WR) == 0 || (vpd[VPD(addr)] & PTE_P) == 0 ||  (vpt[VPN(addr)] & PTE_COW) == 0)
+        panic ("pgfault: not a write or attempting to access a non-COW page");
+
+
+    if ((r = sys_page_alloc (0, (void *)PFTEMP, PTE_U|PTE_P|PTE_W)) < 0)
+        panic ("pgfault: page allocation failed : %e", r);
+
+    addr = ROUNDDOWN (addr, PGSIZE);
+
+    memmove (PFTEMP, addr, PGSIZE);
+
+    if ((r = sys_page_map (0, PFTEMP, 0, addr, PTE_U|PTE_P|PTE_W)) < 0)
+        panic ("pgfault: page mapping failed : %e", r);
+}
+\end{lstlisting}
+
+里面主要有两点需要注意的：
+
+\begin{enumerate}
+\item{PTE\_COW是x86页面机制中在页表表项里留出的几个特殊位供程序员自己定制的位，一共三位，区域为AVAIL，可以参考x86手册获得更详细的资料}
+\item{第15行，在分配了新的物理页以后准备开始从原页面开始拷贝数据时，记得将地址和物理页大小对齐}
+\end{enumerate}
+
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
 
 \begin{lstlisting}[style=exercise]
 |Exercise 7.| Implement fork, duppage and pgfault in lib/fork.c.
@@ -1342,7 +1464,14 @@ Test your code with the forktree program. It should produce the following messag
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}
 
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
 
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
 
 
 
@@ -1363,8 +1492,6 @@ Test your code with the forktree program. It should produce the following messag
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, firstnumber=257, title={\scriptsize \ttfamily \bfseries inc/mmu.h}]
-\end{lstlisting}
 
 
 \begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]

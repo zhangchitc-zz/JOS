@@ -67,8 +67,6 @@ duppage(envid_t envid, unsigned pn)
 
 	// LAB 4: Your code here.
 
-    struct Env *dstenv;
-
     void * addr = (void *) ((uint32_t) pn * PGSIZE);
     pte_t pte = vpt[VPN(addr)];
 
