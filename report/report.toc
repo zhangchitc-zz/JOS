@@ -1,13 +1,21 @@
-\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
-\contentsline {section}{\numberline {2}User-level Environment Creation and Cooperative Multitasking}{2}{section.2}
-\contentsline {subsection}{\numberline {2.1}Round-Robin Scheduling}{2}{subsection.2.1}
-\contentsline {subsection}{\numberline {2.2}System Calls for Environment Creation}{5}{subsection.2.2}
-\contentsline {section}{\numberline {3}Copy-on-Write Fork}{9}{section.3}
-\contentsline {subsection}{\numberline {3.1}User-level page fault handling}{9}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Setting the Page Fault Handler}{9}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}Normal and Exception Stacks in User Environments}{10}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}Invoking the User Page Fault Handler}{13}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}User-mode Page Fault Entrypoint}{16}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}Testing}{21}{subsection.3.6}
-\contentsline {subsection}{\numberline {3.7}Implementing Copy-on-Write Fork}{21}{subsection.3.7}
-\contentsline {section}{\numberline {4}Preemptive Multitasking and Inter-Process communication (IPC)}{22}{section.4}
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}
+\contentsline {section}{\numberline {2}User-level Environment Creation and Cooperative Multitasking}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Round-Robin Scheduling}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}System Calls for Environment Creation}{6}{subsection.2.2}
+\contentsline {section}{\numberline {3}Copy-on-Write Fork}{10}{section.3}
+\contentsline {subsection}{\numberline {3.1}User-level page fault handling}{10}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Setting the Page Fault Handler}{10}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Normal and Exception Stacks in User Environments}{11}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Invoking the User Page Fault Handler}{14}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}User-mode Page Fault Entrypoint}{17}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Testing}{22}{subsection.3.6}
+\contentsline {subsection}{\numberline {3.7}Implementing Copy-on-Write Fork}{22}{subsection.3.7}
+\contentsline {section}{\numberline {4}Preemptive Multitasking and Inter-Process communication (IPC)}{28}{section.4}
+\contentsline {subsection}{\numberline {4.1}Clock Interrupts and Preemption}{28}{subsection.4.1}
+\contentsline {subsubsection}{\numberline {4.1.1}Interrupt discipline}{28}{subsubsection.4.1.1}
+\contentsline {subsubsection}{\numberline {4.1.2}Handling Clock Interrupts}{28}{subsubsection.4.1.2}
+\contentsline {subsection}{\numberline {4.2}Inter-Process communication (IPC)}{28}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}IPC in JOS}{28}{subsubsection.4.2.1}
+\contentsline {subsubsection}{\numberline {4.2.2}Sending and Receiving Messages}{28}{subsubsection.4.2.2}
+\contentsline {subsubsection}{\numberline {4.2.3}Transferring Pages}{28}{subsubsection.4.2.3}
+\contentsline {subsubsection}{\numberline {4.2.4}Implementing IPC}{28}{subsubsection.4.2.4}

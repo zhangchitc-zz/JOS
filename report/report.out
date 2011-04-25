@@ -11,3 +11,11 @@
 \BOOKMARK [2][-]{subsection.3.6}{Testing}{section.3}
 \BOOKMARK [2][-]{subsection.3.7}{Implementing Copy-on-Write Fork}{section.3}
 \BOOKMARK [1][-]{section.4}{Preemptive Multitasking and Inter-Process communication \(IPC\)}{}
+\BOOKMARK [2][-]{subsection.4.1}{Clock Interrupts and Preemption}{section.4}
+\BOOKMARK [3][-]{subsubsection.4.1.1}{Interrupt discipline}{subsection.4.1}
+\BOOKMARK [3][-]{subsubsection.4.1.2}{Handling Clock Interrupts}{subsection.4.1}
+\BOOKMARK [2][-]{subsection.4.2}{Inter-Process communication \(IPC\)}{section.4}
+\BOOKMARK [3][-]{subsubsection.4.2.1}{IPC in JOS}{subsection.4.2}
+\BOOKMARK [3][-]{subsubsection.4.2.2}{Sending and Receiving Messages}{subsection.4.2}
+\BOOKMARK [3][-]{subsubsection.4.2.3}{Transferring Pages}{subsection.4.2}
+\BOOKMARK [3][-]{subsubsection.4.2.4}{Implementing IPC}{subsection.4.2}

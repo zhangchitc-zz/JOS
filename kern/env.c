@@ -158,7 +158,9 @@ env_setup_vm(struct Env *e)
     // just copying mapping from boot_pgdir is enough
     //
     memmove (e->env_pgdir, boot_pgdir, PGSIZE);
-    memset (e->env_pgdir, 0, PDX(UTOP) * sizeof (pde_t));
+    
+    // Attention! no need to clear area below UTOP ! boot_pgdir is zero
+    //memset (e->env_pgdir, 0, PDX(UTOP) * sizeof (pde_t));
    
     // increase env_pgdir's pp_ref 
     p->pp_ref ++;

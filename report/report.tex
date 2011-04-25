@@ -1298,6 +1298,32 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 
 这一部分的MIT材料非常的重要，提到了很多实现上的细节。
 
+\newpage
+
+\begin{lstlisting}[style=exercise]
+|Exercise 7.| Implement fork, duppage and pgfault in lib/fork.c.
+
+Test your code with the forktree program. It should produce the following messages, with interspersed 'new env', 'free env', and 'exiting gracefully' messages. The messages may not appear in this order, and the environment IDs may be different.
+
+	1001: I am ''
+	1802: I am '0'
+	2801: I am '00'
+	3802: I am '000'
+	2003: I am '1'
+	5001: I am '11'
+	4802: I am '10'
+	6801: I am '100'
+	5803: I am '110'
+	3004: I am '01'
+	8001: I am '011'
+	7803: I am '010'
+	4005: I am '001'
+	6006: I am '111'
+	7007: I am '101'
+\end{lstlisting}
+
+\vspace{4em}
+
 首先来看看页错误处理程序 \funcname{pgfault()}，这个函数在材料中提到了需要找到用户程序访问的地址对应页表项来查看它的权限，用户程序要如何访问页目录和页表呢？这就涉及到lab2中的细节了。
 
 请阅读我lab2报告中3.2 Reference counting一节关于$[\mathrm{UVPT}, \mathrm{ULIM})$这段内存区域的详细说明，里面讲述的给定一个虚拟地址，如何构造新的虚拟地址来得到它对应的\highlight{页目录表项}和\highlight{页表表项}的具体方法。这里稍微总结一下：
@@ -1376,12 +1402,12 @@ vpt[VPN(va)] &= vpt + VPN(va) << 2 \notag \\
              &= UVPT + (va >> 10) \notag  
 \end{align}
 
-即我们前面说到的页表表项地址构造方法！页目录的方法也类似。
+即我们前面说到的页表表项地址构造方法vaddr = UVPT[31:22]$\left|\right.$PDX$\left|\right.$PTX$\left|\right.$00！页目录的方法也类似。
 
 
 好了有了这个的铺垫，我们可以开始看看实际的代码了：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/pgfault.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/fork.c: pgfault()}]
 static void
 pgfault(struct UTrapframe *utf)
 {
@@ -1412,76 +1438,167 @@ pgfault(struct UTrapframe *utf)
 \item{第15行，在分配了新的物理页以后准备开始从原页面开始拷贝数据时，记得将地址和物理页大小对齐}
 \end{enumerate}
 
+\vspace{2em}
+\hrule
+\vspace{2em}
 
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+接下来看 \funcname{duppage()}，这个函数负责进行COW方式的页复制：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/fork.c: duppage()}]
+static int
+duppage(envid_t envid, unsigned pn)
+{
+	int r;
+
+    void * addr = (void *) ((uint32_t) pn * PGSIZE);
+    pte_t pte = vpt[VPN(addr)];
+
+    if ((pte & PTE_W) > 0 || (pte & PTE_COW) > 0) {
+        if ((r = sys_page_map (0, addr, envid, addr, PTE_U|PTE_P|PTE_COW)) < 0)
+            panic ("duppage: page re-mapping failed at 1 : %e", r);
+
+        if ((r = sys_page_map (0, addr, 0, addr, PTE_U|PTE_P|PTE_COW)) < 0)
+            panic ("duppage: page re-mapping failed at 2 : %e", r);
+
+    } else {
+        if ((r = sys_page_map (0, addr, envid, addr, PTE_U|PTE_P)) < 0)
+            panic ("duppage: page re-mapping failed at 3 : %e", r);
+    }
+     
+    return 0;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+唯一要注意的就是它传入的参数是物理页号，所以要作相应的地址运算。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+最后来看fork函数：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/fork.c: fork()}]
+envid_t
+fork(void)
+{
+    set_pgfault_handler (pgfault);
+
+    envid_t envid;
+    uint32_t addr;
+    int r;
+
+    envid = sys_exofork();
+	
+    if (envid < 0)
+        panic("sys_exofork: %e", envid);
+
+    // We're the child
+    if (envid == 0) {
+        env = &envs[ENVX(sys_getenvid())];
+        return 0;
+    }
+
+	// We're the parent.
+    for (addr = UTEXT; addr < UXSTACKTOP - PGSIZE; addr += PGSIZE) {
+        if ((vpd[VPD(addr)] & PTE_P) > 0 && (vpt[VPN(addr)] & PTE_P) > 0 && (vpt[VPN(addr)] & PTE_U) > 0)
+            duppage (envid, VPN(addr));
+    }
+
+    if ((r = sys_page_alloc (envid, (void *)(UXSTACKTOP - PGSIZE), PTE_U|PTE_W|PTE_P)) < 0)
+        panic ("fork: page allocation failed : %e", r);
+
+    
+    extern void _pgfault_upcall (void);
+
+    sys_env_set_pgfault_upcall (envid, _pgfault_upcall);
+
+    // Start the child environment running
+    if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)
+        panic("fork: set child env status failed : %e", r);
+
+    return envid;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
-|Exercise 7.| Implement fork, duppage and pgfault in lib/fork.c.
-
-Test your code with the forktree program. It should produce the following messages, with interspersed 'new env', 'free env', and 'exiting gracefully' messages. The messages may not appear in this order, and the environment IDs may be different.
-
-	1001: I am ''
-	1802: I am '0'
-	2801: I am '00'
-	3802: I am '000'
-	2003: I am '1'
-	5001: I am '11'
-	4802: I am '10'
-	6801: I am '100'
-	5803: I am '110'
-	3004: I am '01'
-	8001: I am '011'
-	7803: I am '010'
-	4005: I am '001'
-	6006: I am '111'
-	7007: I am '101'
-\end{lstlisting}
+这里首先需要搞清楚关于页错误处理程序的控制流，请认真阅读绍老师讲义中的的相关章节，理解下图：
+\newpage
 
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.500]{/home/zhangchi/lab/report/pgfault.png}
+\end{figure}
 
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
+然后从上到下梳理一下代码：
 
+\begin{enumerate}
+\item{第4行，注意这里调用的是 \funcname{ set\_pgfault\_handler() } 而不是系统调用 \funcname{ sys\_env\_set\_pgfault\_upcall() }，\highlight{ 因为前者会检查用户程序的错误栈是否存在 }，如果没有则分配相应空间。我们无法得知父进程在调用fork前是否已经为错误栈分配了空间，所以不能直接调用后者}
+\item{第22行，拷贝从0到UXSTACKTOP之间的所有用户页面。因为我们在创建用户env时，已经在\funcname{env\_setup\_vm()} 中将UTOP（即UXSTACKTOP）之上的所有页面都映射到和内核一样，但是不要映射错误栈的空间，因为我们马上要给它创建新物理页。}
+\item{第33行，为子进程设置页错误处理程序。因为使用\funcname{env\_alloc()}创建的env的处理程序指针都为空，但是这时我们已经明确的为其错误栈分配了物理页面，所以可以直接使用系统调用指定错误处理的入口了，\_pgfault\_upcall为所有用户页错误处理程序的总入口。}
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
+\end{enumerate}
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
-\end{lstlisting}
-
-
-
-
+至此使用Copy on Write机制的fork函数就完成了，运行用户程序forktree能争取打印出Exercise要求的结果。任务完成！
 
 
 
 
 
 \section{Preemptive Multitasking and Inter-Process communication (IPC)}
+
+\subsection{Clock Interrupts and Preemption}
+
+\subsubsection{Interrupt discipline}
+
+\subsubsection{Handling Clock Interrupts}
+
+\subsection{Inter-Process communication (IPC)}
+
+\subsubsection{IPC in JOS}
+
+\subsubsection{Sending and Receiving Messages}
+
+\subsubsection{Transferring Pages}
+
+\subsubsection{Implementing IPC}
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+\end{lstlisting}
+
+
+
+
 
 
 
