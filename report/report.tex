@@ -1297,16 +1297,36 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 \subsection{Implementing Copy-on-Write Fork}
 
 
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
-
-
 \begin{lstlisting}[style=exercise]
+|Exercise 7.| Implement fork, duppage and pgfault in lib/fork.c.
+
+Test your code with the forktree program. It should produce the following messages, with interspersed 'new env', 'free env', and 'exiting gracefully' messages. The messages may not appear in this order, and the environment IDs may be different.
+
+	1001: I am ''
+	1802: I am '0'
+	2801: I am '00'
+	3802: I am '000'
+	2003: I am '1'
+	5001: I am '11'
+	4802: I am '10'
+	6801: I am '100'
+	5803: I am '110'
+	3004: I am '01'
+	8001: I am '011'
+	7803: I am '010'
+	4005: I am '001'
+	6006: I am '111'
+	7007: I am '101'
 \end{lstlisting}
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
 
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}

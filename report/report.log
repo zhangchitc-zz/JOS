@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  24 APR 2011 02:02
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  24 APR 2011 22:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -5279,7 +5279,7 @@ Package xcolor Warning: Incompatible color definition on input line 1285.
 Here is how much of TeX's memory you used:
  20629 strings out of 493848
  336508 string characters out of 1152822
- 987066 words of memory out of 3000000
+ 987067 words of memory out of 3000000
  22722 multiletter control sequences out of 15000+50000
  39948 words of font info for 131 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191

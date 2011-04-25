@@ -189,7 +189,7 @@ trap_dispatch(struct Trapframe *tf)
     int r;
 
     if (tf->tf_trapno == T_SYSCALL) {
-        
+      
         //cprintf ("zhangchi: eax = %d\n", tf->tf_regs.reg_eax);
         r = syscall (
                 tf->tf_regs.reg_eax, 
@@ -198,8 +198,6 @@ trap_dispatch(struct Trapframe *tf)
                 tf->tf_regs.reg_ebx, 
                 tf->tf_regs.reg_edi, 
                 tf->tf_regs.reg_esi); 
-        if (r < 0)
-            panic ("trap_dispatch: The System Call number is invalid");
 
         tf->tf_regs.reg_eax = r;
 

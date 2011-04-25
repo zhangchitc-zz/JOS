@@ -254,7 +254,6 @@ sys_page_map(envid_t srcenvid, void *srcva,
     ||  dstva >= (void *)UTOP || ROUNDUP (dstva, PGSIZE) != dstva)
         return -E_INVAL;
 
-
     // check permission
     if ((perm & PTE_U) == 0 || (perm & PTE_P) == 0)
         return -E_INVAL;
