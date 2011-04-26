@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  25 APR 2011 23:28
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  26 APR 2011 10:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -3051,49 +3051,49 @@ Package xcolor Warning: Incompatible color definition on input line 713.
 
 Package xcolor Warning: Incompatible color definition on input line 713.
 
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
+
+Package xcolor Warning: Incompatible color definition on input line 714.
+
 [11]
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
-
-Package xcolor Warning: Incompatible color definition on input line 714.
-
 LaTeX Font Info:    Try loading font information for OMS+ppl on input line 734.
 
-(/usr/share/texmf-texlive/tex/latex/psnfss/omsppl.fd
+ (/usr/share/texmf-texlive/tex/latex/psnfss/omsppl.fd
 File: omsppl.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ppl/m/n' in size <10> not available
@@ -6436,13 +6436,13 @@ Overfull \hbox (23.87723pt too wide) in paragraph at lines 1530--1531
 
 [27 </home/zhangchi/lab/report/pgfault.png (PNG copy)>] [28] (./report.aux) ) 
 Here is how much of TeX's memory you used:
- 20953 strings out of 493848
- 341408 string characters out of 1152822
- 987076 words of memory out of 3000000
- 22877 multiletter control sequences out of 15000+50000
+ 20955 strings out of 493848
+ 341496 string characters out of 1152822
+ 994079 words of memory out of 3000000
+ 22879 multiletter control sequences out of 15000+50000
  40731 words of font info for 134 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
- 54i,12n,116p,807b,1520s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 54i,12n,116p,807b,1526s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/
 usr/share/texmf-texlive/fonts/enc/dvips/base/8r.enc}</usr/share/texmf-texlive/f
 onts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/type1/
@@ -6501,7 +6501,7 @@ share/texmf-texlive/fonts/type1/urw/courier/ucrb8a.pfb></usr/share/texmf-texliv
 e/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/
 palatino/uplb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/palatino/uplr8a.p
 fb>
-Output written on report.pdf (28 pages, 889276 bytes).
+Output written on report.pdf (28 pages, 889204 bytes).
 PDF statistics:
  1547 PDF objects out of 1728 (max. 8388607)
  860 named destinations out of 1000 (max. 500000)

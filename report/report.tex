@@ -642,7 +642,7 @@ Type 'help' for a list of commands.
 
 \subsection{User-level page fault handling}
 
-\subsection{Setting the Page Fault Handler}
+\subsubsection{Setting the Page Fault Handler}
 
 \begin{lstlisting}[style=exercise]
 |Exercise 3.| Implement the sys_env_set_pgfault_upcall system call. Be sure to enable permission checking when looking up the environment ID of the target environment, since this is a "dangerous" system call.
@@ -665,7 +665,7 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 \end{lstlisting}
 
 
-\subsection{Normal and Exception Stacks in User Environments}
+\subsubsection{Normal and Exception Stacks in User Environments}
 
 首先梳理一下几个栈之间的关系。根据inc/memlayout.h中对于虚拟地址空间的描述，他们的布局如下：
 
@@ -849,7 +849,7 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 
 
 
-\subsection{Invoking the User Page Fault Handler}
+\subsubsection{Invoking the User Page Fault Handler}
 
 
 \begin{lstlisting}[style=exercise]
@@ -998,7 +998,7 @@ page_fault_handler(struct Trapframe *tf)
 
 
 
-\subsection{User-mode Page Fault Entrypoint}
+\subsubsection{User-mode Page Fault Entrypoint}
 
 \begin{lstlisting}[style=exercise]
 |Exercise 5.| Implement the _pgfault_upcall routine in lib/pfentry.S. The interesting part is returning to the original point in the user code that caused the page fault. You'll return directly there, without going back through the kernel. The hard part is simultaneously switching stacks and re-loading the EIP.
@@ -1290,7 +1290,7 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 当然记得在kern/syscall.c中添加对应的系统调用号分配程序，这样我们的代码就全部完成了！！
 
 
-\subsection{Testing}
+\subsubsection{Testing}
 
 测试全部顺利通过！
 
@@ -1552,7 +1552,190 @@ fork(void)
 
 \subsubsection{Interrupt discipline}
 
+
+\begin{lstlisting}[style=exercise]
+|Exercise 8.| Modify kern/trapentry.S and kern/trap.c to initialize the appropriate entries in the IDT and provide handlers for IRQs 0 through 15. Then modify the code in env_alloc() in kern/env.c to ensure that user environments are always run with interrupts enabled.
+
+The processor never pushes an error code or checks the Descriptor Privilege Level (DPL) of the IDT entry when invoking a hardware interrupt handler. You might want to re-read section 9.2 of the 80386 Reference Manual, or section 5.8 of the IA-32 Intel Architecture Software Developer's Manual, Volume 3, at this time.
+
+After doing this exercise, if you run your kernel with any test program that runs for a non-trivial length of time (e.g., spin), you should see the kernel print trap frames for hardware interrupts. While interrupts are now enabled in the processor, JOS isn't yet handling them, so you should see it misattribute each interrupt to the currently running user environment and destroy it. Eventually it should run out of environments to destroy and drop into the monitor.
+\end{lstlisting}
+
+这个部分模仿原来设置默认中断向量即可，先在kern/trapentry.S中定义相关的处理例程：
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/trapentry.S}]
+    TRAPHANDLER_NOEC(routine_mchk, T_MCHK)
+    TRAPHANDLER_NOEC(routine_simderr, T_SIMDERR)
+
+    TRAPHANDLER_NOEC(routine_syscall, T_SYSCALL)
+
+
+    # for IRQ handler
+    TRAPHANDLER_NOEC(routine_irq0, IRQ_OFFSET + 0);
+    TRAPHANDLER_NOEC(routine_irq1, IRQ_OFFSET + 1);
+    TRAPHANDLER_NOEC(routine_irq2, IRQ_OFFSET + 2);
+    TRAPHANDLER_NOEC(routine_irq3, IRQ_OFFSET + 3);
+    TRAPHANDLER_NOEC(routine_irq4, IRQ_OFFSET + 4);
+    TRAPHANDLER_NOEC(routine_irq5, IRQ_OFFSET + 5);
+    TRAPHANDLER_NOEC(routine_irq6, IRQ_OFFSET + 6);
+    TRAPHANDLER_NOEC(routine_irq7, IRQ_OFFSET + 7);
+    TRAPHANDLER_NOEC(routine_irq8, IRQ_OFFSET + 8);
+    TRAPHANDLER_NOEC(routine_irq9, IRQ_OFFSET + 9);
+    TRAPHANDLER_NOEC(routine_irq10, IRQ_OFFSET + 10);
+    TRAPHANDLER_NOEC(routine_irq11, IRQ_OFFSET + 11);
+    TRAPHANDLER_NOEC(routine_irq12, IRQ_OFFSET + 12);
+    TRAPHANDLER_NOEC(routine_irq13, IRQ_OFFSET + 13);
+    TRAPHANDLER_NOEC(routine_irq14, IRQ_OFFSET + 14);
+    TRAPHANDLER_NOEC(routine_irq15, IRQ_OFFSET + 15);
+
+/*
+ * Lab 3: Your code here for _alltraps
+ */
+_alltraps:
+
+\end{lstlisting}
+
+然后在IDT里注册，修改 \funcname{idt\_init()}：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: idt\_init()}]
+    // set IDT for irq handler
+    extern void routine_irq0 ();
+    extern void routine_irq1 ();
+    extern void routine_irq2 ();
+    extern void routine_irq3 ();
+    extern void routine_irq4 ();
+    extern void routine_irq5 ();
+    extern void routine_irq6 ();
+    extern void routine_irq7 ();
+    extern void routine_irq8 ();
+    extern void routine_irq9 ();
+    extern void routine_irq10 ();
+    extern void routine_irq11 ();
+    extern void routine_irq12 ();
+    extern void routine_irq13 ();
+    extern void routine_irq14 ();
+    extern void routine_irq15 ();
+
+
+    SETGATE (idt[IRQ_OFFSET + 0], 0, GD_KT, routine_irq0, 0);
+    SETGATE (idt[IRQ_OFFSET + 1], 0, GD_KT, routine_irq1, 0);
+    SETGATE (idt[IRQ_OFFSET + 2], 0, GD_KT, routine_irq2, 0);
+    SETGATE (idt[IRQ_OFFSET + 3], 0, GD_KT, routine_irq3, 0);
+    SETGATE (idt[IRQ_OFFSET + 4], 0, GD_KT, routine_irq4, 0);
+    SETGATE (idt[IRQ_OFFSET + 5], 0, GD_KT, routine_irq5, 0);
+    SETGATE (idt[IRQ_OFFSET + 6], 0, GD_KT, routine_irq6, 0);
+    SETGATE (idt[IRQ_OFFSET + 7], 0, GD_KT, routine_irq7, 0);
+    SETGATE (idt[IRQ_OFFSET + 8], 0, GD_KT, routine_irq8, 0);
+    SETGATE (idt[IRQ_OFFSET + 9], 0, GD_KT, routine_irq9, 0);
+    SETGATE (idt[IRQ_OFFSET + 10], 0, GD_KT, routine_irq10, 0);
+    SETGATE (idt[IRQ_OFFSET + 11], 0, GD_KT, routine_irq11, 0);
+    SETGATE (idt[IRQ_OFFSET + 12], 0, GD_KT, routine_irq12, 0);
+    SETGATE (idt[IRQ_OFFSET + 13], 0, GD_KT, routine_irq13, 0);
+    SETGATE (idt[IRQ_OFFSET + 14], 0, GD_KT, routine_irq14, 0);
+    SETGATE (idt[IRQ_OFFSET + 15], 0, GD_KT, routine_irq15, 0);
+    
+
+    // Setup a TSS so that we get the right stack
+    // when we trap to the kernel.
+    ts.ts_esp0 = KSTACKTOP;
+    ts.ts_ss0 = GD_KD;
+\end{lstlisting}
+
+创建用户进程时，只需要在其EFLAGS寄存器中打开IF位即可，这样等到运行时就会自动开启外部中断响应了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_alloc()}]
+	// Enable interrupts while in user mode.
+	// LAB 4: Your code here.
+        e->env_tf.tf_eflags |= FL_IF;
+\end{lstlisting}
+
+运行spin应该得到下面的输出了：
+
+\begin{lstlisting}[style=console]
+qemu -hda obj/kern/kernel.img -serial mon:stdio
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+enabled interrupts: 1 2
+	     Setup timer interrupts via 8259A
+enabled interrupts: 0 1 2
+	     unmasked timer interrupt
+[00000000] new env 00001000
+[00000000] new env 00001001
+I am the parent.  Forking the child...
+[00001001] new env 00001002
+TRAP frame at 0xf01f607c
+  edi  0xef400000
+  esi  0xef7bd000
+  ebp  0xeebfdfb0
+  oesp 0xefbfffdc
+  ebx  0x9a7ed000
+  edx  0x00000000
+  ecx  0x00802000
+  eax  0x00000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000020 Hardware Interrupt
+  err  0x00000000
+  eip  0x00801315
+  cs   0x----001b
+  flag 0x00000246
+  esp  0xeebfdf68
+  ss   0x----0023
+[00001001] free env 00001001
+Welcome to the JOS kernel monitor!
+\end{lstlisting}
+
+可以看到打开外部中断响应后Hardware Interrupt被成功捕获
+
+
 \subsubsection{Handling Clock Interrupts}
+
+
+\begin{lstlisting}[style=exercise]
+|Exercise 9.| Modify the kernel's trap_dispatch() function so that it calls sched_yield() to find and run a different environment whenever a clock interrupt takes place.
+
+You should now be able to get the user/spin test to work: the parent environment should fork off the child, sys_yield() to it a couple times but in each case regain control of the CPU after one time slice, and finally kill the child environment and terminate gracefully.
+\end{lstlisting}
+
+按照提示处理时钟中断：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/trap.c: trap\_dispatch()}]
+static void
+trap_dispatch(struct Trapframe *tf)
+{
+	// Handle clock interrupts.
+	// LAB 4: Your code here.
+        if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER)
+            sched_yield ();
+\end{lstlisting}
+
+这时运行spin应该就看到子进程交出权限然后被父进程销毁：
+
+\begin{lstlisting}[style=console]
+enabled interrupts: 1 2
+	     Setup timer interrupts via 8259A
+enabled interrupts: 0 1 2
+	     unmasked timer interrupt
+[00000000] new env 00001000
+[00000000] new env 00001001
+I am the parent.  Forking the child...
+[00001001] new env 00001002
+I am the parent.  Running the child...
+I am the child.  Spinning...
+I am the parent.  Killing the child...
+[00001001] destroying 00001002
+[00001001] free env 00001002
+[00001001] exiting gracefully
+[00001001] free env 00001001
+Welcome to the JOS kernel monitor!
+\end{lstlisting}
+
+运行make grade应该可以得到pingpong以前的所有分数了。
+
 
 \subsection{Inter-Process communication (IPC)}
 
@@ -1562,26 +1745,200 @@ fork(void)
 
 \subsubsection{Transferring Pages}
 
+在读懂JOS中实现IPC的机制以后，我们要来看看实现这个机制需要修改Env的地方：
+
+\begin{lstlisting}[style=ccode, firstnumber=38, title={\scriptsize \ttfamily \bfseries inc/env.h}]
+struct Env {
+	struct Trapframe env_tf;	// Saved registers
+	LIST_ENTRY(Env) env_link;	// Free list link pointers
+	envid_t env_id;			// Unique environment identifier
+	envid_t env_parent_id;		// env_id of this env's parent
+	unsigned env_status;		// Status of the environment
+	uint32_t env_runs;		// Number of times environment has run
+
+	// Address space
+	pde_t *env_pgdir;		// Kernel virtual address of page dir
+	physaddr_t env_cr3;		// Physical address of page dir
+
+	// Exception handling
+	void *env_pgfault_upcall;	// page fault upcall entry point
+
+	// Lab 4 IPC
+	bool env_ipc_recving;		// env is blocked receiving
+	void *env_ipc_dstva;		// va at which to map received page
+	uint32_t env_ipc_value;		// data value sent to us 
+	envid_t env_ipc_from;		// envid of the sender	
+	int env_ipc_perm;		// perm of page mapping received
+};
+
+\end{lstlisting}
+
+其中增加了5个成员：
+
+\begin{description}
+\item[env\_ipc\_recving] ：\\
+当进程使用 \funcname{sys\_ipc\_recv()} 等待信息时，会将这个成员置为1，然后阻塞等待；当一个进程像它发消息解除阻塞后，发送进程将此成员修改为0
+\item[env\_ipc\_dstva] ：\\
+如果进程要接受消息，并且是传送页，则该地址 $\leq$ UTOP
+\item[env\_ipc\_value] ：\\
+若等待消息的进程接受到了消息，发送方将接受方此成员置为消息值
+\item[env\_ipc\_from] ：\\
+发送方负责设置该成员为自己的envid号
+\item[env\_ipc\_perm] ：\\
+如果进程要接受消息，并且传送页，那么发送方发送页以后将传送的页权限传给这个成员.
+\end{description}
+
 \subsubsection{Implementing IPC}
 
 
+\begin{lstlisting}[style=exercise]
+|Exercise 10.| Implement sys_ipc_recv and sys_ipc_try_send in kern/syscall.c. Read the comments on both before implementing them, since they have to work together. When you call envid2env in these routines, you should set the checkperm flag to 0, meaning that any environment is allowed to send IPC messages to any other environment, and the kernel does no special permission checking other than verifying that the target envid is valid.
+
+Then implement the ipc_recv and ipc_send functions in lib/ipc.c.
+
+Use the user/pingpong and user/primes functions to test your IPC mechanism. You might find it interesting to read user/primes.c to see all the forking and IPC going on behind the scenes.
+\end{lstlisting}
+
+这一部分的代码很好写，因为相对注释都非常完善，按照一步一步来就行了，首先是两个系统调用：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c}]
+static int
+sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
+{
+    struct Env *dstenv;
+    int r;
+
+
+    // target env does not exist
+    if ((r = envid2env (envid, &dstenv, 0)) < 0)
+        return -E_BAD_ENV;
+
+
+    // target env is not blocked or message has been sent
+    if (!dstenv->env_ipc_recving || dstenv->env_ipc_from != 0)
+        return -E_IPC_NOT_RECV;
+
+    // srcva < UTOP but not page aligned
+    if (srcva < (void *) UTOP && ROUNDDOWN (srcva, PGSIZE) != srcva)
+        return -E_INVAL;
+
+
+    if (srcva < (void *) UTOP) {
+        // check permission
+        if ((perm & PTE_U) == 0 || (perm & PTE_P) == 0)
+            return -E_INVAL;
+        // PTE_USER = PTE_U | PTE_P | PTE_W | PTE_AVAIL
+        if ((perm & ~PTE_USER) > 0)
+            return -E_INVAL;
+    }
+
+
+    pte_t *pte;
+    struct Page *p;
+
+    // the page is not mapped in current env
+    if (srcva < (void *) UTOP && (p = page_lookup (curenv->env_pgdir, srcva, &pte)) == NULL)
+        return -E_INVAL;
+
+    if (srcva < (void *) UTOP && (*pte & PTE_W) == 0 && (perm & PTE_W) > 0)
+        return -E_INVAL;
+
+
+    // will send a page
+    if (srcva < (void *) UTOP && dstenv->env_ipc_dstva != 0) {
+        if (page_insert (dstenv->env_pgdir, p, dstenv->env_ipc_dstva, perm) < 0)
+            return -E_NO_MEM;
+
+        dstenv->env_ipc_perm = perm;
+    }
+
+    dstenv->env_ipc_from = curenv->env_id;
+    dstenv->env_ipc_value = value;
+    dstenv->env_status = ENV_RUNNABLE;
+    dstenv->env_ipc_recving = 0;
+    dstenv->env_tf.tf_regs.reg_eax = 0;
+
+    return 0;
+}
+
+static int
+sys_ipc_recv(void *dstva)
+{
+    if (dstva < (void *) UTOP && ROUNDDOWN (dstva, PGSIZE) != dstva)
+        return -E_INVAL;
+
+    curenv->env_ipc_dstva = dstva;
+    curenv->env_ipc_recving = 1;
+    curenv->env_ipc_from = 0;
+    curenv->env_status = ENV_NOT_RUNNABLE;
+
+    sched_yield ();
+}
+\end{lstlisting}
+
+完成后记得添加相应的分发机制，把这两个调用号加上。
+
+\vspace{2em}
+
+然后就是两个库函数:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/ipc.c}]
+int32_t
+ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
+{
+    int r;
+    
+    if (pg != NULL)
+        r = sys_ipc_recv ((void *) UTOP);
+    else
+        r = sys_ipc_recv (pg);
+
+
+    struct Env *curenv = (struct Env *) envs + ENVX (sys_getenvid ());
+
+    if (from_env_store != NULL)
+        *from_env_store = r < 0 ? 0 : curenv->env_ipc_from;
+
+    if (perm_store != NULL)
+        *perm_store = r < 0 ? 0 : curenv->env_ipc_perm;
+
+    if (r < 0)
+        return r;
+
+	return curenv->env_ipc_value;
+}
+
+void
+ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
+{
+    int r;
+
+    while ((r = sys_ipc_try_send (to_env, val, pg != NULL ? pg : (void *) UTOP, perm)) < 0) {    
+        if (r != -E_IPC_NOT_RECV)
+            panic ("ipc_send: send message error %e", r);
+
+        sys_yield ();
+    }
+}
+\end{lstlisting}
+
+这里要注意的是现在已经是在用户态下使用的库函数，那么在系统调用里的那些内核变量没有了，比如在 \funcname{ipc\_recv()} 里需要用到当前环境的env，那么就只能通过envs来查找，envs定义在lib/entry.S 中。
+
+\vspace{2em}
+
+至此lab4全部Exercise完成，可以通过make grade的所有测试。
+
 \begin{lstlisting}[style=console]
 \end{lstlisting}
 
 \begin{lstlisting}[style=console]
 \end{lstlisting}
-
-
-
-\begin{lstlisting}[style=exercise]
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+\begin{lstlisting}[style=console]
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
 
 
 \begin{lstlisting}[style=exercise]

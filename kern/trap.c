@@ -115,6 +115,45 @@ idt_init(void)
 
 
 
+
+
+    // set IDT for irq handler
+    extern void routine_irq0 ();
+    extern void routine_irq1 ();
+    extern void routine_irq2 ();
+    extern void routine_irq3 ();
+    extern void routine_irq4 ();
+    extern void routine_irq5 ();
+    extern void routine_irq6 ();
+    extern void routine_irq7 ();
+    extern void routine_irq8 ();
+    extern void routine_irq9 ();
+    extern void routine_irq10 ();
+    extern void routine_irq11 ();
+    extern void routine_irq12 ();
+    extern void routine_irq13 ();
+    extern void routine_irq14 ();
+    extern void routine_irq15 ();
+
+
+    SETGATE (idt[IRQ_OFFSET + 0], 0, GD_KT, routine_irq0, 0);
+    SETGATE (idt[IRQ_OFFSET + 1], 0, GD_KT, routine_irq1, 0);
+    SETGATE (idt[IRQ_OFFSET + 2], 0, GD_KT, routine_irq2, 0);
+    SETGATE (idt[IRQ_OFFSET + 3], 0, GD_KT, routine_irq3, 0);
+    SETGATE (idt[IRQ_OFFSET + 4], 0, GD_KT, routine_irq4, 0);
+    SETGATE (idt[IRQ_OFFSET + 5], 0, GD_KT, routine_irq5, 0);
+    SETGATE (idt[IRQ_OFFSET + 6], 0, GD_KT, routine_irq6, 0);
+    SETGATE (idt[IRQ_OFFSET + 7], 0, GD_KT, routine_irq7, 0);
+    SETGATE (idt[IRQ_OFFSET + 8], 0, GD_KT, routine_irq8, 0);
+    SETGATE (idt[IRQ_OFFSET + 9], 0, GD_KT, routine_irq9, 0);
+    SETGATE (idt[IRQ_OFFSET + 10], 0, GD_KT, routine_irq10, 0);
+    SETGATE (idt[IRQ_OFFSET + 11], 0, GD_KT, routine_irq11, 0);
+    SETGATE (idt[IRQ_OFFSET + 12], 0, GD_KT, routine_irq12, 0);
+    SETGATE (idt[IRQ_OFFSET + 13], 0, GD_KT, routine_irq13, 0);
+    SETGATE (idt[IRQ_OFFSET + 14], 0, GD_KT, routine_irq14, 0);
+    SETGATE (idt[IRQ_OFFSET + 15], 0, GD_KT, routine_irq15, 0);
+    
+
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
 	ts.ts_esp0 = KSTACKTOP;
@@ -167,6 +206,8 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle clock interrupts.
 	// LAB 4: Your code here.
+    if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER)
+        sched_yield ();
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
