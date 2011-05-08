@@ -50,7 +50,7 @@ i386_init(void)
 	ENV_CREATE(user_idle);
 
 	// Start fs.
-	ENV_CREATE(fs_fs);
+	//ENV_CREATE(fs_fs);
 
 #if defined(TEST)
 	// Don't touch -- used by grading script!
