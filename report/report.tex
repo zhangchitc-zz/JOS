@@ -213,6 +213,8 @@
 
 \subsubsection{The Block Bitmap: Managing Free Disk Blocks}
 
+\label{bitmap}
+
 \subsubsection{File Meta-data}
 
 \subsubsection{Directories versus Regular Files}
@@ -221,7 +223,348 @@
 
 \subsection{Disk Access}
 
+\begin{lstlisting}[style=exercise]
+|Exercise 1|. Modify your kernel's environment initialization function, env_alloc in env.c, so that it gives environment 1 I/O privilege, but never gives that privilege to any other environment.
+
+Make sure you can start the file environment without causing a General Protection fault. You should pass the "fs i/o" test in make grade.
+\end{lstlisting}
+
+材料中已经说的很明确了，只要在envs[1]被创建时候将EFLAGS置位即可：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c: env\_alloc ()}]
+	// If this is the file server (e == &envs[1]) give it I/O privileges.
+	// LAB 5: Your code here.
+	if (e == &envs[1])
+		e->env_tf.tf_eflags |= FL_IOPL_3;
+\end{lstlisting}
+
+
+材料里后来提了一句：
+
+\begin{lstlisting}[style=exercise]
+Do you have to do anything else to ensure that this I/O privilege setting is saved and restored properly when you subsequently switch from one environment to another? Make sure you understand how this environment state is handled.
+\end{lstlisting}
+
+然后我特意去看了一下进程切换的代码，关键部分应该是kern/env.c中的 \funcname{ env\_run()}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/env.c}]
+void
+env_pop_tf(struct Trapframe *tf)
+{
+	__asm __volatile("movl %0,%%esp\n"
+		"\tpopal\n"
+		"\tpopl %%es\n"
+		"\tpopl %%ds\n"
+		"\taddl $0x8,%%esp\n" /* skip tf_trapno and tf_errcode */
+		"\tiret"
+		: : "g" (tf) : "memory");
+	panic("iret failed");  /* mostly to placate the compiler */
+}
+
+void
+env_run(struct Env *e)
+{
+    if (curenv != e) {
+        curenv = e;
+        curenv->env_runs ++;
+        lcr3 (curenv->env_cr3);
+    }
+
+    env_pop_tf (&curenv->env_tf);
+}
+\end{lstlisting}
+
+寄存器的恢复是在\funcname{env\_pop\_tf ()}中完成的，里面好像没有恢复eflags，但是我在lab3的报告里将\funcname{env\_pop\_tf ()}的过程进行了详细的说明，其中popal指令从栈中恢复了所有的通用寄存器，然后是在iret指令中恢复了eip, cs以及eflags寄存器。
+
+\vspace{2em}
+
+\hrule
+
+\vspace{2em}
+
+在继续作下面的部分前，我们先好好看一下文件系统实现的一些细节，看到：fs/fs.h
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.h}]
+#include <inc/fs.h>
+#include <inc/lib.h>
+
+#define SECTSIZE	512			// bytes per disk sector
+#define BLKSECTS	(BLKSIZE / SECTSIZE)	// sectors per block
+
+/* Disk block n, when in memory, is mapped into the file system
+ * server's address space at DISKMAP + (n*BLKSIZE). */
+#define DISKMAP		0x10000000
+
+/* Maximum disk size we can handle (3GB) */
+#define DISKSIZE	0xC0000000
+
+struct Super *super;		// superblock
+uint32_t *bitmap;		// bitmap blocks mapped in memory
+
+/* ide.c */
+bool	ide_probe_disk1(void);
+void	ide_set_disk(int diskno);
+int	ide_read(uint32_t secno, void *dst, size_t nsecs);
+int	ide_write(uint32_t secno, const void *src, size_t nsecs);
+
+/* bc.c */
+void*	diskaddr(uint32_t blockno);
+bool	va_is_mapped(void *va);
+bool	va_is_dirty(void *va);
+void	flush_block(void *addr);
+void	bc_init(void);
+
+/* fs.c */
+void	fs_init(void);
+int	file_get_block(struct File *f, uint32_t file_blockno, char **pblk);
+int	file_create(const char *path, struct File **f);
+int	file_open(const char *path, struct File **f);
+ssize_t	file_read(struct File *f, void *buf, size_t count, off_t offset);
+int	file_write(struct File *f, const void *buf, size_t count, off_t offset);
+int	file_set_size(struct File *f, off_t newsize);
+void	file_flush(struct File *f);
+int	file_remove(const char *path);
+void	fs_sync(void);
+
+/* int	map_block(uint32_t); */
+bool	block_is_free(uint32_t blockno);
+int	alloc_block(void);
+
+/* test.c */
+void	fs_test(void);
+\end{lstlisting}
+
+从这里可以看到文件系统实现细节被分成了三个大的模块：
+
+\begin{itemize}
+\item{ide.c: 提供IDE磁盘的驱动，比如对特定扇区(sector)的读写以及切换操作磁盘（master和slave）}
+\item{bc.c: 提供磁盘的块缓存实现机制，这个后面会详细说明。大体意义是因为磁盘最大可以支持到3G，而这么大的磁盘空间不可能是被同时使用的，所以当用户请求读写一块磁盘区域时，将其加载到文件系统进程的虚拟地址里，这样就可以用比较小的内存操作很大一块磁盘。而bc（磁盘块缓存）就是专门为文件系统服务进程实现这部分功能的模块}
+\item{fs.c: 文件系统的核心功能，比如文件的增删和读写}
+\end{itemize}
+
+倒是材料里提到的fs/serv.c（真正的文件系统服务器进程的实现）我们可以稍等一下再来关注。
+
 \subsection{The Block Cache}
+
+这里描述了磁盘块缓冲的具体机制：
+
+因为JOS支持的磁盘大小最大在3GB左右，所以我们可以使用类似lab4中实现fork的COW页面机制，也就是
+
+\begin{enumerate}
+\item{用文件系统服务进程的虚拟地址空间（4GB）对应到磁盘的地址空间上（3GB）}
+\item{初始文件系统服务进程里什么页面都没映射，如果要访问一个磁盘的地址空间，则发生页错误}
+\item{在页错误处理程序中，在内存中申请一个块的空间映射到相应的文件系统虚拟地址上，然后去实际的物理磁盘上读取这个区域的东西到这个内存区域上，然后恢复文件系统服务进程}
+\end{enumerate}
+
+这样就使用用户进程的机制完成了对于物理磁盘的读写机制，并且尽量少节省了内存。当然这里也有一个取巧的地方就是用虚拟地址空间模拟磁盘地址空间，但是材料中也提到了：
+
+\begin{lstlisting}[style=exercise]
+It would be awkward for a real file system implementation on a 32-bit machine to do this since modern disks are larger than 3GB.
+\end{lstlisting}
+
+因为一般机器硬盘显然不止3GB，但是一个32位机器虚拟地址只有4GB的地址空间，所以这里JOS的做法是为了方便而取了巧。
+
+\vspace{3em}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 2|. Implement the bc_pgfault and flush_block functions in fs/bc.c. bc_pgfault is a page fault handler, just like the one your wrote in the previous lab for copy-on-write fork, except that its job is to load pages in from the disk in response to a page fault. When writing this, keep in mind that (1) addr may not be aligned to a block boundary and (2) ide_read operates in sectors, not blocks.
+
+The flush_block function should write a block out to disk if necessary. flush_block shouldn't do anything if the block isn't even in the block cache (that is, the page isn't mapped) or if it's not dirty. We will use the VM hardware to keep track of whether a disk block has been modified since it was last read from or written to disk. To see whether a block needs writing, we can just look to see if the PTE_D "dirty" bit is set in the vpt entry. (The PTE_D bit is set by the processor in response to a write to that page; see 5.2.4.3 in chapter 5 of the 386 reference manual.) After writing the block to disk, flush_block should clear the PTE_D bit using sys_page_map.
+
+Use make grade to test your code. Your code should pass "check_bc", "check_super", and "check_bitmap" for a score of 20/100.
+\end{lstlisting}
+
+首先我们要实现的是磁盘块缓冲的页面处理部分和写回部分，根据前面的铺垫，这两个地方要作的具体工作应该都很清楚了，他们主要用到的函数是跟磁盘直接交互的ide驱动：
+
+\begin{lstlisting}[style=ccode]
+int ide_read(uint32_t secno, void *dst, size_t nsecs);
+int ide_write(uint32_t secno, void *dst, size_t nsecs);
+\end{lstlisting}
+
+secno对应IDE磁盘上的扇区编号，dst为当前文件系统服务程序空间中的对应地址，nsecs为读写的扇区数。了解完以后相应的编码就很简单了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fc/bc.c}]
+static void
+bc_pgfault(struct UTrapframe *utf)
+{
+	void *addr = (void *) utf->utf_fault_va;
+	uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
+	int r;
+
+	// Check that the fault was within the block cache region
+	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
+		panic("page fault in FS: eip %08x, va %08x, err %04x",
+		      utf->utf_eip, addr, utf->utf_err);
+
+    
+        // PGSIZE = BLKSIZE
+        addr = ROUNDDOWN (addr, PGSIZE);
+
+        if ((r = sys_page_alloc (0, addr, PTE_U|PTE_P|PTE_W)) < 0)
+            panic ("bc_pgfault: page allocation failed : %e", r);
+
+        // read the whole block[blockno]
+        ide_read (blockno * BLKSECTS, addr, BLKSECTS);
+
+
+
+	// Sanity check the block number. (exercise for the reader:
+	// why do we do this *after* reading the block in?)
+	if (super && blockno >= super->s_nblocks)
+		panic("reading non-existent block %08x\n", blockno);
+
+	// Check that the block we read was allocated.
+	if (bitmap && block_is_free(blockno))
+		panic("reading free block %08x\n", blockno);
+}
+
+void
+flush_block(void *addr)
+{
+	uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
+
+	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
+		panic("flush_block of bad va %08x", addr);
+
+	// LAB 5: Your code here.
+
+        addr = ROUNDDOWN (addr, PGSIZE);
+
+        int r;
+
+        if (va_is_mapped (addr) && va_is_dirty (addr)) {
+            ide_write (blockno * BLKSECTS, addr, BLKSECTS);
+        
+            if ((r = sys_page_map (0, addr, 0, addr, PTE_USER)) < 0)
+                panic ("flush_block: page mapping failed : %e", r);
+        }
+}
+\end{lstlisting}
+
+\vspace{2em}
+
+做完这部分以后进行make qemu可以通过check\_bc, check\_super 以及 check\_bitmap 三个测试。他们是在 fs/fs.c中的 \funcname {fs\_init ()} 中完成的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: fs\_init()}]
+void
+fs_init(void)
+{
+	static_assert(sizeof(struct File) == 256);
+
+	// Find a JOS disk.  Use the second IDE disk (number 1) if available.
+	if (ide_probe_disk1())
+		ide_set_disk(1);
+	else
+		ide_set_disk(0);
+	
+	bc_init();
+
+	// Set "super" to point to the super block.
+	super = diskaddr(1);
+	// Set "bitmap" to the beginning of the first bitmap block.
+	bitmap = diskaddr(2);
+
+	check_super();
+	check_bitmap();
+}
+\end{lstlisting}
+
+其中 \funcname{bc\_init ()} 就是简单的安装一下页错误处理程序。主要是这里设置起了文件系统的超级块Super，可以看到文件系统将第Super块指向了文件系统的Block 1，然后块位图指向了Block 2。这里对应了在\ref{bitmap}中呈现的那张磁盘规划图。
+
+块位图是没有相关结构的（因为就是直接读取特定二进制位），关于Super结构的具体定义在 inc/fs.h中:
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries inc/fs.h}]
+// See COPYRIGHT for copyright information.
+
+#ifndef JOS_INC_FS_H
+#define JOS_INC_FS_H
+
+#include <inc/types.h>
+#include <inc/mmu.h>
+
+// File nodes (both in-memory and on-disk)
+
+// Bytes per file system block - same as page size
+#define BLKSIZE		PGSIZE
+#define BLKBITSIZE	(BLKSIZE * 8)
+
+// Maximum size of a filename (a single path component), including null
+// Must be a multiple of 4
+#define MAXNAMELEN	128
+
+// Maximum size of a complete pathname, including null
+#define MAXPATHLEN	1024
+
+// Number of block pointers in a File descriptor
+#define NDIRECT		10
+// Number of direct block pointers in an indirect block
+#define NINDIRECT	(BLKSIZE / 4)
+
+#define MAXFILESIZE	((NDIRECT + NINDIRECT) * BLKSIZE)
+
+struct File {
+	char f_name[MAXNAMELEN];	// filename
+	off_t f_size;			// file size in bytes
+	uint32_t f_type;		// file type
+
+	// Block pointers.
+	// A block is allocated iff its value is != 0.
+	uint32_t f_direct[NDIRECT];	// direct blocks
+	uint32_t f_indirect;		// indirect block
+
+	// Pad out to 256 bytes; must do arithmetic in case we're compiling
+	// fsformat on a 64-bit machine.
+	uint8_t f_pad[256 - MAXNAMELEN - 8 - 4*NDIRECT - 4];
+} __attribute__((packed));	// required only on some 64-bit machines
+
+// An inode block contains exactly BLKFILES 'struct File's
+#define BLKFILES	(BLKSIZE / sizeof(struct File))
+
+// File types
+#define FTYPE_REG	0	// Regular file
+#define FTYPE_DIR	1	// Directory
+
+
+// File system super-block (both in-memory and on-disk)
+
+#define FS_MAGIC	0x4A0530AE	// related vaguely to 'J\0S!'
+
+struct Super {
+	uint32_t s_magic;		// Magic number: FS_MAGIC
+	uint32_t s_nblocks;		// Total number of blocks on disk
+	struct File s_root;		// Root directory node
+};
+\end{lstlisting}
+
+\begin{itemize}
+\item{首先几个常数要读清楚，可以熟悉JOS的一些细节规定}
+\item{一个File的大小为256 bytes，所以一个块中可以放下4个File结构。其具体的域在MIT材料的第一段预备知识中已经有过详细叙述}
+\end{itemize}
+
+从这里可以看到一个Super其实没有占用一个块大小，大概就是一个File大小（256）加两个DWORDS，而块位图则占用了8个块大小（BLKBITSIZE）。
+
+后面马上我们就要对相关结构进行处理。
+
+\subsection{The Block Bitmap}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 3|. Use free_block as a model to implement alloc_block, which should find a free disk block in the bitmap, mark it used, and return the number of that block. When you allocate a block, you should immediately flush the changed bitmap block to disk with flush_block, to help file system consistency.
+
+Use make grade to test your code. Your code should now pass "alloc_block" for a score of 25/100.
+\end{lstlisting}
+
+\subsection{File Operations}
+
+\subsection{Client/Server File System Access}
+
+\subsection{Client-Side File Operations}
+
+\subsection{Spawning Processes}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
 \end{lstlisting}
