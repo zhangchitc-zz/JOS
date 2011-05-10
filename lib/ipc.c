@@ -23,10 +23,9 @@ int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
 	// LAB 4: Your code here.
-	
     int r;
     
-    if (pg != NULL)
+    if (pg == NULL)
         r = sys_ipc_recv ((void *) UTOP);
     else
         r = sys_ipc_recv (pg);

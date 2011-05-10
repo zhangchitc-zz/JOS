@@ -80,6 +80,21 @@
 
 % 设置代码风格
 
+% 定义makefile代码风格
+\lstdefinestyle{mcode}
+{ 
+    language=make, 
+    numbers=left, 
+    numberstyle=\color{numbercolor},
+    basicstyle=\scriptsize\ttfamily\bfseries,
+    keywordstyle=\color{blue}, 
+    commentstyle=\color{PineGreen},
+    stringstyle=\color{red}, 
+    frame=shadowbox, 
+    frameround=tttt,
+    breaklines=true,
+    backgroundcolor=\color{lightgray} }
+    
 % 定义C语言代码风格
 \lstdefinestyle{ccode}
 { 
@@ -443,7 +458,7 @@ flush_block(void *addr)
 
 \vspace{2em}
 
-做完这部分以后进行make qemu可以通过check\_bc, check\_super 以及 check\_bitmap 三个测试。他们是在 fs/fs.c中的 \funcname {fs\_init ()} 中完成的：
+做完这部分以后进行make qemu可以通过check\_bc, check\_super 以及 check\_bitmap 三个测试。他们是在 fs/fs.c中的 \funcname {fs\_init()} 中完成的：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: fs\_init()}]
 void
@@ -469,7 +484,7 @@ fs_init(void)
 }
 \end{lstlisting}
 
-其中 \funcname{bc\_init ()} 就是简单的安装一下页错误处理程序。主要是这里设置起了文件系统的超级块Super，可以看到文件系统将第Super块指向了文件系统的Block 1，然后块位图指向了Block 2。这里对应了在\ref{bitmap}中呈现的那张磁盘规划图。
+其中 \funcname{bc\_init()} 就是简单的安装一下页错误处理程序。主要是这里设置起了文件系统的超级块Super，可以看到文件系统将第Super块指向了文件系统的Block 1，然后块位图指向了Block 2。这里对应了在\ref{bitmap}中呈现的那张磁盘规划图。
 
 块位图是没有相关结构的（因为就是直接读取特定二进制位），关于Super结构的具体定义在 inc/fs.h中:
 
@@ -542,9 +557,199 @@ struct Super {
 \item{一个File的大小为256 bytes，所以一个块中可以放下4个File结构。其具体的域在MIT材料的第一段预备知识中已经有过详细叙述}
 \end{itemize}
 
-从这里可以看到一个Super其实没有占用一个块大小，大概就是一个File大小（256）加两个DWORDS，而块位图则占用了8个块大小（BLKBITSIZE）。
+从这里可以看到一个Super其实没有占用一个块大小，大概就是一个File大小（256）加两个DWORDS，而块位图则占用了8个块大小（BLKBITSIZE）。后面马上我们就要对相关结构进行处理。
 
-后面马上我们就要对相关结构进行处理。
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+但是这里还有一个问题存在我的脑子中，就是我们这里只对Super指针的地址进行了赋值，那实际内存区域里存的东西是什么时候被初始化的呢？我找了很久，终于在张顺廷湿胸的提醒下去看了看fs/fsformat.c，才恍然大悟：
+
+\begin{enumerate}
+\item{首先，Super的指针赋值为：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: fs\_init()}]
+	// Set "super" to point to the super block.
+	super = diskaddr(1);
+}
+\end{lstlisting}
+
+diskaddr定义在fs/bc.c中：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/bc.c: diskaddr()}]
+void*
+diskaddr(uint32_t blockno)
+{
+	if (blockno == 0 || (super && blockno >= super->s_nblocks))
+		panic("bad block number %08x in diskaddr", blockno);
+	return (char*) (DISKMAP + blockno * BLKSIZE);
+}
+\end{lstlisting}
+
+可见Super的位置是虚拟地址空间的第一块，当这个块被访问的时候，自然会使用磁盘块缓存机制读取到用户空间中，读取来源是IDE磁盘。
+}
+
+\item{这个IDE磁盘是哪里来的呢？在JOS里是以镜像文件由QEMU模拟成IDE磁盘的，产生方式在fs/Makefrag里有详细过程：
+
+\begin{lstlisting}[style=mcode, title={\scriptsize \ttfamily \bfseries fs/Makefrag}]
+
+OBJDIRS += fs
+
+FSOFILES := 		$(OBJDIR)/fs/ide.o \
+			$(OBJDIR)/fs/bc.o \
+			$(OBJDIR)/fs/fs.o \
+			$(OBJDIR)/fs/serv.o \
+			$(OBJDIR)/fs/test.o \
+
+USERAPPS := 		$(OBJDIR)/user/init
+
+FSIMGTXTFILES :=	fs/newmotd \
+			fs/motd
+
+
+
+FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)
+
+$(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h
+	@echo + cc[USER] $<
+	@mkdir -p $(@D)
+	$(V)$(CC) -nostdinc $(USER_CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/fs/fs: $(FSOFILES) $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libjos.a user/user.ld
+	@echo + ld $@
+	$(V)mkdir -p $(@D)
+	$(V)$(LD) -o $@ $(ULDFLAGS) $(LDFLAGS) -nostdlib \
+		$(OBJDIR)/lib/entry.o $(FSOFILES) \
+		-L$(OBJDIR)/lib -ljos $(GCC_LIB)
+	$(V)$(OBJDUMP) -S $@ >$@.asm
+
+# How to build the file system image
+$(OBJDIR)/fs/fsformat: fs/fsformat.c
+	@echo + mk $(OBJDIR)/fs/fsformat
+	$(V)mkdir -p $(@D)
+	$(V)gcc $(USER_CFLAGS) -o $(OBJDIR)/fs/fsformat fs/fsformat.c
+
+$(OBJDIR)/fs/clean-fs.img: $(OBJDIR)/fs/fsformat $(FSIMGFILES)
+	@echo + mk $(OBJDIR)/fs/clean-fs.img
+	$(V)mkdir -p $(@D)
+	$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 1024 $(FSIMGFILES)
+
+$(OBJDIR)/fs/fs.img: $(OBJDIR)/fs/clean-fs.img
+	@echo + cp $(OBJDIR)/fs/clean-fs.img $@
+	$(V)cp $(OBJDIR)/fs/clean-fs.img $@
+
+all: $(OBJDIR)/fs/fs.img
+
+#all: $(addsuffix .sym, $(USERAPPS))
+
+#all: $(addsuffix .asm, $(USERAPPS))
+\end{lstlisting}
+
+注意从32行开始的编译：
+
+\begin{enumerate}
+\item{第32行：将fs/fsformat.c编译成可执行文件}
+\item{第38行：使用fs/fsformat可执行文件产生镜像文件fs/clean-fs.img}
+\item{第43行：将fs/clean-fs.img复制成真正的磁盘镜像文件fs/fs.img}
+\end{enumerate}
+
+我们主要关注第二步是如何产生fs/clean-fs.img的，可以看到它使用的命令为：
+
+\begin{lstlisting}[style=mcode, firstnumber=41, title={\scriptsize \ttfamily \bfseries fs/Makefrag}]
+$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 1024 $(FSIMGFILES)
+\end{lstlisting}
+
+可以看到这个fs/fsformat接受了1024和一堆文件系统的目标文件生成了clean-fs.img，那么我们好奇这个fs/fsformat是干吗的呢？ 打开fs/fsformat.c来看看。
+}
+
+\item{fs/fsformat.c是一个创建磁盘的工具，我们就看看它的主函数:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fsformat.c: main()}]
+int
+main(int argc, char **argv)
+{
+	int i;
+	char *s;
+	struct Dir root;
+
+	assert(BLKSIZE % sizeof(struct File) == 0);
+
+	if (argc < 3)
+		usage();
+
+	nblocks = strtol(argv[2], &s, 0);
+	if (*s || s == argv[2] || nblocks < 2 || nblocks > 1024)
+		usage();
+
+	opendisk(argv[1]);
+
+	startdir(&super->s_root, &root);
+	for (i = 3; i < argc; i++)
+		writefile(&root, argv[i]);
+	finishdir(&root);
+
+	finishdisk();
+	return 0;
+}
+\end{lstlisting}
+
+可以从代码里看到它作了这么几件事：
+
+\begin{enumerate}
+\item{使用opendisk创建一个磁盘文件，超级块在这里被初始化}
+\item{使用startdir创建根目录，并初始化超级块}
+\item{使用writefile将目标文件写入磁盘映像}
+\item{使用finishdir将根目录写入磁盘映像}
+\item{使用finishdisk将块位图设置为正确的值，完成磁盘映像的创建}
+\end{enumerate}
+
+其中opendisk就是我们初始化Super超级块的地方。
+
+}
+\item{来看一下具体代码：
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fsformat.c: opendisk()}]
+void
+opendisk(const char *name)
+{
+	int r, diskfd, nbitblocks;
+
+	if ((diskfd = open(name, O_RDWR | O_CREAT, 0666)) < 0)
+		panic("open %s: %s", name, strerror(errno));
+
+	if ((r = ftruncate(diskfd, 0)) < 0
+	    || (r = ftruncate(diskfd, nblocks * BLKSIZE)) < 0)
+		panic("truncate %s: %s", name, strerror(errno));
+
+	if ((diskmap = mmap(NULL, nblocks * BLKSIZE, PROT_READ|PROT_WRITE,
+			    MAP_SHARED, diskfd, 0)) == MAP_FAILED)
+		panic("mmap %s: %s", name, strerror(errno));
+
+	close(diskfd);
+
+	diskpos = diskmap;
+	alloc(BLKSIZE);
+	super = alloc(BLKSIZE);
+	super->s_magic = FS_MAGIC;
+	super->s_nblocks = nblocks;
+	super->s_root.f_type = FTYPE_DIR;
+	strcpy(super->s_root.f_name, "/");
+
+	nbitblocks = (nblocks + BLKBITSIZE - 1) / BLKBITSIZE;
+	bitmap = alloc(nbitblocks);
+	memset(bitmap, 0xFF, nbitblocks * BLKSIZE);
+}
+\end{lstlisting}
+
+这里创建了映像文件，并为Super和bitmap分配好了空间（在文件中留出相应大小的空间）
+
+}
+\end{enumerate}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+其他的函数我们就不细看了，有兴趣的话可以自行研究。主要是通过Super的例子，我们看到了一个物理磁盘被创建以及其相应的所有细节被设置好的全过程。可以在后面的部分中弄清楚文件系统每个模块的来龙去脉。
 
 \subsection{The Block Bitmap}
 
@@ -554,12 +759,525 @@ struct Super {
 Use make grade to test your code. Your code should now pass "alloc_block" for a score of 25/100.
 \end{lstlisting}
 
+这部分很简单，代码中告诉我们了在内存中直接查找bitmap的时间远远小于读取IDE磁盘的时间，可以不用在乎效率：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: alloc\_block()}]
+alloc_block(void)
+{
+    int blockno;
+    for (blockno = 0; blockno < super->s_nblocks; blockno++)
+        if (block_is_free (blockno)) {
+            bitmap[blockno/32] ^= 1 << (blockno%32);
+            flush_block (bitmap);
+            return blockno;
+        }
+    
+    return -E_NO_DISK;
+}
+\end{lstlisting}
+
 \subsection{File Operations}
+
+
+在进行下面的工作之前，先了解一下fs/fs.c中提供的各个函数的功能：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c}]
+/* public */
+void	fs_init(void);
+int	file_get_block(struct File *f, uint32_t file_blockno, char **pblk);
+int	file_create(const char *path, struct File **f);
+int	file_open(const char *path, struct File **f);
+ssize_t	file_read(struct File *f, void *buf, size_t count, off_t offset);
+int	file_write(struct File *f, const void *buf, size_t count, off_t offset);
+int	file_set_size(struct File *f, off_t newsize);
+void	file_flush(struct File *f);
+int	file_remove(const char *path);
+void	fs_sync(void);
+bool	block_is_free(uint32_t blockno);
+int	alloc_block(void);
+
+
+/* static */
+static int file_block_walk(
+        struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
+
+static int dir_lookup(
+        struct File *dir, const char *name, struct File **file)
+
+static int dir_alloc_file(
+        struct File *dir, struct File **file)
+        
+static const char* skip_slash(const char *p)
+
+static int walk_path(
+        const char *path, struct File **pdir, struct File **pf, char *lastelem)
+        
+static int file_free_block(struct File *f, uint32_t filebno)
+
+static void file_truncate_blocks(struct File *f, off_t newsize)
+
+\end{lstlisting}
+
+这里前面一部分public的函数应该无论是从函数名还是参数上都是比较明确的，就不再解释了，主要需要解释的是下面一部分静态函数：
+
+\begin{description}
+\item[file\_block\_walk(*f, filebno, ppdiskbno, alloc)]:\\
+寻找一个文件结构f中的第filebno个块指向的硬盘块编号放入ppdiskbno，即如果filebno小于NDIRECT，则返回属于f\_direct[NDIRECT]中的相应链接，否则返回f\_indirect中查找的块。
+
+如果alloc为真且相应硬盘块不存在，则分配一个。
+
+当我们要将一个修改后的文件flush回硬盘，就需要使用这个函数找一个文件中链接的所有磁盘块，将他们都flush\_block
+\item[dir\_lookup(*dir, *name, **file)]:\\
+这个很明显了
+
+\item[dir\_alloc\_file(*dir, **file)]:\\
+在*dir对应的File结构中分配一个File的指针链接给*file，用于添加文件的操作。
+
+\item[skip\_slash(*p)]:\\
+用于路径中的字符串处理，调过斜杠。
+
+\item[walk\_path(*path, **pdir, **pf, *lastlem)]:\\
+*path为从根目录开始描述的文件名，如果成功找到了文件，则把相应的文件File结构赋值给*pf，其所在目录的File结构赋值给**pdir，lastlem为失败时最后剩下的文件名字。
+
+\item[file\_free\_block(*f, filebno)]:\\
+释放一个文件中的第filebno个磁盘块。此函数在file\_truncate\_blocks中被调用
+
+\item[file\_truncate\_blocks(*f, newsize)]:\\
+将文件设置为缩小后的新大小，清空那些被释放的物理块。
+
+\end{description}
+
+弄清楚函数功能以后就可以开始下面的工作了
+
+\newpage
+
+\begin{lstlisting}[style=exercise]
+|Exercise 4|. Implement file_block_walk and file_get_block. file_block_walk maps from a block offset within a file to the pointer for that block in the struct File or the indirect block, very much like what pgdir_walk did for page tables. file_get_block goes one step further and maps to the actual disk block, allocating a new one if necessary.
+
+Use make grade to test your code. Your code should pass "file_open", "file_get_block", and "file_flush/file_truncated/file rewrite" for a score of 40/100.
+\end{lstlisting}
+
+
+先来看 \funcname{file\_block\_walk()}：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: file\_block\_walk()}]
+static int
+file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
+{
+    int r;
+    if (filebno >= NDIRECT + NINDIRECT)
+        return -E_INVAL;
+
+    if (filebno < NDIRECT) {
+        if (ppdiskbno)
+            *ppdiskbno = f->f_direct + filebno; 
+        return 0;
+    }
+
+    if (!alloc && !f->f_indirect)
+        return -E_NOT_FOUND;
+
+    if (!f->f_indirect) {
+        if ((r = alloc_block ()) < 0)
+            return -E_NO_DISK;
+        f->f_indirect = r;
+
+        memset (diskaddr (r), 0, BLKSIZE);
+        flush_block (diskaddr(r));
+    }
+
+    if (ppdiskbno)
+        *ppdiskbno = (uint32_t *) diskaddr (f->f_indirect) + filebno - NDIRECT;
+
+    return 0;
+}
+\end{lstlisting}
+
+这里涉及到了对文件中对于磁盘块链接的操作，一定要明确一个概念：File结构中无论是f\_direct还是f\_indirect，\highlight{他们存储的都是指向的物理磁盘块的编号！如果要对指向的磁盘块进行读写，那么必须用diskaddr 转换成文件系统地址空间后才可以进行相应的操作}。
+
+这里最需要注意的是如果申请了一个INDIRECT的链接块，一定要记得将其清空，并写回到磁盘中。
+
+继续看\funcname{file\_get\_block()}:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/fs.c: file\_get\_block()}]
+int
+file_get_block(struct File *f, uint32_t filebno, char **blk)
+{
+    int r;
+    uint32_t *pdiskbno;
+
+    if ((r = file_block_walk (f, filebno, &pdiskbno, 1)) < 0)
+        return r;
+
+    if (*pdiskbno == 0) {
+        if ((r = alloc_block ()) < 0)
+            return -E_NO_DISK;
+
+        *pdiskbno = r;
+        memset (diskaddr (r), 0, BLKSIZE);
+        flush_block (diskaddr (r));
+    }
+
+    *blk = diskaddr (*pdiskbno);
+
+    return 0;
+}
+\end{lstlisting}
+
+这里有一个地方代码注释里没有说得太清楚，就是blk最后应该指向得到的blk对应在文件系统地址空间中的地址，所以最后需要用diskaddr转换。同样和上面的函数一样要记得写回新申请的物理块数据。
+
 
 \subsection{Client/Server File System Access}
 
+MIT的材料中在这部分开始实现文件系统的服务器端以及客户端的代码，两者通过RPC（Remote Process Call）实现通信。
+
+\subsubsection{How RPC Works}
+
+这部分内容在MIT材料上看到的时候就不是太理解，所以我专门去找了一下资料，下面的资料是在MSDN找到的，摘抄了一部分，详细的可以参考\burl{http://msdn.microsoft.com/en-us/library/aa374358(v=VS.85).aspx}
+
+\vspace{2em}
+
+{\sffamily \scriptsize \bfseries The RPC tools make it appear to users as though a client directly calls a procedure located in a remote server program. The client and server each have their own address spaces; that is, each has its own memory resource allocated to data used by the procedure. The following figure illustrates the RPC architecture.
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/rpc.png}
+\end{figure}
+
+As the illustration shows, the client application calls a local stub procedure instead of the actual code implementing the procedure. Stubs are compiled and linked with the client application. Instead of containing the actual code that implements the remote procedure, the client stub code:}
+
+{\sffamily \scriptsize 
+\begin{enumerate}
+\item{Retrieves the required parameters from the client address space.}
+\item{Translates the parameters as needed into a standard NDR format for transmission over the network.}
+\item{Calls functions in the RPC client run-time library to send the request and its parameters to the server.}
+\end{enumerate}
+}
+
+
+{\sffamily \scriptsize \bfseries 
+The server performs the following steps to call the remote procedure.
+}
+
+{\sffamily \scriptsize
+\begin{enumerate}
+\item{The server RPC run-time library functions accept the request and call the server stub procedure.}
+\item{The server stub retrieves the parameters from the network buffer and converts them from the network transmission format to the format the server needs.}
+\item{The server stub calls the actual procedure on the server.}
+\end{enumerate}
+}
+
+{\sffamily \scriptsize \bfseries 
+The remote procedure then runs, possibly generating output parameters and a return value. When the remote procedure is complete, a similar sequence of steps returns the data to the client.
+}
+
+{\sffamily \scriptsize
+\begin{enumerate}
+\item{The remote procedure returns its data to the server stub.}
+\item{The server stub converts output parameters to the format required for transmission over the network and returns them to the RPC run-time library functions.}
+\item{The server RPC run-time library functions transmit the data on the network to the client computer.}
+\end{enumerate}
+}
+
+{\sffamily \scriptsize \bfseries 
+The client completes the process by accepting the data over the network and returning it to the calling function.
+}
+
+{\sffamily \scriptsize  
+\begin{enumerate}
+\item{The client RPC run-time library receives the remote-procedure return values and returns them to the client stub.}
+\item{The client stub converts the data from its NDR to the format used by the client computer. The stub writes data into the client memory and returns the result to the calling program on the client.}
+\item{The calling procedure continues as if the procedure had been called on the same computer.}
+\end{enumerate}
+}
+
+{\sffamily \scriptsize \bfseries 
+The run-time libraries are provided in two parts: an import library, which is linked with the application and the RPC run-time library, which is implemented as a dynamic-link library (DLL).
+
+The server application contains calls to the server run-time library functions which register the server's interface and allow the server to accept remote procedure calls. The server application also contains the application-specific remote procedures that are called by the client applications.
+
+}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+这个介绍大致能看清楚RPC的工作原理。对应到JOS，他们之间的联系是：
+
+\begin{itemize}
+\item{RPC的最底层传输层可以是network，这里我们JOS只是在IPC上实现的RPC}
+\item{JOS中的Server Stub即fs/serv.c，Server Run-Time Library即fs/fs.c}
+\item{JOS中的Client Stub即lib/fd.c，用于封装文件传输的细节，实际上一个文件可以对应一个实际文件，也可以是Socket，Pipe之类的}
+\item{JOS中的Client Run-Time Library即lib/file.c，在这里对应真实文件系统的函数调用和数据传输}
+\end{itemize}
+
+\subsubsection{JOS C/S File System Access}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 5|. Implement serve_read in fs/serv.c and devfile_read in lib/file.c.
+
+serve_read's heavy lifting will be done by the already-implemented file_read in fs/fs.c (which, in turn, is just a bunch of calls to file_get_block). serve_read just has to provide the RPC interface for file reading. Look at the comments and code in serve_set_size to get a general idea of how the server functions should be structured.
+
+Likewise, devfile_read should pack its arguments into fsipcbuf for serve_read, call fsipc, and handle the result.
+
+Use make grade to test your code. Your code should pass "lib/file.c" and "file_read" for a score of 50/100.
+\end{lstlisting}
+
+这个Exercise里面我们主要来关注服务器端程序的架构，下个Exercise里会对客户端程序的结构进行说明。
+
+首先有几个特别重要的结构需要了解，看到inc/fs.h
+
+\begin{lstlisting}[style=ccode, firstnumber=61, title={\scriptsize \ttfamily \bfseries inc/fs.h}]
+
+// Definitions for requests from clients to file system
+enum {
+	FSREQ_OPEN = 1,
+	FSREQ_SET_SIZE,
+	// Read returns a Fsret_read on the request page
+	FSREQ_READ,
+	FSREQ_WRITE,
+	// Stat returns a Fsret_stat on the request page
+	FSREQ_STAT,
+	FSREQ_FLUSH,
+	FSREQ_REMOVE,
+	FSREQ_SYNC
+};
+
+union Fsipc {
+	struct Fsreq_open {
+		char req_path[MAXPATHLEN];
+		int req_omode;
+	} open;
+	struct Fsreq_set_size {
+		int req_fileid;
+		off_t req_size;
+	} set_size;
+	struct Fsreq_read {
+		int req_fileid;
+		size_t req_n;
+	} read;
+	struct Fsret_read {
+		char ret_buf[PGSIZE];
+	} readRet;
+	struct Fsreq_write {
+		int req_fileid;
+		size_t req_n;
+		char req_buf[PGSIZE - (sizeof(int) + sizeof(size_t))];
+	} write;
+	struct Fsreq_stat {
+		int req_fileid;
+	} stat;
+	struct Fsret_stat {
+		char ret_name[MAXNAMELEN];
+		off_t ret_size;
+		int ret_isdir;
+	} statRet;
+	struct Fsreq_flush {
+		int req_fileid;
+	} flush;
+	struct Fsreq_remove {
+		char req_path[MAXPATHLEN];
+	} remove;
+};
+\end{lstlisting}
+
+这里需要了解union Fsipc，文件系统中客户端和服务器端通过IPC进行通信，那么通信的数据格式就是union Fsipc，它里面的每一个成员对应一种文件系统的操作请求。每次客户端发来请求，都会将参数放入一个union Fsipc映射到一个物理页传递给服务器端，这里就涉及到文件服务器程序的地址空间的布局：
+
+\begin{lstlisting}[style=ccode]
+/*
+ *    4 Gig -------->  +------------------------------+
+ *                     :              .               :
+ *                     :              .               :
+ *                     :              .               :
+ *    USTACKTOP  --->  +------------------------------+ 0xeebfe000
+ *                     |      Normal User Stack       | RW/RW  PGSIZE
+ *                     +------------------------------+ 0xeebfd000
+ *                     :              .               :
+ *                     :              .               :
+ *                     +------------------------------+ 
+ *                     |            1024              | 1024 x PGSIZE
+ *                     |         struct Fd *          | 
+ * DISKMAP + DISKSIZE  +------------------------------+ 0xd0000000
+ *                     |                              | 
+ *                     |                              | 
+ *                     |      3GB IDE Disk Space      |
+ *                     |                              | 
+ *                     |                              | 
+ *    DISKMAP   --->   +------------------------------+ 0x10000000
+ *                     |      union Fsipc *fsreq      | RW/RW  PGSIZE
+ *    fsreq     --->   +------------------------------+ 0x0ffff000
+ *                     :              .               :
+ *                     :              .               :
+ *                     |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+ *                     |     Program Data & Heap      |
+ *    UTEXT -------->  +------------------------------+ 0x00800000
+ *    PFTEMP ------->  |       Empty Memory (*)       |        PTSIZE
+ *                     |                              |
+ *    UTEMP -------->  +------------------------------+ 0x00400000      --+
+ *                     |       Empty Memory (*)       |                   |
+ *                     | - - - - - - - - - - - - - - -|                   |
+ *                     |  User STAB Data (optional)   |                 PTSIZE
+ *    USTABDATA ---->  +------------------------------+ 0x00200000        |
+ *                     |       Empty Memory (*)       |                   |
+ *    0 ------------>  +------------------------------+                 --+
+ *
+ */
+\end{lstlisting}
+
+上图我们已经明确的画出了服务器端程序的虚拟空间示意图，需要注意的仅仅是它和普通用户程序不同的地方：
+
+\begin{description}
+\item[$[\mathrm{DISKMAP}, \mathrm{DISKMAP} + \mathrm{DISKSIZE})$]: \\
+前面提到过很多次了，这部分空间映射了3GB的对应IDE磁盘空间。
+\item[$[\mathrm{0x0ffff000}, \mathrm{DISKMAP})$]: \\
+一次IPC请求的union Fsipc放置的地址空间。
+\item[$[\mathrm{0xd0000000}, \mathrm{0xd0000000} + 1024 \times \mathrm{PGSIZE})$]: \\
+这片空间有1024个物理页，每个物理页对应一个struct Fd，这个我们留在后面讲。
+\item[其他区域]:\\
+和普通用户程序一样，UTEXT往上是代码段和部分数据，USTACKTOP下面是用户栈，往上是操作系统预留的系统栈和环境等等。
+\end{description}
+
+打开fs/serv.c，可以看到它定义的唯一一个全局变量opentab：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c}]
+#include <inc/x86.h>
+#include <inc/string.h>
+
+#include "fs.h"
+
+#define debug 0
+
+struct OpenFile {
+	uint32_t o_fileid;	// file id
+	struct File *o_file;	// mapped descriptor for open file
+	int o_mode;		// open mode
+	struct Fd *o_fd;	// Fd page
+};
+
+// Max number of open files in the file system at once
+#define MAXOPEN		1024
+#define FILEVA		0xD0000000
+
+// initialize to force into data section
+struct OpenFile opentab[MAXOPEN] = {
+	{ 0, 0, 1, 0 }
+};
+
+// Virtual address at which to receive page mappings containing client requests.
+union Fsipc *fsreq = (union Fsipc *)0x0ffff000;
+\end{lstlisting}
+
+文件系统默认最大同时可以打开的文件个数为1024，所以有1024个struct Openfile，这个结构是服务器程序维护的一个对应，它将一个文件系统的真实文件struct File和用户客户端打开的文件描述符struct Fd对应到一起（具体struct Fd代表的意义见下段）。每个被打开的文件对应的struct Fd都被映射到FILEVA上往上的一个物理页，服务器程序和打开这个文件的客户程序共享这个物理页。客户端程序和文件系统服务器通信时就通过o\_fileid来指定要操作的文件。
+
+具体的struct Fd被定义在inc/fd.h中：
+
+\begin{lstlisting}[style=ccode, firstnumber=26, title={\scriptsize \ttfamily \bfseries inc/fd.h}]
+struct FdFile {
+	int id;
+};
+ 
+struct Fd {
+	int fd_dev_id;
+	off_t fd_offset;
+	int fd_omode;
+	union {
+		// File server files
+		struct FdFile fd_file;
+	};
+};
+\end{lstlisting}
+
+它是一个抽象层，因为JOS和Linux一样，所有的IO都是文件，所以用户看到的都是Fd代表的文件，但是Fd会记录其对应的具体对象，比如真实文件、Socket和管道等等，因为我们现在只有文件，所以看到union里只有一个FdFile，后面如果有其他类型的对象加入，那么union里会有其他的内容。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+至此我们已经搞明白了服务器段程序的内存结构，然后我们来看看它会作一些什么工作：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c: serve()}]
+void
+serve(void)
+{
+    uint32_t req, whom;
+    int perm, r;
+    void *pg;
+
+    while (1) {
+        perm = 0;
+        req = ipc_recv((int32_t *) &whom, fsreq, &perm);
+        if (debug)
+            cprintf("fs req %d from %08x [page %08x: %s]\n",
+                req, whom, vpt[VPN(fsreq)], fsreq);
+
+        // All requests must contain an argument page
+        if (!(perm & PTE_P)) {
+            cprintf("Invalid request from %08x: no argument page\n", whom);
+            continue; // just leave it hanging...
+        }
+
+        pg = NULL;
+        if (req == FSREQ_OPEN) {
+            r = serve_open(whom, (struct Fsreq_open*)fsreq, &pg, &perm);
+        } else if (req < NHANDLERS && handlers[req]) {
+            r = handlers[req](whom, fsreq);
+        } else {
+            cprintf("Invalid request code %d from %08x\n", whom, req);
+            r = -E_INVAL;
+        }
+        ipc_send(whom, r, pg, perm);
+        sys_page_unmap(0, fsreq);
+    }
+}
+\end{lstlisting}
+
+服务器主循环会使用轮询的方式接受客户端程序的文件请求，每次从IPC接受一个请求类型req以及数据页fsreq，然后根据req来执行相应的服务程序：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c}]
+typedef int (*fshandler)(envid_t envid, union Fsipc *req);
+
+fshandler handlers[] = {
+	// Open is handled specially because it passes pages
+	/* [FSREQ_OPEN] =	(fshandler)serve_open, */
+	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
+	[FSREQ_READ] =		serve_read,
+	[FSREQ_WRITE] =		(fshandler)serve_write,
+	[FSREQ_STAT] =		serve_stat,
+	[FSREQ_FLUSH] =		(fshandler)serve_flush,
+	[FSREQ_REMOVE] =	(fshandler)serve_remove,
+	[FSREQ_SYNC] =		serve_sync
+};
+#define NHANDLERS (sizeof(handlers)/sizeof(handlers[0]))
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=exercise]
+|Exercise 6|. Implement serve_write in fs/serv.c and devfile_write in lib/file.c.
+
+Use make grade to test your code. Your code should pass "file_write" and "file_read after file_write" for a score of 60/100.
+\end{lstlisting}
+
+
 \subsection{Client-Side File Operations}
 
+记得说client端的地址空间
+
+和
+
+lib带来的文件头entry.S
 \subsection{Spawning Processes}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]

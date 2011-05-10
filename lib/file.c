@@ -2,7 +2,7 @@
 #include <inc/string.h>
 #include <inc/lib.h>
 
-#define debug 0
+#define debug 1
 
 extern union Fsipc fsipcbuf;	// page-aligned, declared in entry.S
 
@@ -94,7 +94,17 @@ devfile_read(struct Fd *fd, void *buf, size_t n)
 	// bytes read will be written back to fsipcbuf by the file
 	// system server.
 	// LAB 5: Your code here
-	panic("devfile_read not implemented");
+
+    fsipcbuf.read.req_fileid = fd->fd_file.id;
+    fsipcbuf.read.req_n = n;
+
+    int r;
+    if ((r = fsipc (FSREQ_READ, NULL)) < 0)
+        return r;
+
+    memmove (buf, fsipcbuf.readRet.ret_buf, r);
+
+    return r;
 }
 
 // Write at most 'n' bytes from 'buf' to 'fd' at the current seek position.

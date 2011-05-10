@@ -9,7 +9,7 @@
 #include "fs.h"
 
 
-#define debug 0
+#define debug 0 
 
 // The file system server maintains three structures
 // for each open file.
@@ -215,7 +215,24 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	// Hint: Use file_read.
 	// Hint: The seek position is stored in the struct Fd.
 	// LAB 5: Your code here
-	panic("serve_read not implemented");
+	
+
+    // Added by Chi Zhang (zhangchitc@gmail.com
+    //
+    struct OpenFile *o;
+    int r;
+
+    // openfile_lookup returns the struct OpenFile *o 
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+
+    int req_n = req->req_n > PGSIZE ? PGSIZE : req->req_n;
+    if ((r = file_read (o->o_file, ret->ret_buf, req_n, o->o_fd->fd_offset)) < 0)
+        return r;
+
+    o->o_fd->fd_offset += r;
+
+    return r;
 }
 
 // Write req->req_n bytes from req->req_buf to req_fileid, starting at
@@ -324,10 +341,11 @@ serve(void)
 	while (1) {
 		perm = 0;
 		req = ipc_recv((int32_t *) &whom, fsreq, &perm);
-		if (debug)
+        if (debug)
 			cprintf("fs req %d from %08x [page %08x: %s]\n",
 				req, whom, vpt[VPN(fsreq)], fsreq);
 
+    
 		// All requests must contain an argument page
 		if (!(perm & PTE_P)) {
 			cprintf("Invalid request from %08x: no argument page\n",
