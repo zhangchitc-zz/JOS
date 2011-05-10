@@ -2,7 +2,7 @@
 #include <inc/string.h>
 #include <inc/lib.h>
 
-#define debug 1
+#define debug 0
 
 extern union Fsipc fsipcbuf;	// page-aligned, declared in entry.S
 
@@ -63,7 +63,26 @@ open(const char *path, int mode)
 	// file descriptor.
 
 	// LAB 5: Your code here.
-	panic("open not implemented");
+    //
+
+    struct Fd *fd_store;
+    int r;
+
+    if (strlen (path) >= MAXPATHLEN)
+        return -E_BAD_PATH;
+
+    if ((r = fd_alloc (&fd_store)) < 0)
+        return r;
+
+    strcpy (fsipcbuf.open.req_path, path);
+    fsipcbuf.open.req_omode = mode;
+
+    if ((r = fsipc (FSREQ_OPEN, (void *) fd_store)) < 0) {
+        fd_close (fd_store, 0);
+        return r;
+    }
+
+    return fd2num (fd_store);
 }
 
 // Flush the file descriptor.  After this the fileid is invalid.
@@ -120,7 +139,20 @@ devfile_write(struct Fd *fd, const void *buf, size_t n)
 	// remember that write is always allowed to write *fewer*
 	// bytes than requested.
 	// LAB 5: Your code here
-	panic("devfile_write not implemented");
+	
+    if (n > sizeof (fsipcbuf.write.req_buf))
+        n = sizeof (fsipcbuf.write.req_buf);
+
+    fsipcbuf.write.req_fileid = fd->fd_file.id;
+    fsipcbuf.write.req_n = n;
+
+    memmove (fsipcbuf.write.req_buf, buf, n);
+
+    int r;
+    if ((r = fsipc (FSREQ_WRITE, NULL)) < 0)
+        return r;
+
+    return r;
 }
 
 static int

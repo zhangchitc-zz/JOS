@@ -1081,7 +1081,7 @@ union Fsipc {
 };
 \end{lstlisting}
 
-这里需要了解union Fsipc，文件系统中客户端和服务器端通过IPC进行通信，那么通信的数据格式就是union Fsipc，它里面的每一个成员对应一种文件系统的操作请求。每次客户端发来请求，都会将参数放入一个union Fsipc映射到一个物理页传递给服务器端，这里就涉及到文件服务器程序的地址空间的布局：
+这里需要了解union Fsipc，文件系统中客户端和服务器端通过IPC进行通信，那么通信的数据格式就是union Fsipc（union用法请参考任何一本C语言手册），它里面的每一个成员对应一种文件系统的操作请求。每次客户端发来请求，都会将参数放入一个union Fsipc映射到一个物理页传递给服务器端，同时有时候服务器还会将处理以后的结果放入Fsipc内，传递给用户程序。这里就涉及到文件服务器程序的地址空间的布局：
 
 \begin{lstlisting}[style=ccode]
 /*
@@ -1167,9 +1167,15 @@ struct OpenFile opentab[MAXOPEN] = {
 union Fsipc *fsreq = (union Fsipc *)0x0ffff000;
 \end{lstlisting}
 
-文件系统默认最大同时可以打开的文件个数为1024，所以有1024个struct Openfile，这个结构是服务器程序维护的一个对应，它将一个文件系统的真实文件struct File和用户客户端打开的文件描述符struct Fd对应到一起（具体struct Fd代表的意义见下段）。每个被打开的文件对应的struct Fd都被映射到FILEVA上往上的一个物理页，服务器程序和打开这个文件的客户程序共享这个物理页。客户端程序和文件系统服务器通信时就通过o\_fileid来指定要操作的文件。
+文件系统默认最大同时可以打开的文件个数为1024，所以有1024个struct Openfile。
+
+这个结构是服务器程序维护的一个对应，它将一个文件系统的真实文件struct File和用户客户端打开的文件描述符struct Fd对应到一起（具体struct Fd代表的意义见下段）。每个被打开的文件对应的struct Fd都被映射到FILEVA上往上的一个物理页，服务器程序和打开这个文件的客户程序共享这个物理页。
+
+客户端程序和文件系统服务器通信时就通过o\_fileid来指定要操作的文件。
 
 具体的struct Fd被定义在inc/fd.h中：
+
+\newpage
 
 \begin{lstlisting}[style=ccode, firstnumber=26, title={\scriptsize \ttfamily \bfseries inc/fd.h}]
 struct FdFile {
@@ -1251,18 +1257,82 @@ fshandler handlers[] = {
 #define NHANDLERS (sizeof(handlers)/sizeof(handlers[0]))
 \end{lstlisting}
 
+服务程序被定义在了handler数组里，通过请求号进行调用，具体定义在
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\begin{lstlisting}[style=ccode, firstnumber=74, title={\scriptsize \ttfamily \bfseries inc/lib.h}]
+// Definitions for requests from clients to file system
+enum {
+	FSREQ_OPEN = 1,
+	FSREQ_SET_SIZE,
+	// Read returns a Fsret_read on the request page
+	FSREQ_READ,
+	FSREQ_WRITE,
+	// Stat returns a Fsret_stat on the request page
+	FSREQ_STAT,
+	FSREQ_FLUSH,
+	FSREQ_REMOVE,
+	FSREQ_SYNC
+};
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+以上就是我们需要了解的结构部分，现在开始我们可以进行下面的编码了，先看fs/serv.c的 \funcname{serve\_read ()} :
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c: serve\_read()}]
+int
+serve_read(envid_t envid, union Fsipc *ipc)
+{
+    struct Fsreq_read *req = &ipc->read;
+    struct Fsret_read *ret = &ipc->readRet;
+
+    if (debug)
+        cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
+
+    struct OpenFile *o;
+    int r;
+
+    // openfile_lookup returns the struct OpenFile *o 
+    if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+
+    int req_n = req->req_n > PGSIZE ? PGSIZE : req->req_n;
+    if ((r = file_read (o->o_file, ret->ret_buf, req_n, o->o_fd->fd_offset)) < 0)
+        return r;
+
+    o->o_fd->fd_offset += r;
+
+    return r;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+注意前面我们提到了Fsipc地址为请求参数的位置，同时文件系统还有可能将其用作结果返回，这里的读取过程就用到了。
+
+然后是lib/file.c中用户发出读取请求的函数\funcname{devfile\_read ()}:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c: devfile\_read()}]
+static ssize_t
+devfile_read(struct Fd *fd, void *buf, size_t n)
+{
+    fsipcbuf.read.req_fileid = fd->fd_file.id;
+    fsipcbuf.read.req_n = n;
+
+    int r;
+    if ((r = fsipc (FSREQ_READ, NULL)) < 0)
+        return r;
+
+    memmove (buf, fsipcbuf.readRet.ret_buf, r);
+
+    return r;
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
+这里编码很简单，就是对于客户端程序的结构还没有熟悉，我们下节马上会进行详细的介绍。
+
+\vspace{2em}
 
 \begin{lstlisting}[style=exercise]
 |Exercise 6|. Implement serve_write in fs/serv.c and devfile_write in lib/file.c.
@@ -1270,8 +1340,217 @@ fshandler handlers[] = {
 Use make grade to test your code. Your code should pass "file_write" and "file_read after file_write" for a score of 60/100.
 \end{lstlisting}
 
+这里的编码跟上边如出一辙，就不再赘述了：
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c: serve\_write()}]
+int
+serve_write(envid_t envid, struct Fsreq_write *req)
+{
+    if (debug)
+        cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
+
+    struct OpenFile *o;
+    int r;
+
+    // openfile_lookup returns the struct OpenFile *o 
+    if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
+
+    int req_n = req->req_n > PGSIZE ? PGSIZE : req->req_n;
+    if ((r = file_write (o->o_file, req->req_buf, req_n, o->o_fd->fd_offset)) < 0)
+        return r;
+
+    o->o_fd->fd_offset += r;
+
+    return r;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c: devfile\_write()}]
+static ssize_t
+devfile_write(struct Fd *fd, const void *buf, size_t n)
+{
+    if (n > sizeof (fsipcbuf.write.req_buf))
+        n = sizeof (fsipcbuf.write.req_buf);
+
+    fsipcbuf.write.req_fileid = fd->fd_file.id;
+    fsipcbuf.write.req_n = n;
+
+    memmove (fsipcbuf.write.req_buf, buf, n);
+
+    int r;
+    if ((r = fsipc (FSREQ_WRITE, NULL)) < 0)
+        return r;
+
+    return r;
+}
+\end{lstlisting}
+
 
 \subsection{Client-Side File Operations}
+
+因为引进了文件系统，为了使得用户程序能够使用文件，JOS的库文件和相应程序头也作了少许的改动，看到用户程序入口lib/entry.S:
+
+\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries lib/entry.S}]
+#include <inc/mmu.h>
+#include <inc/memlayout.h>
+
+.data
+	// define page-aligned fsipcbuf for fsipc.c
+	// ... and fdtab for file.c
+	.p2align PGSHIFT
+	.globl fsipcbuf
+fsipcbuf:
+	.space PGSIZE
+	.globl fdtab
+fdtab:
+	.space PGSIZE
+
+
+// Define the global symbols 'envs', 'pages', 'vpt', and 'vpd'
+// so that they can be used in C as if they were ordinary global arrays.
+	.globl envs
+	.set envs, UENVS
+	.globl pages
+	.set pages, UPAGES
+	.globl vpt
+	.set vpt, UVPT
+	.globl vpd
+	.set vpd, (UVPT+(UVPT>>12)*4)
+\end{lstlisting}
+
+这里多定义了两个位置：
+
+\begin{itemize}
+\item{fsipcbuf: 和文件系统共享的物理页用于交换数据}
+\item{fdtab：这个在整个JOS我都没找到使用它的地方，暂时可以忽略它}
+\end{itemize}
+
+然后看到系统库文件lib/fd.c，这个库是帮用户维护所有文件描述符(File Descriptor)的模块：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/fd.c}]
+#include <inc/lib.h>
+
+#define debug		0
+
+// Maximum number of file descriptors a program may hold open concurrently
+#define MAXFD		32
+// Bottom of file descriptor area
+#define FDTABLE		0xD0000000
+// Bottom of file data area.  We reserve one data page for each FD,
+// which devices can use if they choose.
+#define FILEDATA	(FDTABLE + MAXFD*PGSIZE)
+
+// Return the 'struct Fd*' for file descriptor index i
+#define INDEX2FD(i)	((struct Fd*) (FDTABLE + (i)*PGSIZE))
+// Return the file data page for file descriptor index i
+#define INDEX2DATA(i)	((char*) (FILEDATA + (i)*PGSIZE))
+\end{lstlisting}
+
+看到这段声明可以知道，在用户程序编译之后，fd.c为其在FDTABLE（0xD0000000）开始的地址留出了MAXFD（32）个物理页的位置，每一页对应存放一个struct Fd，保存当前用户程序打开的文件，系统默认一个程序同时最多能打开32个。
+
+fd.c提供上层抽象到具体IO操作对象的对应，使用struct Dev来作为中间的过渡，在inc/fd.h中提供如下接口：
+
+\begin{lstlisting}[style=ccode, firstnumber=47, title={\scriptsize \ttfamily \bfseries inc/fd.h}]
+char*	fd2data(struct Fd *fd);
+int	fd2num(struct Fd *fd);
+int	fd_alloc(struct Fd **fd_store);
+int	fd_close(struct Fd *fd, bool must_exist);
+int	fd_lookup(int fdnum, struct Fd **fd_store);
+int	dev_lookup(int devid, struct Dev **dev_store);
+
+extern struct Dev devfile;
+\end{lstlisting}
+
+我们看看struct Dev的具体定义：
+
+\begin{lstlisting}[style=ccode, firstnumber=16, title={\scriptsize \ttfamily \bfseries inc/fd.h}]
+struct Dev {
+	int dev_id;
+	char *dev_name;
+	ssize_t (*dev_read)(struct Fd *fd, void *buf, size_t len);
+	ssize_t (*dev_write)(struct Fd *fd, const void *buf, size_t len);
+	int (*dev_close)(struct Fd *fd);
+	int (*dev_stat)(struct Fd *fd, struct Stat *stat);
+	int (*dev_trunc)(struct Fd *fd, off_t length);
+};
+\end{lstlisting}
+
+这个结构的成员为一系列的函数指针，对应不同设备的各自操作函数。
+
+看到Dev的结构定义之后，我们注意到前面在inc/fd.h中链接了struct Dev devfile，我们看一下devfile的具体声明位置lib/file.c：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c}]
+
+static int devfile_flush(struct Fd *fd);
+static ssize_t devfile_read(struct Fd *fd, void *buf, size_t n);
+static ssize_t devfile_write(struct Fd *fd, const void *buf, size_t n);
+static int devfile_stat(struct Fd *fd, struct Stat *stat);
+static int devfile_trunc(struct Fd *fd, off_t newsize);
+
+struct Dev devfile =
+{
+	.dev_id =	'f',
+	.dev_name =	"file",
+	.dev_read =	devfile_read,
+	.dev_write =	devfile_write,
+	.dev_close =	devfile_flush,
+	.dev_stat =	devfile_stat,
+	.dev_trunc =	devfile_trunc
+};
+\end{lstlisting}
+
+
+再看看lib/fd.c中的各函数代码即可知道，用户通过调用lib/fd.c中的fd\_*等一系列函数，他们的具体实现在lib/fd.c中，这些函数只是简单的对参数进行检查以后，就直接调用devfile中对应的函数指针。在只有文件系统作为IO对象的情况下，这些函数指向的是lib/file.c中的RPC通信函数。
+
+
+这时我们终于完整的搞清楚了整个C/S架构的文件系统调用机制：
+
+{ \scriptsize
+\begin{verbatim}
+
+                 Regular env           FS env
+              +---------------+   +---------------+
+              |      read     |   |   file_read   |
+              |   (lib/fd.c)  |   |   (fs/fs.c)   |
+     .........|.......|.......|...|.......^.......|...............
+              |       v       |   |       |       | RPC mechanism
+              |  devfile_read |   |  serve_read   |
+              |  (lib/file.c) |   |  (fs/serv.c)  |
+              |       |       |   |       ^       |
+              |       v       |   |       |       |
+              |     fsipc     |   |     serve     |
+              |  (lib/file.c) |   |  (fs/serv.c)  |
+              |       |       |   |       ^       |
+              |       v       |   |       |       |
+              |   ipc_send    |   |   ipc_recv    |
+              |       |       |   |       ^       |
+              +-------|-------+   +-------|-------+
+                      |                   |
+                      +-------------------+
+\end{verbatim}
+}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+\end{lstlisting}
+
+	
+\begin{lstlisting}[style=exercise]
+|Exercise 7|. Implement open. The open function must find an unused file descriptor using the fd_alloc() function we have provided, make an IPC request to the file system environment to open the file, and return the number of the allocated file descriptor. Be sure your code fails gracefully if the maximum number of files are already open, or if any of the IPC requests to the file system environment fail.
+
+Use make grade to test your code. Your code should pass "open", "motd display", and "motd change" for a score of 85/100.
+\end{lstlisting}
 
 记得说client端的地址空间
 
