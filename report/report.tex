@@ -1027,22 +1027,7 @@ Use make grade to test your code. Your code should pass "lib/file.c" and "file_r
 
 首先有几个特别重要的结构需要了解，看到inc/fs.h
 
-\begin{lstlisting}[style=ccode, firstnumber=61, title={\scriptsize \ttfamily \bfseries inc/fs.h}]
-
-// Definitions for requests from clients to file system
-enum {
-	FSREQ_OPEN = 1,
-	FSREQ_SET_SIZE,
-	// Read returns a Fsret_read on the request page
-	FSREQ_READ,
-	FSREQ_WRITE,
-	// Stat returns a Fsret_stat on the request page
-	FSREQ_STAT,
-	FSREQ_FLUSH,
-	FSREQ_REMOVE,
-	FSREQ_SYNC
-};
-
+\begin{lstlisting}[style=ccode, firstnumber=76, title={\scriptsize \ttfamily \bfseries inc/fs.h}]
 union Fsipc {
 	struct Fsreq_open {
 		char req_path[MAXPATHLEN];
@@ -1167,15 +1152,14 @@ struct OpenFile opentab[MAXOPEN] = {
 union Fsipc *fsreq = (union Fsipc *)0x0ffff000;
 \end{lstlisting}
 
-文件系统默认最大同时可以打开的文件个数为1024，所以有1024个struct Openfile。
 
-这个结构是服务器程序维护的一个对应，它将一个文件系统的真实文件struct File和用户客户端打开的文件描述符struct Fd对应到一起（具体struct Fd代表的意义见下段）。每个被打开的文件对应的struct Fd都被映射到FILEVA上往上的一个物理页，服务器程序和打开这个文件的客户程序共享这个物理页。
+OpenFile结构是服务器程序维护的一个映射，它将一个真实文件struct File和用户客户端打开的文件描述符struct Fd对应到一起（具体struct Fd代表的意义见下段）。每个被打开的文件对应的struct Fd都被映射到FILEVA上往上的一个物理页，服务器程序和打开这个文件的客户程序共享这个物理页。客户端程序和文件系统服务器通信时使用o\_fileid来指定要操作的文件。
 
-客户端程序和文件系统服务器通信时就通过o\_fileid来指定要操作的文件。
+文件系统默认最大同时可以打开的文件个数为1024，所以有1024个struct Openfile。所以对应着在服务器地址空间0xd0000000往上留出了1024个物理页用于映射这些对应的struct Fd。
+
 
 具体的struct Fd被定义在inc/fd.h中：
 
-\newpage
 
 \begin{lstlisting}[style=ccode, firstnumber=26, title={\scriptsize \ttfamily \bfseries inc/fd.h}]
 struct FdFile {
@@ -1238,7 +1222,14 @@ serve(void)
 }
 \end{lstlisting}
 
-服务器主循环会使用轮询的方式接受客户端程序的文件请求，每次从IPC接受一个请求类型req以及数据页fsreq，然后根据req来执行相应的服务程序：
+服务器主循环会使用轮询的方式接受客户端程序的文件请求，每次
+
+\begin{enumerate}
+\item{从IPC接受一个请求类型req以及数据页fsreq}
+\item{然后根据req来执行相应的服务程序}
+\item{将相应服务程序的执行结果（如果产生了数据页则有pg）通过IPC发送回调用进程}
+\item{将映射好的物理页fsreq取消映射}
+\end{enumerate}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries fs/serv.c}]
 typedef int (*fshandler)(envid_t envid, union Fsipc *req);
@@ -1330,7 +1321,7 @@ devfile_read(struct Fd *fd, void *buf, size_t n)
 }
 \end{lstlisting}
 
-这里编码很简单，就是对于客户端程序的结构还没有熟悉，我们下节马上会进行详细的介绍。
+这里编码很简单，就是对于客户端程序的结构还没有熟悉，所以这里的 \funcname{fsipc()} 对我们还很陌生，我们下节马上会进行详细的介绍。
 
 \vspace{2em}
 
@@ -1500,12 +1491,12 @@ struct Dev devfile =
 \end{lstlisting}
 
 
-再看看lib/fd.c中的各函数代码即可知道，用户通过调用lib/fd.c中的fd\_*等一系列函数，他们的具体实现在lib/fd.c中，这些函数只是简单的对参数进行检查以后，就直接调用devfile中对应的函数指针。在只有文件系统作为IO对象的情况下，这些函数指向的是lib/file.c中的RPC通信函数。
+再看看lib/fd.c中的各函数代码即可知道，用户通过调用lib/fd.c中的fd\_*等一系列函数，他们的具体实现在lib/fd.c中，这些函数只是简单的对参数进行检查以后，就直接调用devfile中对应的函数指针。因为devfile对应的IO设备为文件系统，所以这些函数指向的是lib/file.c中的和文件系统服务器的RPC通信函数。
 
 
 这时我们终于完整的搞清楚了整个C/S架构的文件系统调用机制：
 
-{ \scriptsize
+{ \footnotesize
 \begin{verbatim}
 
                  Regular env           FS env
@@ -1530,15 +1521,48 @@ struct Dev devfile =
 \end{verbatim}
 }
 
-\vspace{2em}
-\hrule
-\vspace{2em}
+现在我们可以开始着手编写客户端的系统库了，稍微了解一下lib/file.c的代码以后需要明确一个函数：
 
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c: fsipc()}]
+static int
+fsipc(unsigned type, void *dstva)
+{
+	if (debug)
+		cprintf("[%08x] fsipc %d %08x\n", env->env_id, type, *(uint32_t *)&fsipcbuf);
 
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+	ipc_send(envs[1].env_id, type, &fsipcbuf, PTE_P | PTE_W | PTE_U);
+	return ipc_recv(NULL, dstva, NULL);
+}
 \end{lstlisting}
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+
+所有的文件操作都通过 \funcname{fsipc()} 向文件服务器发送ipc请求，type为请求类型，dstva为如果需要和文件服务器程序共享物理页（比如马上要写的open打开文件共享struct Fd），那么就需要将dstva设置为正确的物理页地址。
+
+好了，我们可以开始编写 \funcname{open()} 了：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c: open()}]
+int
+open(const char *path, int mode)
+{
+    struct Fd *fd_store;
+    int r;
+
+    if (strlen (path) >= MAXPATHLEN)
+        return -E_BAD_PATH;
+
+    if ((r = fd_alloc (&fd_store)) < 0)
+        return r;
+
+    strcpy (fsipcbuf.open.req_path, path);
+    fsipcbuf.open.req_omode = mode;
+
+    if ((r = fsipc (FSREQ_OPEN, (void *) fd_store)) < 0) {
+        fd_close (fd_store, 0);
+        return r;
+    }
+
+    return fd2num (fd_store);
+}
 \end{lstlisting}
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
 \end{lstlisting}
