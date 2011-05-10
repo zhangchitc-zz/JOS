@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  27 APR 2011 01:59
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2010.10.11)  10 MAY 2011 17:45
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -8182,7 +8182,7 @@ e H \C70/gkai/bx/n/10/4f ^^? \C70/gkai/bx/n/10/75 (\OT1/ppl/m/n/10 make qemu\C7
 Here is how much of TeX's memory you used:
  22192 strings out of 493848
  358789 string characters out of 1152822
- 1071078 words of memory out of 3000000
+ 1071079 words of memory out of 3000000
  23517 multiletter control sequences out of 15000+50000
  40997 words of font info for 135 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
@@ -8245,7 +8245,7 @@ usr/share/texmf-texlive/fonts/type1/urw/courier/ucrb8a.pfb></usr/share/texmf-te
 xlive/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texmf-texlive/fonts/type1/
 urw/palatino/uplb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/palatino/uplr
 8a.pfb>
-Output written on report.pdf (41 pages, 1073517 bytes).
+Output written on report.pdf (41 pages, 1073522 bytes).
 PDF statistics:
  2313 PDF objects out of 2487 (max. 8388607)
  1458 named destinations out of 1728 (max. 500000)
