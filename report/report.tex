@@ -1521,6 +1521,14 @@ struct Dev devfile =
 \end{verbatim}
 }
 
+\newpage
+
+\begin{lstlisting}[style=exercise]
+|Exercise 7|. Implement open. The open function must find an unused file descriptor using the fd_alloc() function we have provided, make an IPC request to the file system environment to open the file, and return the number of the allocated file descriptor. Be sure your code fails gracefully if the maximum number of files are already open, or if any of the IPC requests to the file system environment fail.
+
+Use make grade to test your code. Your code should pass "open", "motd display", and "motd change" for a score of 85/100.
+\end{lstlisting}
+
 现在我们可以开始着手编写客户端的系统库了，稍微了解一下lib/file.c的代码以后需要明确一个函数：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/file.c: fsipc()}]
@@ -1564,40 +1572,57 @@ open(const char *path, int mode)
     return fd2num (fd_store);
 }
 \end{lstlisting}
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
 
-	
-\begin{lstlisting}[style=exercise]
-|Exercise 7|. Implement open. The open function must find an unused file descriptor using the fd_alloc() function we have provided, make an IPC request to the file system environment to open the file, and return the number of the allocated file descriptor. Be sure your code fails gracefully if the maximum number of files are already open, or if any of the IPC requests to the file system environment fail.
+没什么好说的，记得最后返回的值应该用fd2num转化成index即可
 
-Use make grade to test your code. Your code should pass "open", "motd display", and "motd change" for a score of 85/100.
-\end{lstlisting}
-
-记得说client端的地址空间
-
-和
-
-lib带来的文件头entry.S
 \subsection{Spawning Processes}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=acode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console]
-\end{lstlisting}
-
 \begin{lstlisting}[style=exercise]
+|Exercise 8|. spawn relies on the new syscall sys_env_set_trapframe to initialize the state of the newly created environment. Implement sys_env_set_trapframe. Test your code by running the user/icode program from kern/init.c, which will attempt to spawn /init from the file system. (Hint: If this fails in diskaddr, something's probably wrong with your indirect block code, since this is the first time we've used files that large.)
+
+Use make grade to test your code. Your code should score 100/100.
 \end{lstlisting}
+
+如果仅仅只是完成 \funcname{sys\_env\_set\_trapframe() }还是很简单的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/: ()}]
+static int
+sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
+{
+    struct Env *e;
+    if (envid2env (envid, &e, 1) < 0)
+        return -E_BAD_ENV;
+
+    user_mem_assert (e, tf, sizeof (struct Trapframe), PTE_U);
+
+    e->env_tf = *tf;
+    e->env_tf.tf_cs = GD_UT | 3;
+    e->env_tf.tf_eflags |= FL_IF;
+    
+    return 0;
+}
+\end{lstlisting}
+
+完成系统调用后记得在 \funcname{syscall()} 里添加上分发逻辑。
+
+至此lab5就全部完成了，但是我们实际上并没有完全知道spawn函数的具体流程，实际上很复杂:
+
+\begin{enumerate}
+\item{从文件系统打开对应的文件，准备从文件中读取ELF内容信息；}
+\item{使用exofork创建子进程；}
+\item{为子进程初始化堆栈空间；
+\begin{enumerate}
+    \item{因为对于该进程还有相应要传入的参数，所以要将这些参数合理的安排进用户栈中}
+    \item{将子进程的esp栈顶指针设置为合适的位置}
+\end{enumerate}
+}
+\item{将文件对应的ELF文件载入到子进程的地址空间中，记住在这里要为他们分配物理页面；}
+\item{设置子进程的各个寄存器，eip等于ELF文件的入口地址；}
+\item{设置子进程为可运行；}
+\end{enumerate}
+
+过程很繁琐，具体可以参考lib/spawn.c，这里不再深究。
+
 
 \clearpage
 
