@@ -20,6 +20,27 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
 
+    //cprintf ("zhangchi: Enters sched_yield\n");
+    struct Env *curenvptr = curenv;
+
+    if (curenv == NULL)
+        curenvptr = envs;
+
+    int round = 0;
+    for (curenvptr ++; round < NENV; round ++, curenvptr ++) {
+
+        if (curenvptr >= envs + NENV) {
+            curenvptr = envs + 1;
+        }
+
+        if (curenvptr->env_status == ENV_RUNNABLE) {
+            //cprintf ("zhangchi: Found env: %d\n", curenvptr - envs);
+            env_run (curenvptr);
+        }
+    }
+
+    //cprintf ("zhangchi: No env found\n");
+
 	// Run the special idle environment when nothing else is runnable.
 	if (envs[0].env_status == ENV_RUNNABLE)
 		env_run(&envs[0]);

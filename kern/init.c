@@ -1,6 +1,7 @@
 /* See COPYRIGHT for copyright information. */
 
 #include <inc/stdio.h>
+#include <inc/stdlib.h>
 #include <inc/string.h>
 #include <inc/assert.h>
 
@@ -31,6 +32,9 @@ i386_init(void)
 	cons_init();
 
 	cprintf("6828 decimal is %o octal!\n", 6828);
+
+    // test self proposed stdlib for C
+    test_stdlib ();
 
 	// Lab 2 memory management initialization functions
 	i386_detect_memory();
