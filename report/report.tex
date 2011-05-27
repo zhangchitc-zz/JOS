@@ -231,7 +231,7 @@
 \item{如何对网卡发送指令}
 \end{enumerate}
 
-报告在后面会一步一步从课程给出的资料中抽取出这些细节。同时我在写的过程中参考了\burl{http://code.google.com/p/os-xv6-network}项目主页提供的一份源代码，该代码对我的帮助非常的大，其中对于PCI设备以及网卡的操纵值得参考。
+报告在后面会一步一步从课程给出的资料中抽取出这些细节。同时我在写的过程中参考了\burl{http://code.google.com/p/os-xv6-network}项目主页提供的一份源代码，说的比较极端的话我基本是完全照搬了它的代码，不过这并不影响，学习别人优秀的代码本来就是编程中获得提高最有效的方式。重要的仍是个人的理解。
 
 
 \section{Initialization and transmitting packets}
@@ -270,20 +270,1091 @@
 
 \subsection{The Network Interface Card}
 
+
+\begin{lstlisting}[style=exercise]
+|Exercise 2|. Browse the Intel 82559 page and look at these two documents:
+
+    1. Intel 8255x 10/100 Mbps Ethernet Controller Family Open Source Software Developer Manual (local copy)
+    2. 82559ER Fast Ethernet PCI Controller Datasheet (local copy)
+
+Do not worry about the details in your first pass. It is more important to read this assignment write-up first to get a high level pictures of how the Intel chip is organized and what is needed to create a device driver.
+
+When you do read the open source developer manual in depth, glance over Section 4 to learn about the PCI interface but pay very close attention to Section 6 as it deals with the Software Interface. In fact, most everything you need is in Section 6. Use the datasheet solely as a reference if you find the developer manual vague.
+
+A simple E100 driver needs only a fraction of the features and interfaces that the card provides. When you're reading through the developer manual, think carefully about the easiest way to interface with the card. You're of course welcome to use its more advanced, high-performance features (in fact, some of the challenge exercises ask you to do exactly this), but it's a good idea to get a basic driver working first.
+
+The acronyms in both documents can get overwhelming. Consult the glossary at the end of this lab assignment for some help.
+\end{lstlisting}
+
+
+打开资料是不是已经晕了？这是我觉得这个Lab设计的非常不好的原因之一，一开始就甩出一大堆手册要我们看，而不是给出一个纵览性的结构和指南。先放下吧，后面我们再慢慢说具体要看这些资料的哪些部分。
+
+
 \subsubsection{PCI Interface}
+
+在使用网卡之前，我们先要通知硬件系统扫描出所有的PCI设备，并且找出其中的E100网卡，对其进行初始化。这是这部分任务的最终目的，为我们操作网卡做好准备工作。这里我们将大致介绍一下PCI设备的一些基础知识：
+
+\begin{description}
+\item[什么是PCI设备]：\\
+
+PCI是外围设备互连（Peripheral Component Interconnect）的简称，是在目前的计算机系统中得到了非常广泛应用的通用总线接口标准。
+
+\begin{itemize}
+\item{在一个PCI系统中，最多可以有256根PCI总线，一般的主机上只会用到其中很少的几条，比如Bus 0和Bus 1。}
+\item{在一根PCI总线上可以连接多个物理设备，可以是一个网卡、显卡声卡等等。最多不超过32个。一般来说因为物理特性的限制，一条总线上不会有太多的设备。}
+\item{一个PCI物理设备可以有多个功能，比如同时提供视频解析和声音解析。最多提供8个功能。}
+\item{每个功能对应一个256 bytes的PCI Configuration Space，这个在我们接下来对网卡进行初始化的时候会特别提到这个东西的。}
+\end{itemize}
+
+
+所以对于一个PCI设备的具体功能，我们可以使用 {\bfseries 总线号：设备号：功能号}来对其进行定位，比如在Ubuntu下我们使用lspci命令，就可以得到这样的输出：
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+zhangchi@zhangchi-vostro1400:~$ lspci 
+00:00.0 Host bridge: Intel Corporation Mobile PM965/GM965/GL960 Memory Controller Hub (rev 0c)
+00:02.0 VGA compatible controller: Intel Corporation Mobile GM965/GL960 Integrated Graphics Controller (rev 0c)
+00:02.1 Display controller: Intel Corporation Mobile GM965/GL960 Integrated Graphics Controller (rev 0c)
+00:1a.0 USB Controller: Intel Corporation 82801H (ICH8 Family) USB UHCI Controller #4 (rev 02)
+00:1a.1 USB Controller: Intel Corporation 82801H (ICH8 Family) USB UHCI Controller #5 (rev 02)
+00:1a.7 USB Controller: Intel Corporation 82801H (ICH8 Family) USB2 EHCI Controller #2 (rev 02)
+00:1b.0 Audio device: Intel Corporation 82801H (ICH8 Family) HD Audio Controller (rev 02)
+00:1c.0 PCI bridge: Intel Corporation 82801H (ICH8 Family) PCI Express Port 1 (rev 02)
+00:1c.1 PCI bridge: Intel Corporation 82801H (ICH8 Family) PCI Express Port 2 (rev 02)
+00:1c.3 PCI bridge: Intel Corporation 82801H (ICH8 Family) PCI Express Port 4 (rev 02)
+00:1c.5 PCI bridge: Intel Corporation 82801H (ICH8 Family) PCI Express Port 6 (rev 02)
+00:1d.0 USB Controller: Intel Corporation 82801H (ICH8 Family) USB UHCI Controller #1 (rev 02)
+00:1d.1 USB Controller: Intel Corporation 82801H (ICH8 Family) USB UHCI Controller #2 (rev 02)
+00:1d.2 USB Controller: Intel Corporation 82801H (ICH8 Family) USB UHCI Controller #3 (rev 02)
+00:1d.7 USB Controller: Intel Corporation 82801H (ICH8 Family) USB2 EHCI Controller #1 (rev 02)
+00:1e.0 PCI bridge: Intel Corporation 82801 Mobile PCI Bridge (rev f2)
+00:1f.0 ISA bridge: Intel Corporation 82801HEM (ICH8M) LPC Interface Controller (rev 02)
+00:1f.1 IDE interface: Intel Corporation 82801HBM/HEM (ICH8M/ICH8M-E) IDE Controller (rev 02)
+00:1f.2 IDE interface: Intel Corporation 82801HBM/HEM (ICH8M/ICH8M-E) SATA IDE Controller (rev 02)
+00:1f.3 SMBus: Intel Corporation 82801H (ICH8 Family) SMBus Controller (rev 02)
+03:01.0 FireWire (IEEE 1394): Ricoh Co Ltd R5C832 IEEE 1394 Controller (rev 05)
+03:01.1 SD Host controller: Ricoh Co Ltd R5C822 SD/SDIO/MMC/MS/MSPro Host Adapter (rev 22)
+03:01.2 System peripheral: Ricoh Co Ltd R5C843 MMC Host Controller (rev 12)
+03:01.3 System peripheral: Ricoh Co Ltd R5C592 Memory Stick Bus Host Adapter (rev 12)
+03:01.4 System peripheral: Ricoh Co Ltd xD-Picture Card Controller (rev ff)
+09:00.0 Ethernet controller: Broadcom Corporation NetLink BCM5906M Fast Ethernet PCI Express (rev 02)
+0c:00.0 Network controller: Intel Corporation PRO/Wireless 3945ABG [Golan] Network Connection (rev 02)
+\end{lstlisting}
+
+看到前面用冒号和点分割的数字了么，就是以总线号、设备号以及功能号进行标识的。可以看到我的机器上用到了0、3、9、12这四条PCI总线。
+
+\item[PCI配置寄存器]：\\
+
+每一个PCI设备都有它映射的内存地址空间和它的I/O区域。除此之外，PCI设备还有它的配置寄存器（即Configuration Space）。对于所有的PCI设备，配置地址空间一共256 bytes，其中前64 bytes是标准化的，它提供了厂商号，设备号，版本号等信息，唯一标识一个PCI设备。同时，它也提供了最多可多达6个的I/O地址区域，每个区域可以是内存也可以是I/O地址。这几个I/O地址区域是驱动程序找到设备映射到内存和I/O空间的具体位置的唯一途径。关于这64个字节的配置空间的详细情况，可以参考下图：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/pcicr.png}
+\end{figure}
+
+\item[PCI设备启动过程]：\\
+
+
+在系统引导阶段，PCI硬件设备保持未激活状态，每个设备都没有被分配内存空间和I/O端口。但每个PCI主板均配备有能够处理PCI的固件（比如BIOS），固件通过读写PCI控制器中的寄存器，提供了对设备配置地址空间的访问。系统启动以后，固件通过扫描每个PCI设备，通过读取他们的配置地址空间，为每个设备分配相应的内存和I/O端口，为后面硬件驱动程序做好准备。
+
+
+\item[如何使用PCI设备]：\\
+
+当我们想查询一个特定PCI设备的配置地址空间时，我们需要向I/O地址$[\mathrm{0cf8}, \mathrm{0cfb}]$ 写入一个 4 bytes查询码指定总线号：设备号：功能号以及其配置地址空间中的查询位置。那么PCI Host Bridge将监听对于这个I/O端口的写入并在接受到写入数据后将相应的查询结果写入到 $[\mathrm{0cfc}, \mathrm{0cff}]$ ， 我们从这个地址读出一个32位整数表示查询到的相应信息。
+
+查询配置地址空间时，我们一般会从其6个BARS中得到特定设备的控制端口和数据端口信息，那么只要在初始化时将这些端口地址保存下来，就可以在PCI硬件驱动程序中通过向这些端口输入输出数据来达到控制PCI设备的目的了
+
+\end{description}
+
+更多更详细的内容可以参考网站：\burl{http://xwindow.angelfire.com/page13_1.html}，上面介绍的内容已经足够我们理解JOS中的相应代码了。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+接下来我们看JOS中是如何对PCI设备进行编程的，这部分模块主要定义在kern/pci.c中，JOS在系统初始化时调用其中的 \funcname{pci\_init()} 进行设备初始化，首先来看一些最基本的东西：
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+static void
+pci_conf1_set_addr(uint32_t bus,
+		   uint32_t dev,
+		   uint32_t func,
+		   uint32_t offset)
+{
+	assert(bus < 256);
+	assert(dev < 32);
+	assert(func < 8);
+	assert(offset < 256);
+	assert((offset & 0x3) == 0);
+	
+	uint32_t v = (1 << 31) |		// config-space
+		(bus << 16) | (dev << 11) | (func << 8) | (offset);
+	outl(pci_conf1_addr_ioport, v);
+}
+
+static uint32_t
+pci_conf_read(struct pci_func *f, uint32_t off)
+{
+	pci_conf1_set_addr(f->bus->busno, f->dev, f->func, off);
+	return inl(pci_conf1_data_ioport);
+}
+
+static void
+pci_conf_write(struct pci_func *f, uintint
+e100_sw_reset(struct dev_e100 *e100) {
+        outl(e100->reg_base[E100_IO] + CSR_PORT, PORT_SW_RESET);
+        
+        // delay about 10us
+        int i = 0;
+        for (i = 0; i < 8; i++) {
+                inb (0x84);
+        }
+
+        e100_init(e100);
+
+        return 1;
+}
+32_t off, uint32_t v)
+{
+	pci_conf1_set_addr(f->bus->busno, f->dev, f->func, off);
+	outl(pci_conf1_data_ioport, v);
+}
+\end{lstlisting}
+
+
+这三个函数是对PCI设备最基本的读状态和写状态的函数，其中 \funcname{ pci\_conf1\_set\_addr() } 负责设置需要读写的具体设备。这里涉及到的两个I/O端口定义在了文件最上方：
+
+
+\begin{lstlisting}[style=ccode, firstnumber=12, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+// PCI "configuration mechanism one"
+static uint32_t pci_conf1_addr_ioport = 0x0cf8;
+static uint32_t pci_conf1_data_ioport = 0x0cfc;
+\end{lstlisting}
+
+正是我们前面提到的两个端口。接下来我们看看它是怎么初始化PCI设备的，看到 \funcname{pic\_init()}：
+
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+static int 
+pci_scan_bus(struct pci_bus *bus)
+{
+    int totaldev = 0;
+    struct pci_func df;
+    memset(&df, 0, sizeof(df));
+    df.bus = bus;
+	
+    for (df.dev = 0; df.dev < 32; df.dev++) {
+        uint32_t bhlc = pci_conf_read(&df, PCI_BHLC_REG);
+        if (PCI_HDRTYPE_TYPE(bhlc) > 1)	    // Unsupported or no device
+            continue;
+		
+        totaldev++;
+		
+        struct pci_func f = df;
+        for (f.func = 0; f.func < (PCI_HDRTYPE_MULTIFN(bhlc) ? 8 : 1); f.func++) {
+            struct pci_func af = f;
+			
+            af.dev_id = pci_conf_read(&f, PCI_ID_REG);
+            if (PCI_VENDOR(af.dev_id) == 0xffff)
+                continue;
+			
+            uint32_t intr = pci_conf_read(&af, PCI_INTERRUPT_REG);
+            af.irq_line = PCI_INTERRUPT_LINE(intr);
+			
+            af.dev_class = pci_conf_read(&af, PCI_CLASS_REG);
+            if (pci_show_devs)
+                pci_print_func(&af);
+            pci_attach(&af);
+        }
+    }
+	
+    return totaldev;
+}
+
+int
+pci_init(void)
+{
+	static struct pci_bus root_bus;
+	memset(&root_bus, 0, sizeof(root_bus));
+	
+	return pci_scan_bus(&root_bus);
+}
+\end{lstlisting}
+
+\begin{enumerate}
+\item{\funcname{pci\_init()}中，root\_bus被全部清0，然后交给\funcname{pci\_scan\_bus()}扫描这条总线上的所有设备，说明在JOS中E100是被放置在0号总线上的}
+\item{\funcname{pci\_scan\_bus()} 中顺次查找0号总线上的32个设备，如果发现其存在，那么顺次扫描它们每个功能对应的配置地址空间，将一些关键的控制参数读入pci\_func进行保存，其中pci\_func的结构如下：
+
+\begin{lstlisting}[style=ccode, firstnumber=11, title={\scriptsize \ttfamily \bfseries kern/pci.h}]
+struct pci_func {
+    struct pci_bus *bus;	// Primary bus for bridges
+
+    uint32_t dev;
+    uint32_t func;
+
+    uint32_t dev_id;
+    uint32_t dev_class;
+
+    uint32_t reg_base[6];
+    uint32_t reg_size[6];
+    uint8_t irq_line;
+};
+\end{lstlisting}
+
+对于网卡驱动来说，最重要的就是其reg\_base数组，这是我们用于向E100发送命令的地址端口，在后面的初始化程序中我们需要将其记录下来。
+
+}
+
+\item{得到pci\_func之后，它被传入\funcname{pci\_attach()}去查找是否为已存在的硬件，如果匹配成功，则使用预设好的程序初始化该硬件
+
+\begin{lstlisting}[style=ccode, firstnumber=67, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+static int __attribute__((warn_unused_result))
+pci_attach_match(uint32_t key1, uint32_t key2,
+		 struct pci_driver *list, struct pci_func *pcif)
+{
+    uint32_t i;
+	
+    for (i = 0; list[i].attachfn; i++) {
+        if (list[i].key1 == key1 && list[i].key2 == key2) {
+            int r = list[i].attachfn(pcif);
+            if (r > 0)
+                return r;
+            if (r < 0)
+                cprintf("pci_attach_match: attaching "
+                    "%x.%x (%p): e\n",
+                    key1, key2, list[i].attachfn, r);
+        }
+    }
+    return 0;
+}
+
+static int
+pci_attach(struct pci_func *f)
+{
+    return
+        pci_attach_match(PCI_CLASS(f->dev_class), 
+                PCI_SUBCLASS(f->dev_class),
+                &pci_attach_class[0], f) ||
+        pci_attach_match(PCI_VENDOR(f->dev_id), 
+                PCI_PRODUCT(f->dev_id),
+                &pci_attach_vendor[0], f);
+}
+\end{lstlisting}
+
+
+}
+\end{enumerate}
+
+到这里PCI设备的初始化就结束了，接下来我们要尝试写一个E100网卡的初始化过程。
+
+\begin{lstlisting}[style=exercise]
+|Exercise 3|. Implement an attach function to initialize the 82559ER. Add an entry to the pci_attach_vendor array in kern/pci.c to trigger your function if a matching PCI device is found. The vendor ID and device ID for the 82559ER can be found in Section 4 of the developer manual. You should also see these listed when JOS scans the PCI bus while booting.
+
+After enabling the E100 device via pci_func_enable, your attach function should record the IRQ line and base I/O port assigned to the device so you'll be able to communicate with the E100.
+
+We have provided the kern/e100.c and kern/e100.h files for you so that you do not need to mess with the make system. You may still need to include the e100.h file in other places in the kernel.
+
+When you boot your kernel, you should see it print that the PCI function of the E100 card was enabled. Your code should now pass the pci attach test of make grade.
+\end{lstlisting}
+
+第一步我们查阅手册得到E100的Vender ID为8086h，Device ID为1229h，然后将初始化程序作为驱动程序的一部分定义在kern/e100.c中，先撰写头文件kern/e100.h：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+#ifndef JOS_KERN_E100_H
+#define JOS_KERN_E100_H
+
+#include <kern/pci.h>
+
+#define E100_VENDOR		0x8086
+#define E100_DEVICE		0x1209
+
+int e100_attach(struct pci_func *pcif);
+
+#endif	// JOS_KERN_E100_H
+\end{lstlisting}
+
+然后是主过程，定义了一个e100记录其相应的设备信息：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+// LAB 6: Your driver code here
+
+#include <inc/x86.h>
+#include <inc/stdio.h>
+
+#include <kern/e100.h>
+
+struct pci_func e100;
+
+int 
+e100_attach(struct pci_func *pcif) 
+{
+    pci_func_enable(pcif);
+    e100.bus = pcif->bus;
+    e100.dev_id = pcif->dev_id;
+    e100.dev_class = pcif->dev_class;
+    int i;
+    for (i = 0; i < 6; i++) {
+    	e100.reg_base[i] = pcif->reg_base[i];
+        e100.reg_size[i] = pcif->reg_size[i];
+        cprintf ("zhangchi: The %dth Bar: base = %x, size = %x\n", 
+            i, e100.reg_base[i], e100.reg_size[i]);
+    }
+    e100.irq_line = pcif->irq_line;
+
+    return 0;
+}
+\end{lstlisting}
+
+接下来修改kern/pci.c中的pci\_attach\_vendor数组，把我们的E100初始化程序添加进去：
+
+\begin{lstlisting}[style=ccode, firstnumber=31, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+// pci_attach_vendor matches the vendor ID and device ID of a PCI device
+struct pci_driver pci_attach_vendor[] = {
+	{ E100_VENDOR, E100_DEVICE, &e100_attach }, 
+	{ 0, 0, 0 },
+};
+\end{lstlisting}
+
+然后make qemu启动JOS，应该能看到E100网卡被顺利激活了：
+
+\begin{lstlisting}[style=console]
+enabled interrupts: 1 2
+	     Setup timer interrupts via 8259A
+enabled interrupts: 0 1 2
+	     unmasked timer interrupt
+PCI: 00:00.0: 8086:1237: class: 6.0 (Bridge device) irq: 0
+PCI: 00:01.0: 8086:7000: class: 6.1 (Bridge device) irq: 0
+PCI: 00:01.1: 8086:7010: class: 1.1 (Storage controller) irq: 0
+PCI: 00:01.3: 8086:7113: class: 6.80 (Bridge device) irq: 9
+PCI: 00:02.0: 1013:00b8: class: 3.0 (Display controller) irq: 0
+PCI: 00:03.0: 8086:1209: class: 2.0 (Network controller) irq: 11
+PCI function 00:03.0 (8086:1209) enabled
+zhangchi: The 0th Bar: base = f2020000, size = 1000
+zhangchi: The 1th Bar: base = c040, size = 40
+zhangchi: The 2th Bar: base = f2040000, size = 20000
+zhangchi: The 3th Bar: base = 0, size = 0
+zhangchi: The 4th Bar: base = 0, size = 0
+zhangchi: The 5th Bar: base = 0, size = 0
+FS is running
+FS can do I/O
+\end{lstlisting}
+
+可以看到第二个端口应该就是我们以后进行操作的I/O端口c040，空间大小为40h = 64 bytes
+
 
 \subsubsection{E100 Reset}
 
+
+\begin{lstlisting}[style=exercise]
+|Exercise 4|. Add code to your attach function to reset the 82559ER. If you set the -debug-e100 flag, QEMU should tell you if the reset was successfully. It will print something like this after JOS starts scanning the PCI bus:
+
+EE100   nic_reset               0xacea498
+
+There will also be a few nic_reset's before JOS starts; those are the BIOS itself resetting the device.
+\end{lstlisting}
+
+
+这一段的MIT提供的资料是相对来说比较详尽的，还记得我们前面打印出来的c040地址么？这个地方就是我们要写入CSR的端口。CSR(Control/Status Registers)是我们对于E100网卡的控制字，如前面所说，它是一个64 bytes的地址空间，其中我们最需要关注的是它的前12个bytes，称为SCB(System Control Block)，我们对网卡的主要控制主要是对于SCB相应参数的进行设置。其布局如下：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/csr.png}
+\end{figure}
+
+对于重设网卡，是采用的PORT Interface的形式进行控制，详见Manual的6.3.3 PORT Interface。这里E100允许我们只对SCB中的PORT设置特定值以后就执行相应的功能，比如说有：
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/reset.png}
+\end{figure}
+
+从这个表格看出，我们只需要对PORT字段写入全0就可以达到重启的目的了。
+
+但是在进行编码之前，我们需要对头文件进行一些修改，方便后续的程序编写。
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e1000.h}]
+#ifndef JOS_KERN_E100_H
+#define JOS_KERN_E100_H
+
+#include <kern/pci.h>
+
+#define E100_VENDOR		0x8086
+#define E100_DEVICE		0x1209
+
+#define E100_MEMORY     0
+#define E100_IO         1
+#define E100_FLASH      2
+
+#define CSR_SCB         0x0
+#define CSR_STATUS      0x0
+#define CSR_US          0x0
+#define CSR_STATACK     0x1
+#define CSR_COMMAND     0x2
+#define CSR_UC          0x2
+#define CSR_INT         0x3
+#define CSR_GP          0x4
+#define CSR_PORT        0x8
+
+
+#define PORT_SW_RESET   0x0
+#define PORT_SELF_TEST  0x1
+#define PORT_SEL_RESET  0x2
+
+int e100_attach(struct pci_func *pcif);
+
+#endif	// JOS_KERN_E100_H
+\end{lstlisting}
+
+
+\begin{enumerate}
+\item{在手册中的4.1 PCI Configuration Space，对于E100而言，PCI配置中提供的6个地址中的前三个分别为
+
+\begin{enumerate}
+\item{CSR Memory Mapped Base Address Register}
+\item{CSR I/O Mapped Base Address Register}
+\item{Flash Memory Mapped Base Address Register}
+\end{enumerate}
+
+因为我们只使用I/O端口对CSR进行控制，不使用内存地址的原因资料中也提到了，有可能因为编译器的原因使得地址端口失效，所以最稳固的方法还是使用I/O的方式。这三个地址在初始化时已经被载入到e100.reg\_base[0-2]中了。在使用他们的基址的时候，我们为他们定义了相应的数组索引位置
+}
+\item{定义了一系列SCB字段在CSR中的位移，以便于后面我们使用in和out指令对他们进行读写操作}
+\item{预定义了三条PORT Interface指令}
+\end{enumerate}
+
+作这项工作中我大量参考了\burl{http://code.google.com/p/os-xv6-network/source/browse/trunk/dev/e100.h}提供的参数，节省了我大量的时间，对作者表示感谢。
+
+
+然后就可以真正开始对网卡进行重启了：
+
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+// LAB 6: Your driver code here
+
+#include <inc/x86.h>
+#include <inc/stdio.h>
+
+#include <kern/e100.h>
+
+struct pci_func e100;
+
+static void e100_sw_reset(struct pci_func e100);
+
+int 
+e100_attach(struct pci_func *pcif) 
+{
+    pci_func_enable(pcif);
+    e100.bus = pcif->bus;
+    e100.dev_id = pcif->dev_id;
+    e100.dev_class = pcif->dev_class;
+    int i;
+    for (i = 0; i < 6; i++) {
+    	e100.reg_base[i] = pcif->reg_base[i];
+        e100.reg_size[i] = pcif->reg_size[i];
+    }
+    e100.irq_line = pcif->irq_line;
+
+    e100_sw_reset(e100);
+}
+
+static void
+e100_sw_reset(struct pci_func e100) {
+    outl(e100.reg_base[E100_IO] + CSR_PORT, PORT_SW_RESET);
+
+    // delay about 10us
+    int i = 0;
+    for (i = 0; i < 8; i++) {
+        inb (0x84);
+    }
+}
+
+\end{lstlisting}
+
+注意不要忘了按照MIT材料的提示重启后delay 一段时间再返回。使用make qemu QEMUEXTRA="-debug-e100"启动JOS应该可以看到网卡的重启消息:
+
+\begin{lstlisting}[style=console]
+EE100	nic_init                
+EE100	pci_reset               0x9566008
+EE100	nic_init                macaddr:  52 54 00 12 34 56
+EE100	nic_reset               0x9566008
+EE100	nic_selective_reset     checksum=0xbe34
+EE100	nic_init                model=i82559er,macaddr=52:54:00:12:34:56
+EE100	nic_reset               0x9566008
+EE100	nic_selective_reset     checksum=0xbe34
+EE100	pci_mmio_map            region 0, addr=0xf2020000, size=0x00001000, type=8
+EE100	pci_map                 region 1, addr=0x0000c040, size=0x00000040, type=1
+EE100	pci_mmio_map            region 2, addr=0xf2040000, size=0x00020000, type=0
+6828 decimal is 15254 octal!
+Hooray! Passed all test cases for stdlib!!
+Physical memory: 66556K available, base = 640K, extended = 65532K
+check_page_alloc() succeeded!
+page_check() succeeded!
+check_boot_pgdir() succeeded!
+enabled interrupts: 1 2
+	     Setup timer interrupts via 8259A
+enabled interrupts: 0 1 2
+	     unmasked timer interrupt
+PCI: 00:00.0: 8086:1237: class: 6.0 (Bridge device) irq: 0
+PCI: 00:01.0: 8086:7000: class: 6.1 (Bridge device) irq: 0
+PCI: 00:01.1: 8086:7010: class: 1.1 (Storage controller) irq: 0
+PCI: 00:01.3: 8086:7113: class: 6.80 (Bridge device) irq: 9
+PCI: 00:02.0: 1013:00b8: class: 3.0 (Display controller) irq: 0
+PCI: 00:03.0: 8086:1209: class: 2.0 (Network controller) irq: 11
+EE100	pci_mmio_map            region 0, addr=0xf2020000, size=0x00001000, type=8
+EE100	pci_map                 region 1, addr=0x0000c040, size=0x00000040, type=1
+EE100	pci_mmio_map            region 2, addr=0xf2040000, size=0x00020000, type=0
+PCI function 00:03.0 (8086:1209) enabled
+EE100	eepro100_write4         addr=Port+0 val=0x00000000
+EE100	nic_reset               0x9566008
+EE100	nic_selective_reset     checksum=0xbe34
+FS is running
+\end{lstlisting}
+
+
+
+
 \subsubsection{E100 Structure}
 
+其实这里Intel的手册挺让人费解的，我读了以后发现CU其实就是负责发送数据的模块，RU就是接收数据的模块，按道理两个是相对的，那么CU应该称为Transmit Unit才对，Intel却命名为Control Unit，让人感觉这两个模块是分立的，并且CU有控制RU一样。
+
+对于CU和RU的讨论我们要等到将DMA Ring看完以后才能完整的描述，我们先来看DMA Rings
 
 \subsubsection{DMA Rings}
 
+根据资料的描述，DMA Rings就是系统为E100在内存中开辟的一片区域，用于网卡使用DMA缓存当前的收发数据的。一个DMA Rings在申请好以后，就可以将其所在的物理地址通知给E100的DMA控制器，那么E100就可以在不占用CPU的情况下自己根据内存中的数据开始进行收发操作了。\highlight{实际情况中内存里应该有两条DMA Rings}，一个专门用于放置待发送的数据（Control Block list, CBL），一个专门放置接受到的数据（Receive Frame Area, RFA）。
+
+因为采取了这样的操作模式，所以提示我们E100是根据DMA Rings中的内容进行工作的。接下来我们就会详细讲述利用CU发送数据时数据包格式是如何用Control Block(CB)进行描述的。E100读取CB中的设置，然后进行相应的发送操作，当工作完成后，\highlight{通过引发中断或者改变DMA Rings相应的状态位来提示系统工作已完成}。我们可以修改CB中相应场位的设置，来改变E100的工作模式。
+
+上面是E100自动进行工作的一种方式，如果我们需要人为的干预E100的运行的话，\highlight{还可以向CSR中的SCB寄存器写入相应的控制指令}，比如终止运行等，来改变其运行状态。
+
+所以，在完成这个部分的工作前，我们需要了解两方面重要的内容：
+
+\begin{enumerate}
+\item{CB (Control Block)的控制设置}
+\item{SCB (System Control Block)的控制设置}
+\end{enumerate}
+
+在了解 DMA Rings 的相关结构以后，我们会结合DMA Rings来进一步阐述这些控制设置在 DMA Rings上运行的效果。
+
 \subsection{Device Driver Organization}
+
 
 \subsection{Transmitting Packets}
 
+前面提到DMA Rings主要分为两种用途：发送和接受。
+\begin{itemize}
+
+\item{发送数据的DMA Rings是由若干个CB (Control Block)组成的，这些CB通过指针连接成一个环状的结构CBL（Control Block List）。}
+\item{接受数据的DMA Rings由若干个RFD (Receive Frame Descriptior)组成，也是连成环状，称为RFA (Receive Frame Area)}
+\end{itemize}
+
+这个阶段我们主要关注发送，发送是由CU模块来完成的。
+
+\highlight{CB是一个通用的概念}，即使是只在发送时用到，但是因为CU执行的不止一种命令，所以根据不同命令的需要对CB进行更加细致的规定。只有CB的前三个成员Control, Status和Link在各个应用场景中都是相同的，接下来的Command Specific Data才是根据不同的命令发生变化的。一个CB的结构在Intel的开源手册中的6.4.1.1 General Action Command Format中可以找到具体格式，如下图所示：
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/cbaction.png}
+\end{figure}
+
+其中有三个位置是特别值得我们关注的：
+
+\begin{itemize}
+\item{S：如果该位被设置为1，那么当E100的\highlight{CU}执行完此CB的命令之后，将停止运行进入挂起状态(Suspend)，只有使用SCB对E100下达恢复运行(Resume)指令后，CU模块才会重新运行，重新运行开始时执行的地址是该CB的Link Address指向的下一CB。注意，这里要注意\highlight{发送和接受是互相独立不干扰的}，所以CU停止工作的时候有可能RU还在正常运行，注意明确他们两个结构的概念。}
+\item{Status Word Bits中的C位：在操作CU执行任意CB上的命令时，\highlight{程序员首先应该负责手动清除该位上的值}，将其置为0。那么当CU模块执行完任务后，这个位置被设置成1。就可以检测某些指令的执行情况了。比如发送数据时由于数据包比较大，从CU获取到CB开始执行到发送完毕需要耗费一定的时间，
+}
+\item{CMD：CB支持的不同的操作类型，具体操作类型可以在手册的6.4.2 Specific Action Commands中找到，大致有以下几种操作:
+
+\begin{itemize}
+\item{NOP (000b)}
+\item{Individual Address Setup (001b)}
+\item{Configure (010b)}
+\item{Multicast Setup (011b)}
+\item{Transmit (100b)}
+\item{Load Microcode (101b)}
+\item{Dump (110b)}
+\item{Diagnose (111b)}
+\end{itemize}
+
+在这次实验中我们在CU模块的操作只会遇到两个：NOP和Transmit，严格的说只要使用Transmit就好了，但是在写的时候我们可以用NOP来进行一些测试，来检测程序的正确性。NOP的作用就是使CU在处理到该CB时什么事情也不作，\highlight{但是相应的状态位S、C等等都会对CU的执行有作用}。所以我们可以利用NOP指令设置S位\highlight{使其停止在某个CB上}，然后利用debug的输出信息进行调试，而不用去理会Transimit指令中其他那些乱七八糟的参数的设置。
+}
+\end{itemize}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+
+上面描述的是CB的一些通用概念，具体到发送包指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/tcb.png}
+\end{figure}
+
+虽然TCB的结构比CB更细化了，但是我们现在还不需要关注它的设置的细节，第一步我们先考虑\highlight{在内存中分配空间和建立起相应的TCB结构}。这就需要结合CU的工作方式来阐述它是如何读取和使用TCB的了。以下列出了使用TCBs发送数据包的全过程：
+
+\begin{enumerate}
+\item{首先在内存中建立起TCBs的环状结构}
+\item{将其中第一个TCB的物理地址写入CU的General Pointer，通知其要操作的TCB所在的内存位置}
+\item{给CU一个Start指令，CU开始工作}
+\item{如果环状的TCB中所有的S位都是0，那么CU将根据Link Address无限循环的处理这些TCB，每次执行完成以后，以中断和修改TCB中C状态位来表明任务已完成(后面我们会说明处理这些消息的方式，现在先不用管)}
+\item{如果CU碰到了某个TCB的S被设置为1，那么处理完该TCB之后，CU进入Suspend状态，等待用户发送Resume命令恢复运行，那么CU将从当前TCB的下个TCB开始执行}
+\end{enumerate}
+
+
+这只是硬件的执行机制，我们现在要考虑在TCBs上实现一个\highlight{支持多数据包发送的排队系统}，应该注意些什么？
+
+\begin{enumerate}
+\item{首先要记录当前TCB中哪些块是等待被发送的，哪些是可以被重新利用的}
+\item{其次要做好相应S位设置，让CU在发送完需要发送的包之后就停下来}
+\end{enumerate}
+
+考虑到上述两点，我们设计出的系统是这样描述TCB的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+#define TCB_MAXSIZE     1518
+#define CB_MAX_NUM      10
+
+// Transmit Command Blocks
+struct tcb {
+    uint32_t tcb_tbd_array_addr;
+    uint16_t tcb_byte_count;
+    uint8_t tcb_thrs;
+    uint8_t tcb_tbd_count;
+    char tcb_data[TCB_MAXSIZE];
+};
+
+// Control Blocks
+struct cb {
+    volatile uint16_t cb_status;
+    uint16_t cb_control;
+    uint32_t cb_link;
+
+    union cb_cmd_spec_data {
+        struct tcb tcb;
+    } cb_cmd_spec;
+
+    struct cb *prev, *next;
+    physaddr_t phy_addr;   
+};
+
+// Control Block List
+struct cbl {
+    int cb_avail;
+    int cb_wait;
+
+    struct cb *start;
+    struct cb *front, *rear;
+};
+\end{lstlisting}
+
+解释一下这些结构：
+
+\begin{itemize}
+\item{tcb：直接按照MIT给出的结构定义的，没什么好说}
+\item{cb: 这里有两点值得注意：
+\begin{enumerate}
+\item{union结构cb\_cmd\_spec是根据不同指令的需要说明的，其实这里我们只用到了Transmit指令，所以union中只有一个成员看着比较别扭，但是这样写更具有\highlight{扩展性和维护性}，当需要使用到其他指令时，直接在cb\_cmd\_spec里添加其他的数据结构即可}
+\item{在cb\_cmd\_spec的后面我们增加了三个成员prev, next和phy\_addr，这个和手册上关于CB的定义是不符的，但是并不影响CU的执行，主要是为了我们自己在后续操作中的方便，}
+\end{enumerate}
+}
+\item{cbl: 这里维护了几个值，分别说明一下：
+\begin{itemize}
+\item{cb\_avail: 表示当前有多少个闲置的TCB可以用来放置数据以发送}
+\item{cb\_wait: 表示当前有多少个TCB正在处于等待发送状态}
+\item{很明显上面两者相加应该等于所有TCB的总数，在这里应该是我们定义的CB\_MAX\_NUM = 10}
+\item{start: 所有TCB中的第一个TCB，用于开始的时候初始化CU用}
+\item{front和rear: 表示当前正在等待发送的TCB的起始和结尾}
+
+\end{itemize}
+}
+\end{itemize}
+
+那么这个系统是如何根据cbl中定义的结构工作的呢？
+
+\begin{enumerate}
+\item{初始的时候front = start, rear = start$\rightarrow$prev，表示当前等待发送的数据包为空，并且cb\_avail = CB\_MAX\_NUM, cb\_wait = 0}
+\item{当需要发送一个数据包时，将其添加到rear后面，并且移动rear指针，同时增加cb\_wait, 减少cb\_avail}
+\item{当确认等待数据包发送时，检查front指向TCB的C状态是否为1，可以的话则将front向后移动，同时减少cb\_wait, 增加cb\_avail}
+
+\end{enumerate}
+
+那么相应的边界状态就可以很容易的通过cb\_wait和cb\_avail检测出来了。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+好了到这里我们已经清楚了一个TCB结构是如何被建立起来并且在后续过程中维护的详细过程，现在我们可以考虑建立起这样的结构了：
+
+\begin{lstlisting}[style=exercise]
+|Exercise 5|. Construct a control DMA ring for the CU to use. You do not need to worry about configuring the device because the default setting are fine. You also do not need to worry about setting up the device MAC address because the emulated E100 has one already configured.
+\end{lstlisting}
+
+首先为了程序的易于管理，我们新定义了一个结构nic:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+
+// Network Interface Card
+struct nic {
+    uint32_t io_base;
+    uint32_t io_size;
+
+    struct cbl cbl;
+};\end{lstlisting}
+
+注意在前面的初始化硬件过程中添加上nic的初始化过程：
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+struct nic nic;
+
+int
+e100_attach(struct pci_func *pcif) 
+{
+    pci_func_enable(pcif);
+    e100.bus = pcif->bus;
+    e100.dev_id = pcif->dev_id;
+    e100.dev_class = pcif->dev_class;
+    int i;
+    for (i = 0; i < 6; i++) {
+    	e100.reg_base[i] = pcif->reg_base[i];
+        e100.reg_size[i] = pcif->reg_size[i];
+    }
+    e100.irq_line = pcif->irq_line;
+
+    // Initialize NIC
+    nic.io_base = pcif->reg_base[E100_IO];
+    nic.io_size = pcif->reg_size[E100_IO];
+
+    e100_init ();
+
+    return 0;
+}
+\end{lstlisting}
+
+在初始化的第一步我们先需要为TCB分配物理空间，在内核空间地址里我们注意到KERNBASE以上应该是没有被映射的（或者说映射了但是没有实际意义，在内存管理的Lab中我们就知道，KERNBASE以上的空间全部被\highlight{静态映射}成一一对应的物理内存，注意回顾静态映射的概念，就是\highlight{被映射到的物理页没有改变其引用数}，这个特性导致了我后面的程序的一个错误，请多注意！）
+
+我们可以考虑将TCB放置到 KERNBASE 以上的区域中去，我的做法是将 KERNBASE 上 CBLBASE = (KERNBASE + PGSIZE)作为TCB的内存空间，连续分配CB\_MAX\_NUM个物理页，每页对应一个TCB。（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
+static void
+cbl_alloc () {
+    int i, r;
+    void *va;
+    struct Page *p;
+    struct cb *prevcb = NULL;
+    struct cb *currcb = NULL;
+
+    // Allocate physical page for Control block
+    for (i = 0; i < CB_MAX_NUM; i++) {
+
+        va = (void *)CBLBASE + i * PGSIZE;
+
+        if ((r = page_alloc (&p)) != 0)
+            panic ("cbl_init: run out of physical memory! %e\n", r);
+
+        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
+            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+
+        memset (va, 0, PGSIZE);
+
+        currcb = (struct cb *)va;
+        currcb->phy_addr = page2pa (p);
+
+        if (i == 0)
+            nic.cbl.start = currcb;
+        else {
+            prevcb->cb_link = currcb->phy_addr;
+            prevcb->next = currcb;
+            currcb->prev = prevcb;
+        }
+
+        prevcb = currcb;
+    }
+
+    prevcb->cb_link = nic.cbl.start->phy_addr;
+    nic.cbl.start->prev = prevcb;
+    prevcb->next = nic.cbl.start;
+
+    nic.cbl.cb_avail = CB_MAX_NUM;
+    nic.cbl.cb_wait = 0;
+
+    nic.cbl.front = nic.cbl.start;
+    nic.cbl.rear = nic.cbl.start->prev;
+}
+\end{lstlisting}
+
+
+看起来是不是好像没有问题？在初始化中调用\funcname{cbl\_alloc()} 确实也不会有错，但是当我调试的时候打印的时候发现了不对的地方，注意其中第17行：
+
+\begin{lstlisting}[style=ccode, firstnumber=17]
+        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
+            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+\end{lstlisting}
+
+如果我们在其前后添加上打印相应物理页的信息：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
+        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
+        struct Page *pp = pa2page (PTE_ADDR (*pte));
+
+        cprintf ("zhangchi: current mapping va %x -> pa %x, ppref = %d\n", va, PTE_ADDR (*pte), pp->pp_ref);
+
+        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
+            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+
+        cprintf ("zhangchi: changed mapping va %x -> pa %x, ppref = %d\n", va, PTE_ADDR (*pte), pp->pp_ref);
+\end{lstlisting}
+
+解释一下，这里的pp指向的是va地址以前映射到的物理页，当我们使用\funcname{page\_insert()}将当前申请到的TCB所在物理页插入页表以后，pp就会被卸载。启动以后我们发现JOS打印出了下面的信息：
+
+\begin{lstlisting}[style=console]
+zhangchi: current mapping va f0001000 -> pa 1000, ppref = 0
+zhangchi: changed mapping va f0001000 -> pa 40bb000, ppref = 65535
+zhangchi: current mapping va f0002000 -> pa 2000, ppref = 0
+zhangchi: changed mapping va f0002000 -> pa 40ba000, ppref = 65535
+zhangchi: current mapping va f0003000 -> pa 3000, ppref = 0
+zhangchi: changed mapping va f0003000 -> pa 40b9000, ppref = 65535
+zhangchi: current mapping va f0004000 -> pa 4000, ppref = 0
+zhangchi: changed mapping va f0004000 -> pa 40b8000, ppref = 65535
+zhangchi: current mapping va f0005000 -> pa 5000, ppref = 0
+zhangchi: changed mapping va f0005000 -> pa 40b7000, ppref = 65535
+zhangchi: current mapping va f0006000 -> pa 6000, ppref = 0
+zhangchi: changed mapping va f0006000 -> pa 40b6000, ppref = 65535
+zhangchi: current mapping va f0007000 -> pa 7000, ppref = 0
+zhangchi: changed mapping va f0007000 -> pa 40b5000, ppref = 65535
+zhangchi: current mapping va f0008000 -> pa 8000, ppref = 0
+zhangchi: changed mapping va f0008000 -> pa 40b4000, ppref = 65535
+zhangchi: current mapping va f0009000 -> pa 9000, ppref = 0
+zhangchi: changed mapping va f0009000 -> pa 40b3000, ppref = 65535
+zhangchi: current mapping va f000a000 -> pa a000, ppref = 0
+zhangchi: changed mapping va f000a000 -> pa 40b2000, ppref = 65535
+\end{lstlisting}
+
+这里有两个东西需要我们关注：
+
+\begin{enumerate}
+\item{在插入之前映射到的物理页引用数ppref为0，还记得前面我说过的静态映射么？因为在映射KERNBASE以上的地址空间时，我们没有增加映射到的物理页的引用数，为的就是使得这些物理页能够被重用，而不是因为KERNBASE的映射使其引用数大于0导致不能回收。}
+\item{被卸载以后，ppref变成了65535, 很明显这个值不正常}
+\end{enumerate}
+
+为什么？原因出在\funcname{page\_insert()}过程中，我们来看看具体代码：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_insert()}]
+int
+page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm) 
+{
+    pte_t *pte = pgdir_walk (pgdir, va, 1);
+
+    if (pte == NULL) {
+        return -E_NO_MEM;
+    }
+
+    if (*pte & PTE_P) {
+
+        if (PTE_ADDR(*pte) == page2pa (pp)) {
+            tlb_invalidate (pgdir, va);
+            pp -> pp_ref --;
+        } else {
+            // inside the page_remove, it will invoke tlb_invalidate and page_decref
+            page_remove (pgdir, va);
+        }
+    }
+    
+    *pte = page2pa (pp)|perm|PTE_P;
+    pp -> pp_ref ++;
+
+    return 0;
+}
+\end{lstlisting}
+
+注意第17行，其中卸载原有物理页时使用了\funcname{page\_remove()}，我们知道原有页面\highlight{不是经过正常步骤加入页表的}（即通过\funcname{page\_insert()}插入的），而是通过静态映射，那么在这里用\funcname{page\_remove()}卸载就肯定会出问题，我们看到\funcname{page\_remove()}的代码：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_remove()}]
+void
+page_remove(pde_t *pgdir, void *va)
+{
+    pte_t *pte;
+    struct Page *physpage = page_lookup (pgdir, va, &pte);
+
+    if (physpage != NULL) {
+        page_decref (physpage);
+        *pte = 0;
+        tlb_invalidate (pgdir, va);
+    }
+}
+\end{lstlisting}
+
+可以看到这里\highlight{将页面的引用数减少了1}，于是前面的现象就可以得到解释了，原本的引用数为0，减一以后因为无符号所以变成了65535。
+
+这样我们就知道了在改变KERNBASE以上空间的映射时，不能使用 \funcname{page\_insert()}，只能自己手动将页面插入页表了，修改后的程序如下，在插入物理页面的时候将那句\funcname{page\_insert()} 调用换成：
+
+\begin{lstlisting}[style=ccode]
+        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
+
+        *pte = page2pa (p)|PTE_W|PTE_P;
+        p -> pp_ref ++;
+\end{lstlisting}
+
+这样修改后内存的申请就正式完成了。调试的时候我想看看系统页表到底对不对，是否真的把我申请的页面加入了页表，于是启动JOS以后用QEMU自带的命令info pg打印出页表，发现怎么搞都不对，打印结果如下：
+
+\begin{lstlisting}[style=console]
+K> QEMU 0.12.5 monitor - type 'help' for more information
+(qemu) info pg
+PDE(001) 00000000-00400000 00400000 urw
+ |-- PTE(000030) 00200000-00230000 00030000 urw
+PDE(001) 00400000-00800000 00400000 urw
+ |-- PTE(000001) 007ff000-00800000 00001000 urw
+PDE(001) 00800000-00c00000 00400000 urw
+ |-- PTE(000018) 00800000-00818000 00018000 ur-
+ |-- PTE(000001) 00818000-00819000 00001000 urw
+ |-- PTE(00021f) 00819000-00a38000 0021f000 ur-
+ |-- PTE(000107) 00a38000-00b3f000 00107000 urw
+PDE(001) 08000000-08400000 00400000 urw
+ |-- PTE(000007) 08000000-08007000 00007000 urw
+PDE(001) 10000000-10400000 00400000 urw
+ |-- PTE(000001) 10000000-10001000 00001000 urw
+PDE(001) ee800000-eec00000 00400000 urw
+ |-- PTE(000001) eebfd000-eebfe000 00001000 urw
+ |-- PTE(000001) eebff000-eec00000 00001000 urw
+PDE(001) eec00000-ef000000 00400000 urw
+ |-- PTE(00001f) eec00000-eec1f000 0001f000 ur-
+PDE(001) ef000000-ef400000 00400000 urw
+ |-- PTE(000031) ef000000-ef031000 00031000 ur-
+PDE(001) ef400000-ef800000 00400000 ur-
+ |-- PTE(000003) ef400000-ef403000 00003000 urw
+ |-- PTE(000001) ef420000-ef421000 00001000 urw
+ |-- PTE(000001) ef440000-ef441000 00001000 urw
+ |-- PTE(000003) ef7ba000-ef7bd000 00003000 urw
+ |-- PTE(000001) ef7bd000-ef7be000 00001000 ur-
+ |-- PTE(000001) ef7be000-ef7bf000 00001000 urw
+ |-- PTE(000001) ef7bf000-ef7c0000 00001000 -rw
+ |-- PTE(000040) ef7c0000-ef800000 00040000 urw
+PDE(001) ef800000-efc00000 00400000 -rw
+ |-- PTE(000008) efbf8000-efc00000 00008000 -rw
+PDE(001) efc00000-f0000000 00400000 -rw
+ |-- PTE(000003) efc00000-efc03000 00003000 urw
+ |-- PTE(000001) efc20000-efc21000 00001000 urw
+ |-- PTE(000001) efc40000-efc41000 00001000 urw
+ |-- PTE(000003) effba000-effbd000 00003000 urw
+ |-- PTE(000001) effbd000-effbe000 00001000 ur-
+ |-- PTE(000001) effbe000-effbf000 00001000 urw
+ |-- PTE(000001) effbf000-effc0000 00001000 -rw
+ |-- PTE(000040) effc0000-f0000000 00040000 urw
+PDE(040) f0000000-00000000 10000000 urw
+ |-- PTE(010000) f0000000-00000000 10000000 -rw
+(qemu) 
+\end{lstlisting}
+
+只要关心最后一项关于 f0000000-00000000 的映射即可，这个现象让我百思不得其解，因为在程序中所有打印的测试都是没问题的，后来我想到在以前的Lab中我们曾经实现过一个打印地址映射的命令showmappings，我尝试着用自己写的命令打印了一下：
+
+\begin{lstlisting}[style=console]
+K> showmappings 0xf0000000 0xf000c000
+0xf0000000 - 0xf0001000     0x0   kernel: read/write
+0xf0001000 - 0xf0002000     0x40bb000   kernel: read/write
+0xf0002000 - 0xf0003000     0x40ba000   kernel: read/write
+0xf0003000 - 0xf0004000     0x40b9000   kernel: read/write
+0xf0004000 - 0xf0005000     0x40b8000   kernel: read/write
+0xf0005000 - 0xf0006000     0x40b7000   kernel: read/write
+0xf0006000 - 0xf0007000     0x40b6000   kernel: read/write
+0xf0007000 - 0xf0008000     0x40b5000   kernel: read/write
+0xf0008000 - 0xf0009000     0x40b4000   kernel: read/write
+0xf0009000 - 0xf000a000     0x40b3000   kernel: read/write
+0xf000a000 - 0xf000b000     0x40b2000   kernel: read/write
+0xf000b000 - 0xf000c000     0xb000   kernel: read/write
+K> 
+\end{lstlisting}
+
+发现在这里又是正确的。可能是QEMU对于某些打印区间作了简化把，这个情况我确实不清楚为什么QEMU的打印信息不对了。不过至少写到现在代码在后面没有出现过问题。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。从这里开始就涉及到对于CU的操作字的问题。首先回顾一下我们在建立TCB以后可能需要进行的操作：
+
+\begin{enumerate}
+\item{将其中第一个TCB的物理地址写入CU的General Pointer，通知其要操作的TCB所在的内存位置}
+\item{给CU一个Start指令，CU开始工作}
+\item{如果环状的TCB中所有的S位都是0，那么CU将根据Link Address无限循环的处理这些TCB，每次执行完成以后，以中断和修改TCB中C状态位来表明任务已完成(后面我们会说明处理这些消息的方式，现在先不用管)}
+\item{如果CU碰到了某个TCB的S被设置为1，那么处理完该TCB之后，CU进入Suspend状态，等待用户发送Resume命令恢复运行，那么CU将从当前TCB的下个TCB开始执行}
+\end{enumerate}
+
+在这里首先回答一下关于CU\highlight{执行完成后的响应问题}。如果让CU使用中断的方式提醒我们，效率会比较高，但是比较麻烦的是要去处理中断响应。而如果使用轮询的方式的话，根据我们CBL的结构，只需要每次测试front头的C状态位是否完成即可知道任务的完成状态，非常方便。
+
+控制CU是通过向SCB中写入相应的控制字决定的，具体规定在手册的6.3.2 System Control Block (SCB)中规定：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scb.png}
+\end{figure}
+
+最主要的两个部分是控制字和状态字:
+
+\begin{description}
+\item[控制字]：\\
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbcmd.png}
+\end{figure}
+
+我们主要需要关注三个字段：
+
+\begin{itemize}
+\item{M: 当控制字的这个位被设置成1，那么CU将不会发出任何中断，这个位正是当我们屏蔽中断时第一个需要给出的命令}
+\item{CU Command:}
+\item{RU Command:}
+\end{itemize}
+
+
+\item[状态字]：\\
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbstatus.png}
+\end{figure}
+
+\end{description}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
 \subsubsection{C Structures}
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+
+
+
+SCB COMMAND Word： 当CPU接受命令，即将COMMAND清空：
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
 
 \subsection{Transmitting Packets: Network Server}
 
