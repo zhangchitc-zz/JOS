@@ -42,11 +42,15 @@
 
 
 // CU Command Word
-#define CUC_SHIFT       0
-#define CUC_NOP         0x0
+
+#define CUC_NOP         0x00
 #define CUC_START       0x10
 #define CUC_RESUME      0x20
+#define CUC_LD_COUNTER  0x40
+#define CUC_DUMP_SCNT   0x50
 #define CUC_LOAD_BASE   0x60
+#define CUC_DUMP_RSCNT  0x70
+#define CUC_SRESUME     0xa0
 
 
 
@@ -61,6 +65,9 @@
 #define CBC_CONFIG      0x2
 #define CBC_MAS         0x3
 #define CBC_TRANSMIT    0x4
+#define CBC_LOADMC      0x5
+#define CBC_DUMP        0x6
+#define CBC_DIAGNOSE    0x7
 
 
 // Control Block Status
@@ -70,10 +77,10 @@
 
 
 // Error CODE
-#define E_CBL_FULL    0
-#define E_CBL_EMPTY   1
-#define E_RFA_FULL    2
-#define E_RFA_EMPTY   3
+#define E_CBL_FULL    1
+#define E_CBL_EMPTY   2
+#define E_RFA_FULL    3
+#define E_RFA_EMPTY   4
 
 
 #define TCB_MAXSIZE     1518

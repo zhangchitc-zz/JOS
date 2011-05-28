@@ -727,7 +727,7 @@ int e100_attach(struct pci_func *pcif);
 然后就可以真正开始对网卡进行重启了：
 
 
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
 // LAB 6: Your driver code here
 
 #include <inc/x86.h>
@@ -880,19 +880,42 @@ FS is running
 }
 \end{itemize}
 
+看完CB的相关字段说明，我们可以将这些状态定义到头文件里方便后续的设置和读取判断了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// Control Block Command
+#define CBF_EL          0x8000
+#define CBF_S           0x4000
+#define CBF_I           0x2000
+
+#define CBC_NOP         0x0
+#define CBC_IAS         0x1
+#define CBC_CONFIG      0x2
+#define CBC_MAS         0x3
+#define CBC_TRANSMIT    0x4
+#define CBC_LOADMC      0x5
+#define CBC_DUMP        0x6
+#define CBC_DIAGNOSE    0x7
+
+// Control Block Status
+#define CBS_F           0x0800
+#define CBS_OK          0x2000
+#define CBS_C           0x8000
+\end{lstlisting}
+
 \vspace{2em}
 \hrule
 \vspace{2em}
 
 
-上面描述的是CB的一些通用概念，具体到发送包指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。
+上面描述的是CB的一些通用概念，具体到发送包指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。这个是TCB的一个布局图。
 
 \begin{figure}[htp]
 \centering
 \includegraphics[scale=0.30]{/home/zhangchi/lab/report/tcb.png}
 \end{figure}
 
-虽然TCB的结构比CB更细化了，但是我们现在还不需要关注它的设置的细节，第一步我们先考虑\highlight{在内存中分配空间和建立起相应的TCB结构}。这就需要结合CU的工作方式来阐述它是如何读取和使用TCB的了。以下列出了使用TCBs发送数据包的全过程：
+可以看到，虽然TCB的结构比CB更细化了，但是我们现在还不需要关注它的设置的细节，第一步我们先考虑\highlight{在内存中分配空间和建立起相应的TCB结构}。这就需要结合CU的工作方式来阐述它是如何读取和使用TCB的了。以下列出了使用TCBs发送数据包的全过程：
 
 \begin{enumerate}
 \item{首先在内存中建立起TCBs的环状结构}
@@ -980,7 +1003,7 @@ struct cbl {
 
 \end{enumerate}
 
-那么相应的边界状态就可以很容易的通过cb\_wait和cb\_avail检测出来了。
+那么相应的边界状态比如队列空或者队列满就可以很容易的通过 cb\_wait 和 cb\_avail 检测出来了。
 
 \vspace{2em}
 \hrule
@@ -995,7 +1018,6 @@ struct cbl {
 首先为了程序的易于管理，我们新定义了一个结构nic:
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
-
 // Network Interface Card
 struct nic {
     uint32_t io_base;
@@ -1004,9 +1026,11 @@ struct nic {
     struct cbl cbl;
 };\end{lstlisting}
 
+nic是用于编写E100网卡驱动中所有过程中一个记录需要使用到的资源的工具，管理我们用到的I/O端口和CBL、RFA等等。
+
 注意在前面的初始化硬件过程中添加上nic的初始化过程：
 
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
 struct nic nic;
 
 int
@@ -1137,7 +1161,7 @@ zhangchi: changed mapping va f000a000 -> pa 40b2000, ppref = 65535
 
 \begin{enumerate}
 \item{在插入之前映射到的物理页引用数ppref为0，还记得前面我说过的静态映射么？因为在映射KERNBASE以上的地址空间时，我们没有增加映射到的物理页的引用数，为的就是使得这些物理页能够被重用，而不是因为KERNBASE的映射使其引用数大于0导致不能回收。}
-\item{被卸载以后，ppref变成了65535, 很明显这个值不正常}
+\item{被卸载以后，ppref变成了65535, 很明显这个值不正常，如此大的引用数会造成这些页面几乎永久不能回收}
 \end{enumerate}
 
 为什么？原因出在\funcname{page\_insert()}过程中，我们来看看具体代码：
@@ -1251,6 +1275,8 @@ PDE(040) f0000000-00000000 10000000 urw
 
 只要关心最后一项关于 f0000000-00000000 的映射即可，这个现象让我百思不得其解，因为在程序中所有打印的测试都是没问题的，后来我想到在以前的Lab中我们曾经实现过一个打印地址映射的命令showmappings，我尝试着用自己写的命令打印了一下：
 
+\newpage
+
 \begin{lstlisting}[style=console]
 K> showmappings 0xf0000000 0xf000c000
 0xf0000000 - 0xf0001000     0x0   kernel: read/write
@@ -1270,9 +1296,9 @@ K>
 
 发现在这里又是正确的。可能是QEMU对于某些打印区间作了简化把，这个情况我确实不清楚为什么QEMU的打印信息不对了。不过至少写到现在代码在后面没有出现过问题。
 
-\vspace{2em}
+\vspace{1em}
 \hrule
-\vspace{2em}
+\vspace{1em}
 
 TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。从这里开始就涉及到对于CU的操作字的问题。首先回顾一下我们在建立TCB以后可能需要进行的操作：
 
@@ -1285,7 +1311,7 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 
 在这里首先回答一下关于CU\highlight{执行完成后的响应问题}。如果让CU使用中断的方式提醒我们，效率会比较高，但是比较麻烦的是要去处理中断响应。而如果使用轮询的方式的话，根据我们CBL的结构，只需要每次测试front头的C状态位是否完成即可知道任务的完成状态，非常方便。
 
-控制CU是通过向SCB中写入相应的控制字决定的，具体规定在手册的6.3.2 System Control Block (SCB)中规定：
+我们带着这些需求来看看具体操作方法。控制CU是通过向SCB中写入相应的控制字决定的，具体规定在手册的6.3.2 System Control Block (SCB)中规定：
 
 \begin{figure}[htp]
 \centering
@@ -1305,10 +1331,56 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 
 \begin{itemize}
 \item{M: 当控制字的这个位被设置成1，那么CU将不会发出任何中断，这个位正是当我们屏蔽中断时第一个需要给出的命令}
-\item{CU Command:}
-\item{RU Command:}
+\item{CUC (CU Command): 这里对CU的控制命令有以下几种：
+
+\begin{enumerate}
+\item{0000 NOP}
+\item{0001 CU Start}
+\item{0010 CU Resume}
+\item{0100 Load Dump Counters Address}
+\item{0101 Dump Statistical Counters}
+\item{0110 Load CU Base}
+\item{0111 Dump and Reset Statistical Counters}
+\item{1010 CU Static Resume} 
+\end{enumerate}
+
+我们要用到的主要是\highlight{CU Start}和\highlight{CU Resume}，他们对应的需求为：
+
+\begin{itemize}
+\item{在建立好TCB并且给CU设置好TCB的地址以后，发出一个CU Start指令，CU开始工作}
+\item{当CU在某个TCB因为S位被挂起以后，发出一个CU Resume指令可以让其恢复工作}
 \end{itemize}
 
+手册读到这里我们可以把相应的设置场位定义到kern/e100.h中了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// CU Command Word
+#define CUC_NOP         0x00
+#define CUC_START       0x10
+#define CUC_RESUME      0x20
+#define CUC_LD_COUNTER  0x40
+#define CUC_DUMP_SCNT   0x50
+#define CUC_LOAD_BASE   0x60
+#define CUC_DUMP_RSCNT  0x70
+#define CUC_SRESUME     0xa0
+\end{lstlisting}
+
+}
+\item{RUC (RU Command): 这个我们在后面会详细讲述}
+\end{itemize}
+
+看到这里，我们已经知道\highlight{如何关闭CU的中断}、使其\highlight{开始}和\highlight{恢复}执行，但是在开始前需要将TCB的地址告诉CU使其能够开始运行，这个如何设置？这里就涉及到SCB中General Pointer的设置了：
+
+\newpage
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbgp.png}
+\end{figure}
+
+General Pointer是SCB中根据不同的命令设置的一个场位，\highlight{提供某些命令执行时需要的数据}，比如这里我们只需要关注CU Start命令，在执行该命令前，General Pointer里必须写入开始执行的TCB的物理地址，那么CU Start时就可以从该TCB开始执行。而CU Resume就不需要，因为其下一次运行的TCB地址已经在被Suspend的时候被写入了内部寄存器。
+
+设置General Pointer只需要像写入SCB的状态字和控制字一样直接像相应的I/O端口写入值即可。
 
 \item[状态字]：\\
 \begin{figure}[htp]
@@ -1316,24 +1388,322 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 \includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbstatus.png}
 \end{figure}
 
+这里我们只需要关注CU的状态字即可，它主要可能有以下状态：
+
+\begin{enumerate}
+\item{00: Idle}
+\item{01: Suspend}
+\item{10: LPQ Active}
+\item{11: HQP Active}
+\end{enumerate}
+
+后面两个我都不知道是干吗的，这次实验里只需要知道前两个即可，因为如果不是前面两个的停止状态，那么当前CU肯定是在工作状态，然后将该状态值也定义到头文件里：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// CU Status Word
+#define CUS_MASK        0xc0
+#define CUS_IDLE        0x0
+#define CUS_SUSPENDED   0x1
+#define CUS_LPQ_ACTIVE  0x2
+#define CUS_HQP_ACTIVE  0x3
+\end{lstlisting}
+
+CUS\_MASK是由于要从SCB中读取其状态但CUS又是在中间的位置，所以先要用CUS\_MASK取出CUS相应场位出来
+
 \end{description}
 
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+到这里我们已经将所有的控制指令都了解完毕了，在开始编写真正的驱动之前，还有一个东西我们需要明确，就是发出指令的状态控制，在手册的6.3.2.2 SCB Command Word中提到了这么一段话：
+
+\begin{lstlisting}[style=challenge]
+When software wants to issue an action command, it should write to the Command byte. The CUC and RUC fields of the Command byte specify the actions to be performed by the 8255x. The command is ready for acceptance by the device as soon as it is written into the CUC or RUC field. The actual command execution may not start instantaneously and will depend on current receive and transmit DMA activity. The Command byte is set by the CPU and cleared by the 8255x indicating command acceptance.
+\end{lstlisting}
+
+因为硬件控制的原因，所以在我们对于SCB写入相应的控制指令时，\highlight{并不会马上开始执行}，硬件要过一段时间以后才会接受，那么如何知道是否接受呢？上面的材料提到当CU接受命令以后，\highlight{SCB中的命令字会被硬件清除}。进一步的，在手册中的6.5 Starting and Completing Control Commands中也提到：
+
+\begin{lstlisting}[style=challenge]
+* Software must wait for this byte to be cleared before the next control command can be issued.
+* CU and RU control commands must never be issued together in the same SCB write cycle.
+\end{lstlisting}
+
+通过修改SCB对CU发出一条指令之后，\highlight{我们必须等待其命令字被清空以后}，才能继续下面的指令。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+好了我们可以正式开始编程了，首先是对CU发出命令的基本模块：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_exec\_cmd()}]
+static void
+e100_exec_cmd (int csr_comp, uint8_t cmd)
+{
+    int scb_command;
+
+    outb(nic.io_base + csr_comp, cmd);
+    do {
+        scb_command = inb(nic.io_base + CSR_COMMAND);
+    } while (scb_command != 0);
+}
+\end{lstlisting}
+
+csr\_comp是SCB命令字的一个字段，cmd是需要执行的命令。发出命令后，我们通过轮询等待命令字被清空确认指令被接受。
+
+初始化的第一步，屏蔽所有的中断：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_init()}]
+static void
+e100_init ()
+{
+    // Software Reset E100
+    e100_sw_reset(e100);
+
+    // disable all interrupts
+    e100_exec_cmd (CSR_INT, 1);
+
+    cbl_init ();
+}
+\end{lstlisting}
+
+我们把刚才在\funcname{e100\_attch()}中调用的软重启放到了 \funcname{e100\_init()} 中，并将 \funcname{e100\_attch()} 换成了调用\funcname{e100\_init()} 完成E100的所有初始化。
+
+然后我们看看对于CBL进行初始化的\funcname{cbl\_init()}:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_init()}]
+static int
+cbl_append_nop (uint16_t flag)
+{
+    if (nic.cbl.cb_avail == 0)
+        return -E_CBL_FULL;
+
+    nic.cbl.rear = nic.cbl.rear->next;
+    nic.cbl.rear->cb_control = CBC_NOP | flag;
+
+    return 0;
+}
+
+static void
+cbl_init () 
+{
+    cbl_alloc ();
+
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (CBF_S);
+
+    outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, CUC_START); 
+}
+\end{lstlisting}
+
+\funcname{cbl\_append\_nop()}是在CBL待发送队列中添加一个NOP指令，用于我们待会查看网卡输出判断我们在 \funcname{cbl\_alloc()} 建立的结构是否被CU正确找到。
+
+具体的话它的工作就是在待发送队列的末尾添加了一个NOP指令TCB。然后设置其flag为我们需要的状态，一般来说就是S=0或者S=1的区别。同样这里使用到了出错状态，我一共定义了四种边界的错误：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// Error CODE
+#define E_CBL_FULL    1
+#define E_CBL_EMPTY   2
+#define E_RFA_FULL    3
+#define E_RFA_EMPTY   4
+\end{lstlisting}
+
+
+在\funcname{cbl\_init()}第23行，添加完以后我们往SCB的General Pointer里写入了当前CBL里的第一个TCB的物理地址，然后发送了一条CU Start指令。这个逻辑产生的效果应该是，网卡启动后执行了4条NOP指令，然后在最后一条执行完后被挂起。
+
+我们通过make qemu QEMUEXTRA="-debug-e100"启动JOS，其打印出的网卡记录为：
+
+\begin{lstlisting}[style=console, numbers=left, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+PCI: 00:00.0: 8086:1237: class: 6.0 (Bridge device) irq: 0
+PCI: 00:01.0: 8086:7000: class: 6.1 (Bridge device) irq: 0
+PCI: 00:01.1: 8086:7010: class: 1.1 (Storage controller) irq: 0
+PCI: 00:01.3: 8086:7113: class: 6.80 (Bridge device) irq: 9
+PCI: 00:02.0: 1013:00b8: class: 3.0 (Display controller) irq: 0
+PCI: 00:03.0: 8086:1209: class: 2.0 (Network controller) irq: 11
+EE100	pci_mmio_map            region 0, addr=0xf2020000, size=0x00001000, type=8
+EE100	pci_map                 region 1, addr=0x0000c040, size=0x00000040, type=1
+EE100	pci_mmio_map            region 2, addr=0xf2040000, size=0x00020000, type=0
+PCI function 00:03.0 (8086:1209) enabled
+EE100	eepro100_write4         addr=Port+0 val=0x00000000
+EE100	nic_reset               0x92d8008
+EE100	nic_selective_reset     checksum=0xbe34
+EE100	eepro100_write1         addr=Command/Status+3 val=0x01
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+EE100	eepro100_write_pointer  val=0x040bb000
+EE100	eepro100_write1         addr=Command/Status+2 val=0x10
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040ba000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b9000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b8000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x4000, link=0x040b7000
+EE100	action_command          CU list empty
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+FS is running
+FS can do I/O
+\end{lstlisting}
+
+从13行nic\_selective\_reset记录后开始，产生的log分别为：
+
+\begin{enumerate}
+\item{14-15行，向Command/Status+3写入0x01，即写入SCB Command字的M位，用于屏蔽中断，然后读取Command/Status+2即SCB Command字，查看是否被清空，这两句是我们在 \funcname{e100\_exec\_cmd()}中一起执行的两条命令}
+\item{16行，向General Pointer写入TCB的物理地址}
+\item{17行，向Command/Status+2写入0x10，即发出CU Start指令}
+\item{18-25行，CU开始执行TCB中指明的指令了，到了第四个以后执行完毕停止}
+\item{26行，这句是对应17行中CU Start指令的验证，也是同在\funcname{e100\_exec\_cmd()}的}
+\end{enumerate}
+
+现在看起来还挺不错的，但是我们还没有验证以下几个方面：
+
+\begin{itemize}
+\item{TCB的环状结构是否正常}
+\item{TCB的发送指令是否正常}
+\item{CU的Resume命令是否正常}
+\end{itemize}
+
+所以我们将初始化过程修改成这样：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+static int
+cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
+{
+    if (nic.cbl.cb_avail == 0)
+        return -E_CBL_FULL;
+
+    nic.cbl.rear = nic.cbl.rear->next;
+    nic.cbl.rear->cb_control = CBC_TRANSMIT | flag;
+    
+    nic.cbl.rear->cb_cmd_spec.tcb.tcb_tbd_array_addr    = 0xFFFFFFFF;
+    nic.cbl.rear->cb_cmd_spec.tcb.tcb_byte_count        = l;
+    nic.cbl.rear->cb_cmd_spec.tcb.tcb_thrs              = 0xE0;
+    nic.cbl.rear->cb_cmd_spec.tcb.tcb_tbd_count         = 0;
+
+    memmove (nic.cbl.rear->cb_cmd_spec.tcb.tcb_data, (void *)data, l);
+
+    return 0;
+}
+
+static void
+cbl_init () 
+{
+    cbl_alloc ();
+
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (CBF_S);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+    cbl_append_nop (0);
+
+    cbl_append_transmit ("aaaax", 5, 0);
+
+
+    outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, CUC_START); 
+
+    e100_exec_cmd (CSR_COMMAND, CUC_RESUME); 
+}
+\end{lstlisting}
+
+这里添加了一个函数 \funcname{cbl\_append\_transmit()} 添加一个发送指令的TCB到队尾，不再赘述。
+
+然后初始化过程中我们添加发送了CBL中所有的10个TCB，并且最后一次发送transmit不是suspend，那么在我们发出的第一次Start指令后，应该会在第四个NOP指令停下来，接下来发出Resume指令后，应该会循环执行CBL中的所有TCB后在同样在第四个NOP停下来，启动JOS后打印的信息如下：
+
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+PCI function 00:03.0 (8086:1209) enabled
+EE100	eepro100_write4         addr=Port+0 val=0x00000000
+EE100	nic_reset               0x8a8e008
+EE100	nic_selective_reset     checksum=0xbe34
+EE100	eepro100_write1         addr=Command/Status+3 val=0x01
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+EE100	eepro100_write_pointer  val=0x040bb000
+EE100	eepro100_write1         addr=Command/Status+2 val=0x10
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040ba000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b9000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b8000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x4000, link=0x040b7000
+EE100	action_command          CU list empty
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+EE100	eepro100_write1         addr=Command/Status+2 val=0x20
+EE100	eepro100_cu_command     CU resuming
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b6000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b5000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b4000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b3000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0000, link=0x040b2000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x0004, link=0x040bb000
+EE100	action_command          transmit, TBD array address 0xffffffff, TCB byte count 0x0005, TBD count 0
+EE100	action_command          TBD (simplified mode): buffer address 0x040b2010, size 0x0005
+EE100	action_command          0x8a8e008 sending frame, len=5, 61 61 61 61 78
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0xa000, command=0x0000, link=0x040ba000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0xa000, command=0x0000, link=0x040b9000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0xa000, command=0x0000, link=0x040b8000
+EE100	action_command          CU list with at least one more entry
+EE100	action_command          val=0x10 (cu start), status=0xa000, command=0x4000, link=0x040b7000
+EE100	action_command          CU list empty
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+FS is running
+FS can do I/O
+\end{lstlisting}
+
+可以看到发送的流程和我们的预期是正常的，但是这里看到发送的时候打印的信息不是很给力：
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+EE100	action_command          transmit, TBD array address 0xffffffff, TCB byte count 0x0005, TBD count 0
+EE100	action_command          TBD (simplified mode): buffer address 0x040b2010, size 0x0005
+EE100	action_command          0x8a8e008 sending frame, len=5, 61 61 61 61 78
+EE100	action_command          CU list with at least one more entry
+\end{lstlisting}
+
+尤其是在发送大量数据的话在大量包记录里很难找到有效信息，我们可以使用提供的包拦截参数将其记录到文件，使用make qemu QEMUEXTRA="-debug-e100 -pcap slirp.cap"打印调试信息的同时将网卡的包抓取后放入slirp.cap文件中，这个文件是一个二进制文件，人无法直接读取，需要tcpdump来为我们解析，使用tcpdump -XXr slirp.cap命令打印其中的内容，得到的输出如下：
+
+
+\begin{lstlisting}[style=console]
+zhangchi@zhangchi-vostro1400:~/lab$ tcpdump -XXr slirp.cap 
+reading from file slirp.cap, link-type EN10MB (Ethernet)
+15:05:39.002011 [|ether]
+	0x0000:  6161 6161 78                             aaaax
+zhangchi@zhangchi-vostro1400:~/lab$ 
+\end{lstlisting}
+
+可以看到我们发送的aaaax消息，这样看着就直观多了。
+
+
+
+
+
 \begin{lstlisting}[style=exercise]
 \end{lstlisting}
 
 
-
-\begin{lstlisting}[style=exercise]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
 
 
@@ -1347,11 +1717,15 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 
 SCB COMMAND Word： 当CPU接受命令，即将COMMAND清空：
 
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
 
 
-\begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
 
 

@@ -143,13 +143,13 @@ cbl_append_nop (uint16_t flag)
 
 
 static int
-cbl_append_data (char *data, uint16_t l)
+cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
 {
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
 
     nic.cbl.rear = nic.cbl.rear->next;
-    nic.cbl.rear->cb_control                            = CBC_TRANSMIT;
+    nic.cbl.rear->cb_control                            = CBC_TRANSMIT | flag;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_tbd_array_addr    = 0xFFFFFFFF;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_byte_count        = l;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_thrs              = 0xE0;
@@ -165,14 +165,7 @@ cbl_init ()
 {
     cbl_alloc ();
 
-    return;
-
-    // Clear General Pointer
-    //outl(nic.io_base + CSR_GP, 0);
-    //e100_exec_cmd (CSR_COMMAND, CUC_LOAD_BASE); 
-
     cbl_append_nop (0);
-
     cbl_append_nop (0);
     cbl_append_nop (0);
     cbl_append_nop (CBF_S);
@@ -181,15 +174,12 @@ cbl_init ()
     cbl_append_nop (0);
     cbl_append_nop (0);
     cbl_append_nop (0);
-    cbl_append_nop (0);
-    //cbl_append_nop (0);
 
-    cbl_append_data ("aaaa", 5);
-    
+    cbl_append_transmit ("aaaax", 5, 0);
+
 
     outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
     e100_exec_cmd (CSR_COMMAND, CUC_START); 
-
 
     e100_exec_cmd (CSR_COMMAND, CUC_RESUME); 
 }
