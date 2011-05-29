@@ -2112,7 +2112,7 @@ zhangchi: validate, avail = 1, wait = 3,   slot = f40af000
 
 可以看到输出是符合我们的预期的，通过slot可以看到每次操作的RFD编号，可以观察RU操作这些RFD的顺序。测试成功以后，我们需要将初始化改回来：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: rfa\_init()}]
 static void
 rfa_init () 
 {
@@ -2123,6 +2123,7 @@ rfa_init ()
 }
 \end{lstlisting}
 
+实验很顺利，可以考虑编写给系统调用的接口了：
 \newpage
 
 \begin{lstlisting}[style=exercise]
@@ -2154,6 +2155,8 @@ e100_receive (char *data)
 
 如果没有数据可以获取，返回负数错误，否则将数据填入data代表的buffer，然后将数据的字节数作为返回值返回。
 
+记得修改相关代码将系统调用安装到JOS中去。
+
 
 \subsection{Receiving Packets: Network Server}
 
@@ -2165,51 +2168,366 @@ e100_receive (char *data)
 
 这个Exercise是我本次实验花费的时间最多的地方之一，为什么，可以看看我的代码：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/input.c}]
+#include "ns.h"
+#include <inc/lib.h>
+
+extern union Nsipc nsipcbuf;
+
+void
+input(envid_t ns_envid)
+{
+    binaryname = "ns_input";
+
+    while (1) {
+        while ((nsipcbuf.pkt.jp_len 
+            = sys_net_try_recv (nsipcbuf.pkt.jp_data)) < 0);
+
+        ipc_send(ns_envid, NSREQ_INPUT, &nsipcbuf, PTE_U|PTE_W|PTE_P);     
+    }
+}
 \end{lstlisting}
 
-
-
-\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
-\end{lstlisting}
-
-\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
-\end{lstlisting}
-
-
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
-\end{lstlisting}
-
+这段代码在测试的时候发现make grade在testinput死都不过，于是我尝试自己单独运行testinput, 在grade-lab6.sh中可以看到testinput是这么调用的：
 
 \begin{lstlisting}[style=console]
+runtest1 -tag "testinput [5 packets]" -dir net testinput -DTEST_NO_NS \
+	-check check_testinput 5
 \end{lstlisting}
 
+注意DTEST\_NO\_NS是不启动网络服务器的宏，这就让我很纳闷了，如果不启动的话怎么测试Input和Output模块的？结果查看了一下net/testinput.c代码后才发现，它自己在进程中创建了Input环境和Output环境，单独对这两个模块进行测试：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+void
+umain(void)
+{
+	envid_t ns_envid = sys_getenvid();
+	int i, r;
+
+	binaryname = "testinput";
+
+	output_envid = fork();
+	if (output_envid < 0)
+		panic("error forking");
+	else if (output_envid == 0) {
+		output(ns_envid);
+		return;
+	}
+
+	input_envid = fork();
+	if (input_envid < 0)
+		panic("error forking");
+	else if (input_envid == 0) {
+		input(ns_envid);
+		return;
+	}
+
+	cprintf("Sending ARP announcement...\n");
+	announce();
+
+	cprintf("Waiting for packets...\n");
+	while (1) {
+		envid_t whom;
+		int perm;
+
+		int32_t req = ipc_recv((int32_t *)&whom, pkt, &perm);
+		if (req < 0)
+			panic("ipc_recv: %e", req);
+		if (whom != input_envid)
+			panic("IPC from unexpected environment %08x", whom);
+		if (req != NSREQ_INPUT)
+			panic("Unexpected IPC %d", req);
+
+		hexdump("input: ", pkt->jp_data, pkt->jp_len);
+		cprintf("\n");
+	}
+}
+\end{lstlisting}
+
+所以单独运行testinput就只需要启动testinput进程就可以了，NS和FS都可以不用启动，反正也没有用到，即把kern/init.c的创建进程一段改成：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/init.c: i386\_init()}]
+	// Should always have an idle process as first one.
+	ENV_CREATE(user_idle);
+
+	// Start fs.
+	//ENV_CREATE(fs_fs);
+
+
+#if !defined(TEST_NO_NS)
+	//Start ns.
+        //ENV_CREATE(net_ns);
+#endif
+
+#if defined(TEST)
+	// Don't touch -- used by grading script!
+	ENV_CREATE2(TEST, TESTSIZE);
+#else
+	// Touch all you want.
+	ENV_CREATE(net_testinput);
+	// ENV_CREATE(user_echosrv);
+	// ENV_CREATE(user_httpd);
+#endif // TEST*
+
+	// Schedule and run the first user environment!
+
+        sched_yield ();
+\end{lstlisting}
+
+然后make qemu发现出错了，内核地址错误：
 
 \begin{lstlisting}[style=console]
+Sending ARP announcement...
+Waiting for packets...
+TRAP frame at 0xefbffecc
+  edi  0x00806004
+  esi  0xf40b1010
+  ebp  0xefbfff10
+  oesp 0xefbffeec
+  ebx  0x0000002a
+  edx  0x0000000a
+  ecx  0x0000002a
+  eax  0x00806004
+  es   0x----0010
+  ds   0x----0010
+  trap 0x0000000e Page Fault
+  err  0x00000003
+  eip  0xf0105b14
+  cs   0x----0008
+  flag 0x00003002
+  esp  0xf0286208
+  ss   0x----6004
+kernel panic at kern/trap.c:313: kernel-mode page faults
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
 \end{lstlisting}
 
+很奇怪，然后选择打印栈轨迹查看是从哪里出错的：
+
+\begin{lstlisting}[style=console]
+Welcome to the JOS kernel monitor!
+Type 'help' for a list of commands.
+K> backtrace
+Stack backtrace:
+  ebp efbffdc0  eip f010092a  args 00000001 efbffdd8 00000000 efbffe64 f0285d60
+         kern/monitor.c:419: monitor+274
+  ebp efbffe30  eip f01000e2  args 00000000 efbffe64 00000139 00000008 efbffecc
+         kern/init.c:112: _panic+93
+  ebp efbffe50  eip f01041f8  args f01086c0 00000139 f01086a8 00000008 00000000
+         kern/trap.c:356: page_fault_handler+63
+  ebp efbffe90  eip f01043d5  args efbffecc 00806000 efbffed0 f0103992 efbffef4
+         kern/trap.c:232: trap+198
+  ebp efbffec0  eip f0104582  args efbffecc 00806004 f40b1010 efbfff10 efbffeec
+         kern/trapentry.S:103: <unknown>+0
+  ebp efbfff10  eip f0106205  args 00806004 f40b1010 0000002a 007ff000 00000000
+         kern/e100.c:328: e100_receive+196
+  ebp efbfff30  eip f0104c1c  args 00806004 f02b8564 00807000 00000007 f02b9174
+         kern/syscall.c:593: syscall+1535
+  ebp efbfff80  eip f0104416  args 00000010 00806004 00000000 00000000 00000000
+         kern/trap.c:248: trap+263
+  ebp efbfffb0  eip f0104582  args efbfffbc 00000000 00000000 eebfdef0 efbfffdc
+         kern/trapentry.S:103: <unknown>+0
+  ebp eebfdef0  eip 0080050a  args 00806004 00000000 00000000 00001001 00001001
+         <unknown>:0: <unknown>+0
+  ebp eebfdf10  eip 008000ce  args 00001001 00000000 00000000 00000000 00000000
+         <unknown>:0: <unknown>+0
+  ebp eebfdfd0  eip 00800614  args 00000000 00000000 00000000 00000000 00000000
+         <unknown>:0: <unknown>+0
+\end{lstlisting}
+
+看到其中出现了kern/e100.c:328 e100\_receive的信息，然后去源文件找到这行代码：
+
+\begin{lstlisting}[style=ccode, firstnumber=323, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_receive()}]
+    nic.rfa.front->prev->rfd_control &= ~RFDF_S;
+    nic.rfa.front->rfd_control = RFDF_S;
+    nic.rfa.front->rfd_status = 0;
+
+    int r = nic.rfa.front->rfd_actual_count & RFD_AC_MASK;
+    memmove (data, nic.rfa.front->rfd_data, r);
+
+    nic.rfa.front = nic.rfa.front->next;
+
+    return r;
+\end{lstlisting}
+
+328行是memmove，也就是说往data里写入数据的时候出错了，data是input系统调用的传入参数，最外层的时候应该是由net/input.c中调用的：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/input.c}]
+#include "ns.h"
+#include <inc/lib.h>
+
+extern union Nsipc nsipcbuf;
+
+void
+input(envid_t ns_envid)
+{
+    binaryname = "ns_input";
+
+    while (1) {
+        while ((nsipcbuf.pkt.jp_len 
+            = sys_net_try_recv (nsipcbuf.pkt.jp_data)) < 0);
+
+        ipc_send(ns_envid, NSREQ_INPUT, &nsipcbuf, PTE_U|PTE_W|PTE_P);     
+    }
+}
+\end{lstlisting}
+
+第12行的sys\_net\_try\_recv 就是调用的 e100\_receive ()，为什么写入 nsipcbuf.pkt.jp\_data会错误呢？我百思不得其解，直到\highlight{张顺廷}湿胸提醒我才明白过来，Input和Output都是由testinput这个进程fork出来的，因此对于nsipcbuf这样的数据，在他们的地址中都是\highlight{COW页}。
+
+如果按照我这样的调用方法传入调用系统调用，那么向nsipcbuf中写入值的时候由于是处在内核态，内核态没有COW恢复机制，所以就发生了内核页错误了。COW恢复只可能是在用户态程序中进行写入时才有可能发生，即只有在Input本身向nsipcbuf写入数据，才有可能恢复。
+
+所以处理的办法是，在Input环境中开一片buf专门用于存储从系统调用 \funcname{ sys\_net\_try\_recv() } 接受来的数据，然后在接收以后再复制给 nsipcbuf.pkt.jp\_data，修改后的Input如下：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/input.c}]
+#include "ns.h"
+#include <inc/lib.h>
+
+extern union Nsipc nsipcbuf;
+
+void
+input(envid_t ns_envid)
+{
+    binaryname = "ns_input";
+    char buf[1518];
+    int len;
+
+    while (1) {
+        while ((len = sys_net_try_recv (buf)) < 0);
+
+        nsipcbuf.pkt.jp_len = len;
+        memmove ((void*) nsipcbuf.pkt.jp_data, (void *) buf, len);
+
+        ipc_send(ns_envid, NSREQ_INPUT, &nsipcbuf, PTE_U|PTE_W|PTE_P);     
+    }
+}
+\end{lstlisting}
+
+修改以后再次测试，出现了很奇怪的现象：
+
+\begin{lstlisting}[style=console]
+testinput [5 packets]: WRONG, receiving packet 001/5 (5.0s)
+expected input: 0030   2030 3031 0a
+got      input: 0030   2030 3032 0a
+testinput [100 packets]: WRONG, receiving packet 001/100 (5.2s)
+expected input: 0030   2030 3031 0a
+got      input: 0030   2030 3032 0a
+tcp echo server [echosrv]: OK (5.0s)
+\end{lstlisting}
+
+echosvr过了，但是testinput还是不过，而且跟答案的差距还非常小，在怎么检查都查不出的情况下，我通过比对张磊同学的代码，发现了我忘记看他提示中的一句话：
+
+\begin{lstlisting}[style=challenge]
+    // LAB 6: Your code here:
+    // 	- read a packet from the device driver
+    //	- send it to the network server
+    // Hint: When you IPC a page to the network server, it will be
+    // reading from it for a while, so don't immediately receive
+    // another packet in to the same physical page.
+\end{lstlisting}
+
+即会有这样的情况，Input将数据放入nsipcbuf中传给NS，NS处理这些数据需要一些时间。因为Input 是轮询查询网卡是不是有新数据的，所以可能在NS还没处理完的时候就利用原来的页面装进了新收到的数据，准备发给NS，这个时候就悲剧了，原来的数据被刷新了。
+
+张磊的做法是每次把nsipcbuf以ipc发送给NS以后，进行一次 \funcname{sys\_yield()} 我也这么试了，让我很郁闷，他进行一次就可以了，我一定要yield三次才可以。其实事实上yield多少次都不安全，因为没法知道网络服务器端什么时候才读完所有的数据，允许Input可以在nsipcbuf上写新的东西。
+
+所以我的想法是应该让网络服务器接受和处理完毕以后，向Input发送一条消息，通知他可以继续收数据。但是具体服务器代码我没有看，所以也无所谓改不改了。
 
 
 \subsection{The Web Server}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=exercise]
+|Exercise 11|. The web server is missing the code that deals with sending the contents of a file back to the client. Finish the web server by implementing send_file and send_data.
 \end{lstlisting}
 
-\begin{lstlisting}[style=exercise]
+这段程序主要是查询文件系统中关于Socket的用法，以及将文件读取连接后输出，都不难，直接贴代码了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries user/httpd.c: send\_file()}]
+static int
+send_file(struct http_request *req)
+{
+	int r;
+	off_t file_size = -1;
+	int fd;
+
+	// open the requested url for reading
+	// if the file does not exist, send a 404 error using send_error
+	// if the file is a directory, send a 404 error using send_error
+	// set file_size to the size of the file
+
+	// LAB 6: Your code here.
+ 	char path[MAXPATHLEN];
+	struct Stat stat;
+
+	memmove(path, req->url, strlen(req->url));
+
+        if ((fd = open(path, O_RDONLY)) < 0) {
+            send_error(req, 404);
+            goto end;
+        }
+
+        if ((r = fstat(fd, &stat)) < 0) {
+            goto end;
+        }
+
+        if (stat.st_isdir) {
+            send_error(req, 404);
+            goto end;
+        }
+ 
+        file_size = stat.st_size;
+
+
+	if ((r = send_header(req, 200)) < 0)
+		goto end;
+
+	if ((r = send_size(req, file_size)) < 0)
+		goto end;
+
+	if ((r = send_content_type(req)) < 0)
+		goto end;
+
+	if ((r = send_header_fin(req)) < 0)
+		goto end;
+
+	r = send_data(req, fd);
+
+end:
+	close(fd);
+	return r;
+}
 \end{lstlisting}
+
+还有
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries user/httpd.c: send\_data()}]
+static int
+send_data(struct http_request *req, int fd)
+{
+	// LAB 6: Your code here.
+	char *buff = malloc(1520 + 10);
+	struct Stat stat;
+	int size, r;
+
+	if (fstat(fd, &stat) < 0) {
+		return 0;
+	}
+	size = stat.st_size;
+
+	if (size > 1520 + 10)
+		return 0;
+	if ((r = readn(fd, buff, stat.st_size)) < 0) {
+		return 0;
+	}
+	if (write(req->sock, buff, stat.st_size) != stat.st_size)
+		cprintf("Failed to send the file\n");
+
+	return 0;
+}
+\end{lstlisting}
+
+\vspace{3em}
+
+到这里Lab6终于完全结束了！真的太消耗人了。
 
 \clearpage
 

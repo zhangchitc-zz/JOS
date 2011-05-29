@@ -266,7 +266,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	LIST_REMOVE(e, env_link);
 	*newenv_store = e;
 
-	cprintf("[%08x] new env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+	//cprintf("[%08x] new env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 	return 0;
 }
 
@@ -578,7 +578,6 @@ env_run(struct Env *e)
 	// LAB 3: Your code here.
    
     if (curenv != e) {
-        //cprintf (" =env_run= from [%08x] to [%08x]\n", curenv ? curenv->env_id : 0, e->env_id);
         curenv = e;
         curenv->env_runs ++;
         lcr3 (curenv->env_cr3);

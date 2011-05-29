@@ -56,8 +56,6 @@ i386_init(void)
 	// Start fs.
 	ENV_CREATE(fs_fs);
 
-    cprintf ("fda");
-
 
 #if !defined(TEST_NO_NS)
 	//Start ns.

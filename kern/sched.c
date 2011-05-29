@@ -28,8 +28,6 @@ sched_yield(void)
 
     int round = 0;
 
-   // if (curenvptr - envs <= 3)
-      //  cprintf ("yield: enter, cur = env %d\n", curenvptr - envs);
     for (curenvptr ++; round < NENV; round ++, curenvptr ++) {
 
 
@@ -38,9 +36,6 @@ sched_yield(void)
         }
 
         if (curenvptr->env_status == ENV_RUNNABLE) {
-    //if (curenvptr - envs <= 3)
-     //   cprintf ("yield: start, cur = env %d\n", curenvptr - envs);
-            //cprintf ("zhangchi: Found env: %d\n", curenvptr - envs);
             env_run (curenvptr);
         }
     }
