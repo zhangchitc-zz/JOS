@@ -22,10 +22,13 @@ static void e100_init();
 static void cbl_init();
 static void cbl_alloc();
 static void cbl_validate ();
+static int cbl_append_nop (uint16_t flag);
+static int cbl_append_transmit (const char *data, uint16_t l, uint16_t flag);
 
 static void rfa_init();
 static void rfa_alloc();
 static void rfa_validate ();
+static int rfa_retrieve_data (char *data);
 
 int
 e100_attach(struct pci_func *pcif) 
@@ -216,27 +219,19 @@ cbl_init ()
 static void
 rfa_alloc () {
     int i, r;
-    void *va;
     struct Page *p;
     struct rfd *prevrfd = NULL;
     struct rfd *currrfd = NULL;
 
     // Allocate physical page for Control block
     for (i = 0; i < RFD_MAX_NUM; i++) {
-
-        va = (void *)RFABASE + i * PGSIZE;
-
         if ((r = page_alloc (&p)) != 0)
             panic ("rfa_init: run out of physical memory! %e\n", r);
 
-        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
-
-        *pte = page2pa (p)|PTE_W|PTE_P;
         p -> pp_ref ++;
+        memset (page2kva (p), 0, PGSIZE);
 
-        memset (va, 0, PGSIZE);
-
-        currrfd = (struct rfd *)va;
+        currrfd = (struct rfd *)page2kva (p);
         currrfd->phy_addr = page2pa (p);
         currrfd->rfd_control = 0;
         currrfd->rfd_status = 0;
@@ -269,15 +264,32 @@ rfa_alloc () {
 static void
 rfa_init () 
 {
+    //cprintf ("\n\nRFA Initialization started! \n");
+
     rfa_alloc ();
 
     outl(nic.io_base + CSR_GP, nic.rfa.front->phy_addr);
     e100_exec_cmd (CSR_COMMAND, RUC_START); 
-/*
-    int scb_status = inb(nic.io_base + CSR_STATUS);
-    while ((scb_status & RUS_MASK) != RUS_SUSPEND) {
+
+
+/**
+ * This section is for test when we finished rfa_alloc ()  
+ *
+    while (nic.rfa.rfd_avail > 0)
         rfa_validate ();
-    }
+
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+
+    cprintf ("zhangchi: rfd slot is full, current RU state = %02x\n", scb_status & RUS_MASK);
+
+    char s[1518];
+    while (rfa_retrieve_data (s) >= 0);
+
+
+    e100_exec_cmd (CSR_COMMAND, RUC_RESUME);
+
+    while (nic.rfa.rfd_avail > 0)
+        rfa_validate ();
 */
 }
 
@@ -287,20 +299,25 @@ rfa_validate ()
 {
     while (nic.rfa.rfd_avail > 0 && (nic.rfa.rear->next->rfd_status & RFDS_C) != 0) {
         nic.rfa.rear = nic.rfa.rear->next;
+
         nic.rfa.rfd_avail --;
         nic.rfa.rfd_wait ++;
-        //cprintf ("zhangchi: validate, avail = %d, wait = %d\n", nic.rfa.rfd_avail, nic.rfa.rfd_wait);
+        //cprintf ("zhangchi: validate, avail = %d, wait = %d,   slot = %x\n", 
+        //    nic.rfa.rfd_avail, nic.rfa.rfd_wait, nic.rfa.rear);
     }
 }
 
-int 
-e100_receive (char *data)
+static int
+rfa_retrieve_data (char* data)
 {
-    rfa_validate ();
-
     if (nic.rfa.rfd_wait == 0)
         return -E_RFA_EMPTY;
-    
+
+    nic.rfa.rfd_avail ++;
+    nic.rfa.rfd_wait --;
+    //cprintf ("zhangchi: retrieve, avail = %d, wait = %d,   slot = %x\n", 
+        //nic.rfa.rfd_avail, nic.rfa.rfd_wait, nic.rfa.front);
+
     nic.rfa.front->prev->rfd_control &= ~RFDF_S;
     nic.rfa.front->rfd_control = RFDF_S;
     nic.rfa.front->rfd_status = 0;
@@ -310,16 +327,22 @@ e100_receive (char *data)
 
     nic.rfa.front = nic.rfa.front->next;
 
-    nic.rfa.rfd_avail ++;
-    nic.rfa.rfd_wait --;
+    return r;
+}
 
-    //cprintf ("zhangchi: received, avail = %d, wait = %d\n", nic.rfa.rfd_avail, nic.rfa.rfd_wait);
-    //cprintf ("zhangchi: received packet: len = %d\n", r);
-    //int i;
-    //for (i = 0; i < r; i+=2) cprintf ("%02x%02x ", nic.rfa.front->prev->rfd_data[i], nic.rfa.front->prev->rfd_data[i + 1]);
-    //cprintf ("\n");
+int 
+e100_receive (char *data)
+{
+    rfa_validate ();
 
-    e100_exec_cmd (CSR_COMMAND, RUC_RESUME); 
+    if (nic.rfa.rfd_wait == 0)
+        return -E_RFA_EMPTY;
+
+    int r = rfa_retrieve_data (data);
+    
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    if ((scb_status & RUS_MASK) == RUS_SUSPEND)
+        e100_exec_cmd (CSR_COMMAND, RUC_RESUME); 
 
     return r;
 }

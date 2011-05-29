@@ -1075,6 +1075,7 @@ e100_attach(struct pci_func *pcif)
 
 真实分配的时候，我们为CB\_MAX\_NUM个TCB每个分配一个物理页（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
 
+\label{cblalloc}
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
 /**
@@ -1140,6 +1141,8 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 
 在这里首先回答一下关于CU\highlight{执行完成后的响应问题}。如果让CU使用中断的方式提醒我们，效率会比较高，但是比较麻烦的是要去处理中断响应。而如果使用轮询的方式的话，根据我们CBL的结构，只需要每次测试front头的C状态位是否完成即可知道任务的完成状态，非常方便。
 
+\label{scb}
+
 我们带着这些需求来看看具体操作方法。控制CU是通过向SCB中写入相应的控制字决定的，具体规定在手册的6.3.2 System Control Block (SCB)中规定：
 
 \begin{figure}[htp]
@@ -1195,7 +1198,7 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 \end{lstlisting}
 
 }
-\item{RUC (RU Command): 这个我们在后面会详细讲述}
+\item{RUC (RU Command): 这个我们在后面\ref{scbru}会详细讲述}
 \end{itemize}
 
 看到这里，我们已经知道\highlight{如何关闭CU的中断}、使其\highlight{开始}和\highlight{恢复}执行，但是在开始前需要将TCB的地址告诉CU使其能够开始运行，这个如何设置？这里就涉及到SCB中General Pointer的设置了：
@@ -1328,7 +1331,7 @@ cbl_init ()
 
     outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
     e100_exec_cmd (CSR_COMMAND, CUC_START); 
-}
+}http://im.qq.com/webqq/
 \end{lstlisting}
 
 \funcname{cbl\_append\_nop()}是在CBL待发送队列中添加一个NOP指令，用于我们待会查看网卡输出判断我们在 \funcname{cbl\_alloc()} 建立的结构是否被CU正确找到。
@@ -1710,6 +1713,10 @@ file rewrite is good
 
 \section{Receiving packets and the web server}
 
+
+\subsection{Receiving Packets}
+
+
 在E100处理数据接收的时候，和前面处理发送几乎是一样的，只是RU处理的是RFD而CU处理的是CB，而且CU可能有多个命令，每个命令对应的CB结构是不一样的，发送对应的CB就是TCB。
 
 而RU只有RFD一种结构，其布局如下：
@@ -1809,6 +1816,8 @@ struct rfd的结构没什么好说的，按照手册的规定设计即可，这�
 \begin{enumerate}
 \item{初始的时候 front=start, rear=start$\rightarrow$prev，表示当前等待被用户接收的RFD队列为空，同时将start$\rightarrow$prev的Suspend控制位设成1，有两个目的：
 
+\label{ruwork}
+
 \begin{itemize}
 
 \item{在第一次让RU开始执行START指令时，让RU可以一直接收数据直到最后一个RFD才停下。}
@@ -1816,24 +1825,23 @@ struct rfd的结构没什么好说的，按照手册的规定设计即可，这�
 \end{itemize}
 
 并且rfd\_avail = RFD\_MAX\_NUM, rfd\_wait = 0}
-\item{当用户需要收取一个数据包时，将front的内容取出，同时增加cb\_wait, 减少cb\_avail}
-\item{当确认等待数据包发送时，检查front指向TCB的C状态是否为1，可以的话则将front向后移动，同时减少cb\_wait, 增加cb\_avail}
+\item{当用户需要收取一个数据包时，将front的内容取出，作为数据返回。并且清空front$\rightarrow$prev的S位，将front的S位置为1，表示该位置\highlight{可以让RU重新回收使用了}。做完以后front向后移动一个位置。同时增加rfd\_avail, 减少rfd\_wait}
+\item{当确认数据包被RU接收完毕时，检查rear的后一个指向TCB的C状态是否为1，可以的话则将rear向后移动，同时减少rfd\_avail, 增加rfd\_wait}
 
 \end{enumerate}
 
-那么相应的边界状态比如队列空或者队列满就可以很容易的通过 cb\_wait 和 cb\_avail 检测出来了。
 
 \vspace{2em}
 \hrule
 \vspace{2em}
 
-好了到这里我们已经清楚了一个TCB结构是如何被建立起来并且在后续过程中维护的详细过程，现在我们可以考虑建立起这样的结构了：
+好了RFA的结构了解完毕，现在我们可以考虑建立起这样的结构了：
 
 \begin{lstlisting}[style=exercise]
-|Exercise 5|. Construct a control DMA ring for the CU to use. You do not need to worry about configuring the device because the default setting are fine. You also do not need to worry about setting up the device MAC address because the emulated E100 has one already configured.
+|Exercise 8|. Construct a receive DMA ring and start the RU. If you use interrupts, make sure that 82559ER-generated interrupts are routed to your driver and are handled.
 \end{lstlisting}
 
-首先为了程序的易于管理，我们新定义了一个结构nic:
+首先将RFA加入nic结构：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
 // Network Interface Card
@@ -1842,103 +1850,349 @@ struct nic {
     uint32_t io_size;
 
     struct cbl cbl;
+    struct rfa rfa;
 };\end{lstlisting}
 
-nic是用于编写E100网卡驱动中所有过程中一个记录需要使用到的资源的工具，管理我们用到的I/O端口和CBL、RFA等等。
-
-注意在前面的初始化硬件过程中添加上nic的初始化过程：
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
-struct nic nic;
-
-int
-e100_attach(struct pci_func *pcif) 
-{
-    pci_func_enable(pcif);
-    e100.bus = pcif->bus;
-    e100.dev_id = pcif->dev_id;
-    e100.dev_class = pcif->dev_class;
-    int i;
-    for (i = 0; i < 6; i++) {
-    	e100.reg_base[i] = pcif->reg_base[i];
-        e100.reg_size[i] = pcif->reg_size[i];
-    }
-    e100.irq_line = pcif->irq_line;
-
-    // Initialize NIC
-    nic.io_base = pcif->reg_base[E100_IO];
-    nic.io_size = pcif->reg_size[E100_IO];
-
-    e100_init ();
-
-    return 0;
-}
-\end{lstlisting}
-
-在初始化的第一步我们先需要为TCB分配物理空间，在内核空间地址里我们注意到KERNBASE以上应该是没有被映射的（或者说映射了但是没有实际意义，在内存管理的Lab中我们就知道，KERNBASE以上的空间全部被\highlight{静态映射}成一一对应的物理内存，注意回顾静态映射的概念，就是\highlight{被映射到的物理页没有改变其引用数}，这个特性导致了我后面的程序的一个错误，请多注意！）
-
-我们可以考虑将TCB放置到 KERNBASE 以上的区域中去，我的做法是将 KERNBASE 上 CBLBASE = (KERNBASE + PGSIZE)作为TCB的内存空间，连续分配CB\_MAX\_NUM个物理页，每页对应一个TCB。（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
+然后为RFA分配物理空间：
 
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: rfa\_alloc()}]
 static void
-cbl_alloc () {
+rfa_alloc () {
     int i, r;
-    void *va;
     struct Page *p;
-    struct cb *prevcb = NULL;
-    struct cb *currcb = NULL;
+    struct rfd *prevrfd = NULL;
+    struct rfd *currrfd = NULL;
 
     // Allocate physical page for Control block
-    for (i = 0; i < CB_MAX_NUM; i++) {
-
-        va = (void *)CBLBASE + i * PGSIZE;
-
+    for (i = 0; i < RFD_MAX_NUM; i++) {
         if ((r = page_alloc (&p)) != 0)
-            panic ("cbl_init: run out of physical memory! %e\n", r);
+            panic ("rfa_init: run out of physical memory! %e\n", r);
 
-        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
-            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+        p -> pp_ref ++;
+        memset (page2kva (p), 0, PGSIZE);
 
-        memset (va, 0, PGSIZE);
-
-        currcb = (struct cb *)va;
-        currcb->phy_addr = page2pa (p);
+        currrfd = (struct rfd *)page2kva (p);
+        currrfd->phy_addr = page2pa (p);
+        currrfd->rfd_control = 0;
+        currrfd->rfd_status = 0;
+        currrfd->rfd_size = RFD_MAXSIZE;
 
         if (i == 0)
-            nic.cbl.start = currcb;
+            nic.rfa.start = currrfd;
         else {
-            prevcb->cb_link = currcb->phy_addr;
-            prevcb->next = currcb;
-            currcb->prev = prevcb;
+            prevrfd->rfd_link = currrfd->phy_addr;
+            prevrfd->next = currrfd;
+            currrfd->prev = prevrfd;
         }
 
-        prevcb = currcb;
+        prevrfd = currrfd;
     }
 
-    prevcb->cb_link = nic.cbl.start->phy_addr;
-    nic.cbl.start->prev = prevcb;
-    prevcb->next = nic.cbl.start;
+    prevrfd->rfd_link = nic.rfa.start->phy_addr;
+    nic.rfa.start->prev = prevrfd;
+    prevrfd->next = nic.rfa.start;
 
-    nic.cbl.cb_avail = CB_MAX_NUM;
-    nic.cbl.cb_wait = 0;
+    nic.rfa.rfd_avail = RFD_MAX_NUM;
+    nic.rfa.rfd_wait = 0;
 
-    nic.cbl.front = nic.cbl.start;
-    nic.cbl.rear = nic.cbl.start->prev;
+    nic.rfa.front = nic.rfa.start;
+    nic.rfa.rear = nic.rfa.start->prev;
+    nic.rfa.rear->rfd_control |= RFDF_S;
+}
+
+\end{lstlisting}
+
+注意上面程序和\ref{cblalloc}的区别，因为RU一启动就开始等待接收数据，所以我们一开始就要设置好RFD的命令字、状态字和data buf大小等等，请关注18行到20行。最后将RFA中的末尾RFD的S位置成1。
+
+
+\label{scbru}
+
+然后是对RU的控制，前面在\ref{scb}介绍SCB时只介绍了针对CU的控制字和状态字，现在我们把RU的补充上来：
+
+\begin{description}
+\item[控制字]：\\
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbcmd.png}
+\end{figure}
+
+RUC (RU Command): 这里对RU的控制命令有以下几种：
+
+\begin{enumerate}
+\item{000 NOP}
+\item{001 RU Start}
+\item{010 RU Resume}
+\item{011 Receive DMA Redirect}
+\item{100 RU Abort}
+\item{101 Load Header Data Size (HDS)}
+\item{110 Load RU Base}
+\end{enumerate}
+
+我们要用到的主要是\highlight{RU Start}和\highlight{RU Resume}，把相应的设置场位定义到kern/e100.h中：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// RU Command Word
+#define RUC_NOP         0x0
+#define RUC_START       0x1
+#define RUC_RESUME      0x2
+#define RUC_REDIR       0x3
+#define RUC_ABORT       0x4
+#define RUC_LOADHDS     0x5
+#define RUC_LOAD_BASE   0x6
+\end{lstlisting}
+
+
+\item[状态字]：\\
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbstatus.png}
+\end{figure}
+
+RU的状态字主要可能有以下状态：
+
+\begin{enumerate}
+\item{0000: Idle}
+\item{0001: Suspend}
+\item{0010: No resources}
+\item{0011: Reserved}
+\end{enumerate}
+
+我们只需要知道Suspend用于给出恢复命令时判断RU的当前状态，相关头文件定义：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// RU Status Word
+#define RUS_MASK        0x3c
+#define RUS_IDLE        0x0
+#define RUS_SUSPEND     0x4
+#define RUS_NORES       0x8
+#define RUS_READY       0x10
+\end{lstlisting}
+
+\end{description}
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+下面尝试初始化RFA。首先是两种对于RFA的操作：
+\begin{itemize}
+\item{第一种是确认其所在RFD的数据被RU接收完成}
+\item{第二种是从队头取出一个数据准备返回给用户}
+\end{itemize}
+
+这两种操作的情况我们在前面\ref{ruwork}已经说过了。后面给出的程序中第一种操作对应\funcname{rfa\_validate()}，第二种操作对应\funcname{rfa\_retrieve\_data()}。
+
+为了保证我们后面编写系统调用的正确性，我们在初始化的时候就尽量对前面的RFA初始化以及指令操控作了一系列的测试，保证不要将错误在外层调用它时才显现出来，以免陷入混乱的调试。所以我们在程序中打印了一些消息用于查看：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+static void
+rfa_validate () 
+{
+    while (nic.rfa.rfd_avail > 0 && (nic.rfa.rear->next->rfd_status & RFDS_C) != 0) {
+        nic.rfa.rear = nic.rfa.rear->next;
+
+        nic.rfa.rfd_avail --;
+        nic.rfa.rfd_wait ++;
+        cprintf ("zhangchi: validate, avail = %d, wait = %d,   slot = %x\n", 
+            nic.rfa.rfd_avail, nic.rfa.rfd_wait, nic.rfa.rear);
+    }
+}
+
+static int
+rfa_retrieve_data (char* data)
+{
+    if (nic.rfa.rfd_wait == 0)
+        return -E_RFA_EMPTY;
+
+    nic.rfa.rfd_avail ++;
+    nic.rfa.rfd_wait --;
+    cprintf ("zhangchi: retrieve, avail = %d, wait = %d,   slot = %x\n", 
+        nic.rfa.rfd_avail, nic.rfa.rfd_wait, nic.rfa.front);
+
+    nic.rfa.front->prev->rfd_control &= ~RFDF_S;
+    nic.rfa.front->rfd_control = RFDF_S;
+    nic.rfa.front->rfd_status = 0;
+
+    int r = nic.rfa.front->rfd_actual_count & RFD_AC_MASK;
+    memmove (data, nic.rfa.front->rfd_data, r);
+
+    nic.rfa.front = nic.rfa.front->next;
+
+    return r;
+}\end{lstlisting}
+
+其中\funcname{rfa\_retrieve\_data()} 接受一个buffer作为参数，如果当前RFA为空，那么返回一个负数错误码，否则将数据填入buffer后返回传输的数据字节数。
+
+然后主过程是这么写的：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: rfa\_init()}]
+static void
+rfa_init () 
+{
+    cprintf ("\n\nRFA Initialization started! \n");
+    rfa_alloc ();
+
+    outl(nic.io_base + CSR_GP, nic.rfa.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, RUC_START); 
+
+    while (nic.rfa.rfd_avail > 0)
+        rfa_validate ();
+
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    cprintf ("zhangchi: rfd slot is full, current RU state = %02x\n", 
+        scb_status & RUS_MASK);
+
+    char s[1518];
+    while (rfa_retrieve_data (s) >= 0);
+
+    e100_exec_cmd (CSR_COMMAND, RUC_RESUME);
+
+    while (nic.rfa.rfd_avail > 0)
+        rfa_validate ();
 }
 \end{lstlisting}
 
+可以看到在为RFA分配物理内存以后，马上会进行一系列的测试：
+
+\begin{enumerate}
+\item{第7行，给RU发送START命令，使其开始接收数据包，因为初始化的时候只有最后一个RFD设置了S标志，所以开始以后只有当RU将所有RFD都接收了数据才会停下来}
+\item{第10行，不断检查系统中可用RFD的个数，当其减少到0的时候，就证明整个RFA已经被RU收到的数据塞满了。在\funcname{rfa\_validate()}检查过程中一旦发现有新收到的数据，将会打印出一条validate信息}
+\item{第18行，被塞满以后数据应该被发送到用户，这里我们只是单纯的把数据提取出来，不作处理。\funcname{rfa\_retrieve\_data()} 执行过程中也会打印出一条信息。
+}
+\item{第20行，开始让RU继续接收数据}
+\end{enumerate}
+
+测试的时候我们使用make qemu QEMUEXTRA="-debug-e100 -pcap slirp.cap"启动JOS，那么初始JOS应该会停滞在第10行轮询检查可用RFD的个数，那么这个时候如果开始给它发消息，就会有相应信息打印出来了，新开一个terminal使用make nc-7命令即可向网卡发送数据包，下面是我们得到的输出（为了打印长度的考虑，我把RFD\_MAX\_NUM改成了4，使我们能更快看到程序执行到边界条件）。
 
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+RFA Initialization started! 
+EE100	eepro100_write_pointer  val=0x040b1000
+EE100	eepro100_write1         addr=Command/Status+2 val=0x01
+EE100	eepro100_ru_command     val=0x01 (rx start)
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040b0000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 3, wait = 1,   slot = f40b1000
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040af000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 2, wait = 2,   slot = f40b0000
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040ae000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 1, wait = 3,   slot = f40af000
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x4000, link 0x040b1000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 0, wait = 4,   slot = f40ae000
+EE100	eepro100_read1          addr=Command/Status+0 val=0x44
+zhangchi: rfd slot is full, current RU state = 04
+zhangchi: retrieve, avail = 1, wait = 3,   slot = f40b1000
+zhangchi: retrieve, avail = 2, wait = 2,   slot = f40b0000
+zhangchi: retrieve, avail = 3, wait = 1,   slot = f40af000
+zhangchi: retrieve, avail = 4, wait = 0,   slot = f40ae000
+EE100	eepro100_write1         addr=Command/Status+2 val=0x02
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040b0000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 3, wait = 1,   slot = f40b1000
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040af000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 2, wait = 2,   slot = f40b0000
+EE100	nic_can_receive         0x8adc008
+EE100	nic_receive             0x8adc008 received broadcast, len=42
+EE100	nic_receive             command 0x0000, link 0x040ae000, addr 0x00000000, size 1518
+zhangchi: validate, avail = 1, wait = 3,   slot = f40af000
 \end{lstlisting}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+可以看到输出是符合我们的预期的，通过slot可以看到每次操作的RFD编号，可以观察RU操作这些RFD的顺序。测试成功以后，我们需要将初始化改回来：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+static void
+rfa_init () 
+{
+    rfa_alloc ();
+
+    outl(nic.io_base + CSR_GP, nic.rfa.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, RUC_START); 
+}
 \end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[style=exercise]
+|Exercise 9|. Create a system call for receiving packets. As described in the Device Driver Organization section, the system call will read a packet out of the receive DMA ring, mark the DMA buffer as empty (so that the E100 can reuse it), resume the RU if necessary, and pass the packet to the calling user environment.
+\end{lstlisting}
+
+我设计的接口如下：
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_receive()}]
+int 
+e100_receive (char *data)
+{
+    rfa_validate ();
+
+    if (nic.rfa.rfd_wait == 0)
+        return -E_RFA_EMPTY;
+
+    int r = rfa_retrieve_data (data);
+    
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    if ((scb_status & RUS_MASK) == RUS_SUSPEND)
+        e100_exec_cmd (CSR_COMMAND, RUC_RESUME); 
+
+    return r;
+}
+\end{lstlisting}
+
+如果没有数据可以获取，返回负数错误，否则将数据填入data代表的buffer，然后将数据的字节数作为返回值返回。
+
+
+\subsection{Receiving Packets: Network Server}
+
 
 
 \begin{lstlisting}[style=exercise]
+|Exercise 10|. Implement net/input.c.
 \end{lstlisting}
+
+这个Exercise是我本次实验花费的时间最多的地方之一，为什么，可以看看我的代码：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+\end{lstlisting}
+
+
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\end{lstlisting}
+
 
 \begin{lstlisting}[style=console]
 \end{lstlisting}
@@ -1948,11 +2202,6 @@ cbl_alloc () {
 \end{lstlisting}
 
 
-
-
-\subsection{Receiving Packets}
-
-\subsection{Receiving Packets: Network Server}
 
 \subsection{The Web Server}
 

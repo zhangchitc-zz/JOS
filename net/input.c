@@ -42,7 +42,6 @@ input(envid_t ns_envid)
         ipc_send(ns_envid, NSREQ_INPUT, &nsipcbuf, PTE_U|PTE_W|PTE_P);     
 
         sys_yield ();
- sys_yield ();
- sys_yield ();
+        sys_yield ();
     }
 }

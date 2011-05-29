@@ -56,8 +56,11 @@ i386_init(void)
 	// Start fs.
 	ENV_CREATE(fs_fs);
 
+    cprintf ("fda");
+
+
 #if !defined(TEST_NO_NS)
-	// Start ns.
+	//Start ns.
     ENV_CREATE(net_ns);
 #endif
 
@@ -72,6 +75,7 @@ i386_init(void)
 #endif // TEST*
 
 	// Schedule and run the first user environment!
+
     sched_yield ();
 }
 
