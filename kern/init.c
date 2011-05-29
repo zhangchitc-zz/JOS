@@ -16,7 +16,6 @@
 #include <kern/time.h>
 #include <kern/pci.h>
 
-
 void
 i386_init(void)
 {
@@ -55,11 +54,11 @@ i386_init(void)
 	ENV_CREATE(user_idle);
 
 	// Start fs.
-	ENV_CREATE(fs_fs);
+	//ENV_CREATE(fs_fs);
 
 #if !defined(TEST_NO_NS)
 	// Start ns.
-	ENV_CREATE(net_ns);
+    //ENV_CREATE(net_ns);
 #endif
 
 #if defined(TEST)
@@ -67,13 +66,13 @@ i386_init(void)
 	ENV_CREATE2(TEST, TESTSIZE);
 #else
 	// Touch all you want.
-	// ENV_CREATE(net_testoutput);
+	ENV_CREATE(net_testinput);
 	// ENV_CREATE(user_echosrv);
 	// ENV_CREATE(user_httpd);
 #endif // TEST*
 
 	// Schedule and run the first user environment!
-	sched_yield();
+    sched_yield ();
 }
 
 

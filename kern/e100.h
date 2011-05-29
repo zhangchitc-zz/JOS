@@ -35,14 +35,13 @@
 
 // CU Status Word
 #define CUS_MASK        0xc0
-#define CUS_IDLE        0x0
-#define CUS_SUSPENDED   0x1
-#define CUS_LPQ_ACTIVE  0x2
-#define CUS_HQP_ACTIVE  0x3
+#define CUS_IDLE        0x00
+#define CUS_SUSPENDED   0x40
+#define CUS_LPQ_ACTIVE  0x80
+#define CUS_HQP_ACTIVE  0xc0
 
 
 // CU Command Word
-
 #define CUC_NOP         0x00
 #define CUC_START       0x10
 #define CUC_RESUME      0x20
@@ -54,8 +53,27 @@
 
 
 
-// Control Block Command
+// RU Status Word
+#define RUS_MASK        0x3c
+#define RUS_IDLE        0x0
+#define RUS_SUSPEND     0x4
+#define RUS_NORES       0x8
+#define RUS_READY       0x10
 
+
+
+// RU Command Word
+#define RUC_NOP         0x0
+#define RUC_START       0x1
+#define RUC_RESUME      0x2
+#define RUC_REDIR       0x3
+#define RUC_ABORT       0x4
+#define RUC_LOADHDS     0x5
+#define RUC_LOAD_BASE   0x6
+
+
+
+// Control Block Command
 #define CBF_EL          0x8000
 #define CBF_S           0x4000
 #define CBF_I           0x2000
@@ -76,6 +94,30 @@
 #define CBS_C           0x8000
 
 
+
+
+// Recieve Frame Descriptor Command
+#define RFDF_EL         0x8000
+#define RFDF_S          0x4000
+#define RFDF_H          0x10
+#define RFDF_SF         0x8
+
+
+// Recieve Frame Descriptor Status
+#define RFDS_C          0x8000
+#define RFDS_OK         0x2000
+#define RFDS_MASK       0x1fff
+
+
+// Recieve Frame Descriptor Data
+#define RFD_SIZE_MASK   0x3fff
+#define RFD_AC_MASK     0x3fff
+#define RFD_EOF         0x8000
+#define RFD_F           0x4000
+
+
+
+
 // Error CODE
 #define E_CBL_FULL    1
 #define E_CBL_EMPTY   2
@@ -84,7 +126,10 @@
 
 
 #define TCB_MAXSIZE     1518
+#define RFD_MAXSIZE     1518
 #define CB_MAX_NUM      10
+#define RFD_MAX_NUM     10
+
 
 // Transmit Command Blocks
 struct tcb {
@@ -94,6 +139,7 @@ struct tcb {
     uint8_t tcb_tbd_count;
     char tcb_data[TCB_MAXSIZE];
 };
+int e100_transmit (const char *data, uint16_t len);
 
 
 // Control Blocks
@@ -113,7 +159,7 @@ struct cb {
 
 
 
-
+// Control Block List
 struct cbl {
     int cb_avail;
     int cb_wait;
@@ -125,14 +171,49 @@ struct cbl {
 
 
 
+
+// Receive Frame Descriptor
+struct rfd {
+    volatile uint16_t rfd_status;
+    uint16_t rfd_control;
+    uint32_t rfd_link;
+
+    uint32_t rfd_reserved;
+    uint16_t rfd_actual_count;
+    uint16_t rfd_size;
+
+    char rfd_data[RFD_MAXSIZE];
+
+
+    struct rfd *prev, *next;
+    physaddr_t phy_addr;   
+};
+
+
+
+// Receive Frame Area
+struct rfa {
+    int rfd_avail;
+    int rfd_wait;
+
+    struct rfd *start;
+    struct rfd *front, *rear;
+};
+
+
+
+
 // Network Interface Card
 struct nic {
     uint32_t io_base;
     uint32_t io_size;
 
     struct cbl cbl;
+    struct rfa rfa;
 };
 
 int e100_attach(struct pci_func *pcif);
+int e100_transmit (const char *data, uint16_t len);
+int e100_receive (char *data);
 
 #endif	// JOS_KERN_E100_H

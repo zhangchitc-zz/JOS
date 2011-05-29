@@ -264,6 +264,8 @@
 
 \subsubsection{The Output Environment}
 
+\label{outputhelp}
+
 \subsubsection{The Input Environment}
 
 这两部分在材料中也提到了我们需要先实现驱动程序和系统调用部分才可以完成。所以我们先放下他们关注最重要的驱动部分。
@@ -903,9 +905,7 @@ FS is running
 #define CBS_C           0x8000
 \end{lstlisting}
 
-\vspace{2em}
-\hrule
-\vspace{2em}
+\subsubsection{C Structures}
 
 
 上面描述的是CB的一些通用概念，具体到发送包指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。这个是TCB的一个布局图。
@@ -1403,10 +1403,10 @@ General Pointer是SCB中根据不同的命令设置的一个场位，\highlight{
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
 // CU Status Word
 #define CUS_MASK        0xc0
-#define CUS_IDLE        0x0
-#define CUS_SUSPENDED   0x1
-#define CUS_LPQ_ACTIVE  0x2
-#define CUS_HQP_ACTIVE  0x3
+#define CUS_IDLE        0x00
+#define CUS_SUSPENDED   0x40
+#define CUS_LPQ_ACTIVE  0x80
+#define CUS_HQP_ACTIVE  0xc0
 \end{lstlisting}
 
 CUS\_MASK是由于要从SCB中读取其状态但CUS又是在中间的位置，所以先要用CUS\_MASK取出CUS相应场位出来
@@ -1481,7 +1481,12 @@ cbl_append_nop (uint16_t flag)
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
 
+    nic.cbl.cb_avail --;
+    nic.cbl.cb_wait ++;
+
     nic.cbl.rear = nic.cbl.rear->next;
+
+    nic.cbl.rear->cb_status = 0;
     nic.cbl.rear->cb_control = CBC_NOP | flag;
 
     return 0;
@@ -1504,7 +1509,9 @@ cbl_init ()
 
 \funcname{cbl\_append\_nop()}是在CBL待发送队列中添加一个NOP指令，用于我们待会查看网卡输出判断我们在 \funcname{cbl\_alloc()} 建立的结构是否被CU正确找到。
 
-具体的话它的工作就是在待发送队列的末尾添加了一个NOP指令TCB。然后设置其flag为我们需要的状态，一般来说就是S=0或者S=1的区别。同样这里使用到了出错状态，我一共定义了四种边界的错误：
+具体的话它的工作就是在待发送队列的末尾添加了一个NOP指令TCB。然后设置其flag为我们需要的状态，一般来说就是S=0或者S=1的区别。这里特别需要注意的是12行\highlight{对SCB的状态字清空}，因为前面提到过，CU通过设置状态字来提醒我们发送执行的状态。
+
+同样这里使用到了出错状态，我一共定义了四种边界的错误：
 
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
@@ -1573,14 +1580,19 @@ FS can do I/O
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
 static int
-cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
+cbl_append_transmit (const char *data, uint16_t l, uint16_t flag)
 {
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
 
+    nic.cbl.cb_avail --;
+    nic.cbl.cb_wait ++;
+
     nic.cbl.rear = nic.cbl.rear->next;
+
+    nic.cbl.rear->cb_status = 0;
     nic.cbl.rear->cb_control = CBC_TRANSMIT | flag;
-    
+
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_tbd_array_addr    = 0xFFFFFFFF;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_byte_count        = l;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_thrs              = 0xE0;
@@ -1590,7 +1602,6 @@ cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
 
     return 0;
 }
-
 static void
 cbl_init () 
 {
@@ -1671,6 +1682,8 @@ FS can do I/O
 
 可以看到发送的流程和我们的预期是正常的，但是这里看到发送的时候打印的信息不是很给力：
 
+\vspace{1em}
+
 \begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
 EE100	action_command          transmit, TBD array address 0xffffffff, TCB byte count 0x0005, TBD count 0
 EE100	action_command          TBD (simplified mode): buffer address 0x040b2010, size 0x0005
@@ -1678,8 +1691,10 @@ EE100	action_command          0x8a8e008 sending frame, len=5, 61 61 61 61 78
 EE100	action_command          CU list with at least one more entry
 \end{lstlisting}
 
+
 尤其是在发送大量数据的话在大量包记录里很难找到有效信息，我们可以使用提供的包拦截参数将其记录到文件，使用make qemu QEMUEXTRA="-debug-e100 -pcap slirp.cap"打印调试信息的同时将网卡的包抓取后放入slirp.cap文件中，这个文件是一个二进制文件，人无法直接读取，需要tcpdump来为我们解析，使用tcpdump -XXr slirp.cap命令打印其中的内容，得到的输出如下：
 
+\vspace{1em}
 
 \begin{lstlisting}[style=console]
 zhangchi@zhangchi-vostro1400:~/lab$ tcpdump -XXr slirp.cap 
@@ -1691,49 +1706,288 @@ zhangchi@zhangchi-vostro1400:~/lab$
 
 可以看到我们发送的aaaax消息，这样看着就直观多了。
 
+最后正常的初始化过程应该是这样：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_init()}]
+static void
+cbl_init () 
+{
+    cbl_alloc ();
+
+    cbl_append_nop (CBF_S);
+
+    outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, CUC_START); 
+}
+\end{lstlisting}
+
+执行一个NOP指令后停在第一个TCB上，等待Resume
 
 
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+到这里我们已经做完了所有的实验，到现在已经可以实现出一个完整的系统调用了：
 
 
 \begin{lstlisting}[style=exercise]
+|Exercise 6|. Create a system call for transmitting packets. The interface is up to you. As described in the Device Driver Organization section the send system call should add the packet to the transmit DMA ring and restart or resume the CU if it is idle or suspended. If your design requires it, you can take this opportunity to reclaim any buffers which have been marked as transmitted by the E100 in order to free up space in the transmit DMA ring.
 \end{lstlisting}
 
+我设计的接口如下：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+static void
+cbl_gc () 
+{
+    while (nic.cbl.cb_wait > 0 && (nic.cbl.front->cb_status & CBS_C) != 0) {
+        nic.cbl.front = nic.cbl.front->next;
+        nic.cbl.cb_avail ++;
+        nic.cbl.cb_wait --;
+    }
+}
+
+int 
+e100_transmit (const char *data, uint16_t len)
+{
+    cbl_gc ();
+
+    if (nic.cbl.cb_avail == 0)
+        return -E_CBL_FULL;
+    
+    nic.cbl.rear->cb_control &= ~CBF_S;
+    cbl_append_transmit (data, len, CBF_S);
+
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    if ((scb_status & CUS_MASK) == CUS_SUSPENDED)
+        e100_exec_cmd (CSR_COMMAND, CUC_RESUME); 
+
+    return 0;
+}
 \end{lstlisting}
 
+\begin{description}
+\item[cbl\_gc()]:\\
+将在待发送队列中已经发送完毕的TCB回收，并维护CBL相关的状态值
+\item[e100\_transmit()]:
+\begin{itemize}
+\item{发送前先进行回收，如果回收后TCB仍然没有空闲，那么则返回错误信息，交给用户程序重新发送。}
+\item{否则将当前CBL的最后一个的控制位中的S清0，并且将要发送的数据以TRANSMIT命令形式添加到队尾，并设置S位为1，即指示CU每次在最后一个待发送包发送完后挂起}
+\item{恢复CU运行}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{itemize}
+
+\end{description}
+
+然后根据\funcname{e100\_transmit()} 我向系统添加了一条系统调用：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c: sys\_net\_try\_send()}]
+static int
+sys_net_try_send (const char *data, uint16_t len)
+{
+    return e100_transmit (data, len);
+}
 \end{lstlisting}
 
+将命令注册为系统调用需要修改很多文件，有：
 
-\subsubsection{C Structures}
+\begin{itemize}
+\item{kern/syscall.c, kern/syscall.h}
+\item{lib/syscall.c, lib/lib.h}
+\item{inc/syscall.h}
+\end{itemize}
 
-\begin{lstlisting}[style=exercise]
+然后我写了一个用户程序调用网络发送字符串：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries user/testsend.c}]
+#include <inc/x86.h>
+#include <inc/lib.h>
+
+void
+umain(void)
+{
+    sys_net_try_send ("Hello, World", 12);
+}
 \end{lstlisting}
 
+将用户程序加入内核镜像记得修改kern/Makefrag，然后就可以使用make run-testsend QEMUEXTRA="-debug-e100 -pcap slirp.cap" 运行该程序了，运行完成后使用tcpdump分析包，得到预期的结果：
 
+\begin{lstlisting}[style=console]
+zhangchi@zhangchi-vostro1400:~/lab$ tcpdump -XXr slirp.cap
+reading from file slirp.cap, link-type EN10MB (Ethernet)
+23:25:17.333149 [|ether]
+	0x0000:  4865 6c6c 6f2c 2057 6f72 6c64            Hello,.World
+zhangchi@zhangchi-vostro1400:~/lab$ 
 
-
-SCB COMMAND Word： 当CPU接受命令，即将COMMAND清空：
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
-\end{lstlisting}
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
-\end{lstlisting}
-
 
 
 \subsection{Transmitting Packets: Network Server}
 
+这里我们就可以实现前面\ref{outputhelp}中的Output Helper Environment了，写的时候我对于IPC的细节又忘的差不多了，可以参考Lab5中文件服务器的代码fs/serv.c的 \funcname{serve()} 很有帮助，这里就直接贴代码了：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/output.c}]
+#include "ns.h"
+
+extern union Nsipc nsipcbuf;
+
+void
+output(envid_t ns_envid)
+{
+    binaryname = "ns_output";
+
+    // LAB 6: Your code here:
+    // 	- read a packet from the network server
+    //	- send the packet to the device driver
+
+    uint32_t req, whom;
+    int perm, r;
+
+    while (1) {
+        perm = 0;
+        req = ipc_recv((int32_t *) &whom, &nsipcbuf, &perm);
+    
+        // All requests must contain an argument page
+        if (!(perm & PTE_P))
+            panic ("output: Invalid request from %08x: no argument page\n", whom);
+
+        if (req != NSREQ_OUTPUT)
+            panic ("output: Invalid IPC Request type: %d\n", req);
+
+        while ((r = sys_net_try_send (nsipcbuf.pkt.jp_data, nsipcbuf.pkt.jp_len)) != 0);
+
+        sys_page_unmap(0, &nsipcbuf);
+    }
+}
+\end{lstlisting}
+
+启动JOS后可以看到网络服务器发送的包：
+
+
+\begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
+ns: 52:54:00:12:34:56 bound to static IP 10.0.2.15
+NS: TCP/IP initialized.
+EE100	eepro100_write1         addr=Command/Status+2 val=0x20
+EE100	eepro100_cu_command     CU resuming
+EE100	action_command          val=0x10 (cu start), status=0x0000, command=0x4004, link=0x040bb000
+EE100	action_command          transmit, TBD array address 0xffffffff, TCB byte count 0x002a, TBD count 0
+EE100	action_command          TBD (simplified mode): buffer address 0x040bb010, size 0x002a
+EE100	action_command          0xa052008 sending frame, len=42, ff ff ff ff ff ff 52 54 00 12 34 56 08 06 00 01
+EE100	nic_receive             0xa052008 received frame for me, len=42
+EE100	nic_receive             no resources, state=0
+EE100	action_command          CU list empty
+EE100	eepro100_read1          addr=Command/Status+2 val=0x00
+file_flush is good
+file_truncate is good
+file rewrite is good
+\end{lstlisting}
+
+测试make grade可以顺利通过output测试。
+
 
 \section{Receiving packets and the web server}
+
+在E100处理接受的时候，和前面处理发送几乎是一样的，只是RU处理的是RFD而CU处理的是CB，而且CU可能有多个命令，每个命令对应的CB结构是不一样的，发送对应的CB就是TCB。
+
+而RU只有RFD一种结构，其布局如下：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/zhangchi/lab/report/rfd.png}
+\end{figure}
+
+这里控制字和状态字中需要我们注意的只有S和C两位，没有CMD。
+\begin{itemize}
+\item{如果S被设置成1，那么RU在接受完这个RFD的数据以后，挂起}
+\item{如果C被设置成1，那么代表接收完成，注意\highlight{接收之前用户应该完成这个位的清除工作}}
+\end{itemize}
+
+前面的都和TCB是差不多的，但是下面的有两个场位是不同的：
+
+\begin{itemize}
+\item{Size: 表示data buffer的大小，在我们的数据中，数据包大小最大为1518，这个值在接收数据之前要\highlight{由用户来设置好}。}
+\item{Actual Count: 如果C被置1表示接收完成，那么Actual Count表示的就是data buffer中总共的数据bytes数。这个是\highlight{由RU接收完以后填好}}
+\end{itemize}
+
+根据这些字段说明，我们把他们定义到头文件里方便后面使用和设置：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// Recieve Frame Descriptor Command
+#define RFDF_EL         0x8000
+#define RFDF_S          0x4000
+#define RFDF_H          0x10
+#define RFDF_SF         0x8
+
+
+// Recieve Frame Descriptor Status
+#define RFDS_C          0x8000
+#define RFDS_OK         0x2000
+#define RFDS_MASK       0x1fff
+
+
+// Recieve Frame Descriptor Data
+#define RFD_SIZE_MASK   0x3fff
+#define RFD_AC_MASK     0x3fff
+#define RFD_EOF         0x8000
+#define RFD_F           0x4000
+\end{lstlisting}
+
+了解完RFD的结构，类似的，我们需要在其上面实现一个\highlight{支持多数据包等待接收的排队系统}，同样也要注意两方面
+\begin{enumerate}
+\item{首先要记录的是当前RFA环状结构中哪些RFD是等待被用户接收的，哪些是可以被RU重新利用来接受数据的}
+\item{其次要做好相应的S位设置，让RU在接收到不能接收的时候就停下来，不要让它将还没被用户接收的RFD覆盖了}
+\end{enumerate}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+#define RFD_MAXSIZE     1518
+#define RFD_MAX_NUM     10
+
+// Receive Frame Descriptor
+struct rfd {
+    volatile uint16_t rfd_status;
+    uint16_t rfd_control;
+    uint32_t rfd_link;
+
+    uint32_t rfd_reserved;
+    uint16_t rfd_actual_count;
+    uint16_t rfd_size;
+
+    char rfd_data[TCB_MAXSIZE];
+
+    struct rfd *prev, *next;
+    physaddr_t phy_addr;   
+};
+
+// Receive Frame Area
+struct rfa {
+    int rfd_avail;
+    int rfd_wait;
+
+    struct rfd *start;
+    struct rfd *front, *rear;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=exercise]
+\end{lstlisting}
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+\begin{lstlisting}[style=console]
+\end{lstlisting}
+
+
+
 
 \subsection{Receiving Packets}
 
@@ -1741,13 +1995,7 @@ SCB COMMAND Word： 当CPU接受命令，即将COMMAND清空：
 
 \subsection{The Web Server}
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries : ()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries : ()}]
-\end{lstlisting}
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries : ()}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}
 
 \begin{lstlisting}[style=exercise]

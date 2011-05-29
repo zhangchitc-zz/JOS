@@ -9,8 +9,15 @@
 #include <kern/pmap.h>
 #include <kern/e100.h>
 
+// for test use
+#include <netif/etharp.h>
+#include <ipv4/lwip/inet.h>
+#define IP "10.0.2.15"
+#define MASK "255.255.255.0"
+#define DEFAULT "10.0.2.2"
 
 #define CBLBASE     (KERNBASE + PGSIZE)
+#define RFABASE     (CBLBASE + CB_MAX_NUM * PGSIZE)
 
 
 struct pci_func e100;
@@ -20,9 +27,14 @@ static void e100_sw_reset(struct pci_func e100);
 static void e100_exec_cmd(int csr_comp, uint8_t cmd);
 
 static void e100_init();
+
 static void cbl_init();
 static void cbl_alloc();
+static void cbl_gc ();
 
+static void rfa_init();
+static void rfa_alloc();
+static void rfa_validate ();
 
 int
 e100_attach(struct pci_func *pcif) 
@@ -129,13 +141,19 @@ cbl_alloc () {
 }
 
 
+
 static int
 cbl_append_nop (uint16_t flag)
 {
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
 
+    nic.cbl.cb_avail --;
+    nic.cbl.cb_wait ++;
+
     nic.cbl.rear = nic.cbl.rear->next;
+
+    nic.cbl.rear->cb_status = 0;
     nic.cbl.rear->cb_control = CBC_NOP | flag;
 
     return 0;
@@ -143,13 +161,19 @@ cbl_append_nop (uint16_t flag)
 
 
 static int
-cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
+cbl_append_transmit (const char *data, uint16_t l, uint16_t flag)
 {
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
 
+    nic.cbl.cb_avail --;
+    nic.cbl.cb_wait ++;
+
     nic.cbl.rear = nic.cbl.rear->next;
-    nic.cbl.rear->cb_control                            = CBC_TRANSMIT | flag;
+
+    nic.cbl.rear->cb_status = 0;
+    nic.cbl.rear->cb_control = CBC_TRANSMIT | flag;
+
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_tbd_array_addr    = 0xFFFFFFFF;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_byte_count        = l;
     nic.cbl.rear->cb_cmd_spec.tcb.tcb_thrs              = 0xE0;
@@ -160,40 +184,174 @@ cbl_append_transmit (char *data, uint16_t l, uint16_t flag)
     return 0;
 }
 
+int 
+e100_transmit (const char *data, uint16_t len)
+{
+    cbl_gc ();
+
+    if (nic.cbl.cb_avail == 0)
+        return -E_CBL_FULL;
+    
+    nic.cbl.rear->cb_control &= ~CBF_S;
+    cbl_append_transmit (data, len, CBF_S);
+
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    if ((scb_status & CUS_MASK) == CUS_SUSPENDED)
+        e100_exec_cmd (CSR_COMMAND, CUC_RESUME); 
+
+    return 0;
+}
+
+static void
+cbl_gc () 
+{
+    while (nic.cbl.cb_wait > 0 && (nic.cbl.front->cb_status & CBS_C) != 0) {
+        nic.cbl.front = nic.cbl.front->next;
+        nic.cbl.cb_avail ++;
+        nic.cbl.cb_wait --;
+    }
+}
+
+
 static void
 cbl_init () 
 {
     cbl_alloc ();
 
-    cbl_append_nop (0);
-    cbl_append_nop (0);
-    cbl_append_nop (0);
     cbl_append_nop (CBF_S);
-    cbl_append_nop (0);
-    cbl_append_nop (0);
-    cbl_append_nop (0);
-    cbl_append_nop (0);
-    cbl_append_nop (0);
-
-    cbl_append_transmit ("aaaax", 5, 0);
-
 
     outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
     e100_exec_cmd (CSR_COMMAND, CUC_START); 
+}
 
-    e100_exec_cmd (CSR_COMMAND, CUC_RESUME); 
+
+
+/**
+ * Allocate CB_MAX_NUM pages starting from CBLBASE, 
+ * each page for a control block
+ */
+static void
+rfa_alloc () {
+    int i, r;
+    void *va;
+    struct Page *p;
+    struct rfd *prevrfd = NULL;
+    struct rfd *currrfd = NULL;
+
+    // Allocate physical page for Control block
+    for (i = 0; i < RFD_MAX_NUM; i++) {
+
+        va = (void *)RFABASE + i * PGSIZE;
+
+        if ((r = page_alloc (&p)) != 0)
+            panic ("rfa_init: run out of physical memory! %e\n", r);
+
+        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
+
+        *pte = page2pa (p)|PTE_W|PTE_P;
+        p -> pp_ref ++;
+
+        memset (va, 0, PGSIZE);
+
+        currrfd = (struct rfd *)va;
+        currrfd->phy_addr = page2pa (p);
+        currrfd->rfd_control = 0;
+        currrfd->rfd_status = 0;
+        currrfd->rfd_size = RFD_MAXSIZE;
+
+        if (i == 0)
+            nic.rfa.start = currrfd;
+        else {
+            prevrfd->rfd_link = currrfd->phy_addr;
+            prevrfd->next = currrfd;
+            currrfd->prev = prevrfd;
+        }
+
+        prevrfd = currrfd;
+    }
+
+    prevrfd->rfd_link = nic.rfa.start->phy_addr;
+    nic.rfa.start->prev = prevrfd;
+    prevrfd->next = nic.rfa.start;
+
+    nic.rfa.rfd_avail = RFD_MAX_NUM;
+    nic.rfa.rfd_wait = 0;
+
+    nic.rfa.front = nic.rfa.start;
+    nic.rfa.rear = nic.rfa.start->prev;
+    nic.rfa.rear->rfd_control |= RFDF_S;
+}
+
+
+static void
+rfa_init () 
+{
+    rfa_alloc ();
+
+    outl(nic.io_base + CSR_GP, nic.rfa.front->phy_addr);
+    e100_exec_cmd (CSR_COMMAND, RUC_START); 
+/*
+    int scb_status = inb(nic.io_base + CSR_STATUS);
+    while ((scb_status & RUS_MASK) != RUS_SUSPEND) {
+        rfa_validate ();
+    }
+*/
+}
+
+
+static void
+rfa_validate () 
+{
+    while (nic.rfa.rfd_avail > 0 && (nic.rfa.rear->next->rfd_status & RFDS_C) != 0) {
+        nic.rfa.rear = nic.rfa.rear->next;
+        nic.rfa.rfd_avail --;
+        nic.rfa.rfd_wait ++;
+        //cprintf ("zhangchi: validate, avail = %d, wait = %d\n", nic.rfa.rfd_avail, nic.rfa.rfd_wait);
+    }
+}
+
+int 
+e100_receive (char *data)
+{
+    rfa_validate ();
+
+    if (nic.rfa.rfd_wait == 0)
+        return -E_RFA_EMPTY;
+    
+    nic.rfa.front->prev->rfd_control &= ~RFDF_S;
+    nic.rfa.front->rfd_control = RFDF_S;
+    nic.rfa.front->rfd_status = 0;
+
+    int r = nic.rfa.front->rfd_actual_count & RFD_AC_MASK;
+    memmove (data, nic.rfa.front->rfd_data, r);
+
+    nic.rfa.front = nic.rfa.front->next;
+
+    nic.rfa.rfd_avail ++;
+    nic.rfa.rfd_wait --;
+
+    //cprintf ("zhangchi: received, avail = %d, wait = %d\n", nic.rfa.rfd_avail, nic.rfa.rfd_wait);
+    //cprintf ("zhangchi: received packet: len = %d\n", r);
+    //int i;
+    //for (i = 0; i < r; i+=2) cprintf ("%02x%02x ", nic.rfa.front->prev->rfd_data[i], nic.rfa.front->prev->rfd_data[i + 1]);
+    //cprintf ("\n");
+
+    e100_exec_cmd (CSR_COMMAND, RUC_RESUME); 
+
+    return r;
 }
 
 static void
 e100_init ()
 {
-    // Software Reset E100
+    // Software Reset E100rfd_data
     e100_sw_reset(e100);
 
     // disable all interrupts
     e100_exec_cmd (CSR_INT, 1);
 
     cbl_init ();
+    rfa_init ();
 }
 
 

@@ -88,6 +88,8 @@ umain(void)
 		return;
 	}
 
+    for (i = 0; i < 100; i++) sys_yield ();
+
 	cprintf("Sending ARP announcement...\n");
 	announce();
 

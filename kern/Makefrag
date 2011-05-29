@@ -53,7 +53,8 @@ KERN_BINFILES :=	user/idle \
 			fs/fs \
 			net/testoutput \
 			net/testinput \
-			net/ns
+			net/ns\
+            user/testsend
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))
