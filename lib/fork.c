@@ -26,7 +26,7 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
     if (env->env_id == 0x1003) {
-      cprintf (" *** input env pgfault ***\n");
+      //cprintf (" *** input env pgfault ***\n");
     }
 
     if ((err & FEC_WR) == 0 || (vpd[VPD(addr)] & PTE_P) == 0 ||  (vpt[VPN(addr)] & PTE_COW) == 0)

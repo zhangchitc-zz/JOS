@@ -999,11 +999,11 @@ struct cbl {
 \begin{enumerate}
 \item{初始的时候front = start, rear = start$\rightarrow$prev，表示当前等待发送的数据包为空，并且cb\_avail = CB\_MAX\_NUM, cb\_wait = 0}
 \item{当需要发送一个数据包时，将其添加到rear后面，并且移动rear指针，同时增加cb\_wait, 减少cb\_avail}
-\item{当确认等待数据包发送时，检查front指向TCB的C状态是否为1，可以的话则将front向后移动，同时减少cb\_wait, 增加cb\_avail}
+\item{当确认等待数据包发送时，检查front指向TCB的C状态是否为1，可以的话则将front向后移动，表示front指向的数据包已经被CU发送。同时减少cb\_wait, 增加cb\_avail}
 
 \end{enumerate}
 
-那么相应的边界状态比如队列空或者队列满就可以很容易的通过 cb\_wait 和 cb\_avail 检测出来了。
+那么相应的边界状态比如队列空或者队列满就可以很容易的通过 cb\_wait 和 cb\_avail 检测出来了。我们在这里还没有结合控制位中S的设置来说明CU的工作方式，这个在讲发送数据包的时候会讲到移动指针时会如何进行Suspend位的设置，具体请参考\ref{cususpend}
 
 \vspace{2em}
 \hrule
@@ -1057,16 +1057,32 @@ e100_attach(struct pci_func *pcif)
 }
 \end{lstlisting}
 
-在初始化的第一步我们先需要为TCB分配物理空间，在内核空间地址里我们注意到KERNBASE以上应该是没有被映射的（或者说映射了但是没有实际意义，在内存管理的Lab中我们就知道，KERNBASE以上的空间全部被\highlight{静态映射}成一一对应的物理内存，注意回顾静态映射的概念，就是\highlight{被映射到的物理页没有改变其引用数}，这个特性导致了我后面的程序的一个错误，请多注意！）
+在初始化的第一步我们先需要为TCB分配\highlight{物理空间}，为什么要强调是物理地址呢？
 
-我们可以考虑将TCB放置到 KERNBASE 以上的区域中去，我的做法是将 KERNBASE 上 CBLBASE = (KERNBASE + PGSIZE)作为TCB的内存空间，连续分配CB\_MAX\_NUM个物理页，每页对应一个TCB。（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
+因为一开始我犯了一个错误，我特别在系统\highlight{虚拟地址空间}里在KERNBASE以上找了一块连续的区域（我找的是KERNBASE + PGSIZE开始），专门映射这些TCB。但是后来就发现这样映射是完全没有必要的：
+
+\begin{itemize}
+\item{首先如果将其映射到虚拟地址上是为了方便内核里使用指针访问这些TCB的话，那么我们利用\funcname{page\_alloc()} 得到这些物理页面对应的 struct Page 的时候，就可以利用page2kva (Page)的虚拟地址访问他们了}
+
+\item{其次，前面我们使用page2kva (Page)访问的前提，是因为在内存管理的Lab中，KERNBASE以上的空间全部被\highlight{静态映射}成一一对应的物理内存（注意回顾静态映射的概念，就是被映射到的物理页\highlight{没有改变其引用数}，方便我们可以重用这些物理页，静态映射的意义就只是单纯提供一个顺序访问所有物理地址的转换而已）}
+
+\item{如果我们设置一个KERNBASE上的区域专门映射我们分配到的TCB物理页面，那么该虚拟地址原来对应的真实物理页就要被卸载，如果在未来的某个时候这个真实物理页被分配后需要用page2kva这样的地址进行访问，那么映射就会失败，其访问到的是我们现在安装上的TCB的物理页，这样就会造成系统的崩溃}
+\end{itemize}
+
+{\bfseries \large \color{red} 所以为TCB的物理页分配虚拟地址空间不仅是没必要的，在有的时候更可能造成系统的崩溃。感谢张顺廷湿胸指出了我理解上的错误！}
+
+\vspace{2em}
+
+真实分配的时候，我们为CB\_MAX\_NUM个TCB每个分配一个物理页（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
 
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
+/**
+ * Allocate CB_MAX_NUM pages, each page for a control block
+ */
 static void
 cbl_alloc () {
     int i, r;
-    void *va;
     struct Page *p;
     struct cb *prevcb = NULL;
     struct cb *currcb = NULL;
@@ -1074,18 +1090,15 @@ cbl_alloc () {
     // Allocate physical page for Control block
     for (i = 0; i < CB_MAX_NUM; i++) {
 
-        va = (void *)CBLBASE + i * PGSIZE;
-
         if ((r = page_alloc (&p)) != 0)
             panic ("cbl_init: run out of physical memory! %e\n", r);
 
-        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
-            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+        p -> pp_ref ++;
+        memset (page2kva (p), 0, PGSIZE);
 
-        memset (va, 0, PGSIZE);
-
-        currcb = (struct cb *)va;
+        currcb = (struct cb *)page2kva (p);
         currcb->phy_addr = page2pa (p);
+
 
         if (i == 0)
             nic.cbl.start = currcb;
@@ -1110,195 +1123,11 @@ cbl_alloc () {
 }
 \end{lstlisting}
 
+通过\funcname{page\_alloc()} 拿到物理页之后，第一记得增加它的ref数，第二记得清空所有的数据。
 
-看起来是不是好像没有问题？在初始化中调用\funcname{cbl\_alloc()} 确实也不会有错，但是当我调试的时候打印的时候发现了不对的地方，注意其中第17行：
-
-\begin{lstlisting}[style=ccode, firstnumber=17]
-        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
-            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
-\end{lstlisting}
-
-如果我们在其前后添加上打印相应物理页的信息：
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
-        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
-        struct Page *pp = pa2page (PTE_ADDR (*pte));
-
-        cprintf ("zhangchi: current mapping va %x -> pa %x, ppref = %d\n", va, PTE_ADDR (*pte), pp->pp_ref);
-
-        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
-            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
-
-        cprintf ("zhangchi: changed mapping va %x -> pa %x, ppref = %d\n", va, PTE_ADDR (*pte), pp->pp_ref);
-\end{lstlisting}
-
-解释一下，这里的pp指向的是va地址以前映射到的物理页，当我们使用\funcname{page\_insert()}将当前申请到的TCB所在物理页插入页表以后，pp就会被卸载。启动以后我们发现JOS打印出了下面的信息：
-
-\begin{lstlisting}[style=console]
-zhangchi: current mapping va f0001000 -> pa 1000, ppref = 0
-zhangchi: changed mapping va f0001000 -> pa 40bb000, ppref = 65535
-zhangchi: current mapping va f0002000 -> pa 2000, ppref = 0
-zhangchi: changed mapping va f0002000 -> pa 40ba000, ppref = 65535
-zhangchi: current mapping va f0003000 -> pa 3000, ppref = 0
-zhangchi: changed mapping va f0003000 -> pa 40b9000, ppref = 65535
-zhangchi: current mapping va f0004000 -> pa 4000, ppref = 0
-zhangchi: changed mapping va f0004000 -> pa 40b8000, ppref = 65535
-zhangchi: current mapping va f0005000 -> pa 5000, ppref = 0
-zhangchi: changed mapping va f0005000 -> pa 40b7000, ppref = 65535
-zhangchi: current mapping va f0006000 -> pa 6000, ppref = 0
-zhangchi: changed mapping va f0006000 -> pa 40b6000, ppref = 65535
-zhangchi: current mapping va f0007000 -> pa 7000, ppref = 0
-zhangchi: changed mapping va f0007000 -> pa 40b5000, ppref = 65535
-zhangchi: current mapping va f0008000 -> pa 8000, ppref = 0
-zhangchi: changed mapping va f0008000 -> pa 40b4000, ppref = 65535
-zhangchi: current mapping va f0009000 -> pa 9000, ppref = 0
-zhangchi: changed mapping va f0009000 -> pa 40b3000, ppref = 65535
-zhangchi: current mapping va f000a000 -> pa a000, ppref = 0
-zhangchi: changed mapping va f000a000 -> pa 40b2000, ppref = 65535
-\end{lstlisting}
-
-这里有两个东西需要我们关注：
-
-\begin{enumerate}
-\item{在插入之前映射到的物理页引用数ppref为0，还记得前面我说过的静态映射么？因为在映射KERNBASE以上的地址空间时，我们没有增加映射到的物理页的引用数，为的就是使得这些物理页能够被重用，而不是因为KERNBASE的映射使其引用数大于0导致不能回收。}
-\item{被卸载以后，ppref变成了65535, 很明显这个值不正常，如此大的引用数会造成这些页面几乎永久不能回收}
-\end{enumerate}
-
-为什么？原因出在\funcname{page\_insert()}过程中，我们来看看具体代码：
-
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_insert()}]
-int
-page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm) 
-{
-    pte_t *pte = pgdir_walk (pgdir, va, 1);
-
-    if (pte == NULL) {
-        return -E_NO_MEM;
-    }
-
-    if (*pte & PTE_P) {
-
-        if (PTE_ADDR(*pte) == page2pa (pp)) {
-            tlb_invalidate (pgdir, va);
-            pp -> pp_ref --;
-        } else {
-            // inside the page_remove, it will invoke tlb_invalidate and page_decref
-            page_remove (pgdir, va);
-        }
-    }
-    
-    *pte = page2pa (pp)|perm|PTE_P;
-    pp -> pp_ref ++;
-
-    return 0;
-}
-\end{lstlisting}
-
-注意第17行，其中卸载原有物理页时使用了\funcname{page\_remove()}，我们知道原有页面\highlight{不是经过正常步骤加入页表的}（即通过\funcname{page\_insert()}插入的），而是通过静态映射，那么在这里用\funcname{page\_remove()}卸载就肯定会出问题，我们看到\funcname{page\_remove()}的代码：
-
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pmap.c: page\_remove()}]
-void
-page_remove(pde_t *pgdir, void *va)
-{
-    pte_t *pte;
-    struct Page *physpage = page_lookup (pgdir, va, &pte);
-
-    if (physpage != NULL) {
-        page_decref (physpage);
-        *pte = 0;
-        tlb_invalidate (pgdir, va);
-    }
-}
-\end{lstlisting}
-
-可以看到这里\highlight{将页面的引用数减少了1}，于是前面的现象就可以得到解释了，原本的引用数为0，减一以后因为无符号所以变成了65535。
-
-这样我们就知道了在改变KERNBASE以上空间的映射时，不能使用 \funcname{page\_insert()}，只能自己手动将页面插入页表了，修改后的程序如下，在插入物理页面的时候将那句\funcname{page\_insert()} 调用换成：
-
-\begin{lstlisting}[style=ccode]
-        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
-
-        *pte = page2pa (p)|PTE_W|PTE_P;
-        p -> pp_ref ++;
-\end{lstlisting}
-
-这样修改后内存的申请就正式完成了。调试的时候我想看看系统页表到底对不对，是否真的把我申请的页面加入了页表，于是启动JOS以后用QEMU自带的命令info pg打印出页表，发现怎么搞都不对，打印结果如下：
-
-\begin{lstlisting}[style=console]
-K> QEMU 0.12.5 monitor - type 'help' for more information
-(qemu) info pg
-PDE(001) 00000000-00400000 00400000 urw
- |-- PTE(000030) 00200000-00230000 00030000 urw
-PDE(001) 00400000-00800000 00400000 urw
- |-- PTE(000001) 007ff000-00800000 00001000 urw
-PDE(001) 00800000-00c00000 00400000 urw
- |-- PTE(000018) 00800000-00818000 00018000 ur-
- |-- PTE(000001) 00818000-00819000 00001000 urw
- |-- PTE(00021f) 00819000-00a38000 0021f000 ur-
- |-- PTE(000107) 00a38000-00b3f000 00107000 urw
-PDE(001) 08000000-08400000 00400000 urw
- |-- PTE(000007) 08000000-08007000 00007000 urw
-PDE(001) 10000000-10400000 00400000 urw
- |-- PTE(000001) 10000000-10001000 00001000 urw
-PDE(001) ee800000-eec00000 00400000 urw
- |-- PTE(000001) eebfd000-eebfe000 00001000 urw
- |-- PTE(000001) eebff000-eec00000 00001000 urw
-PDE(001) eec00000-ef000000 00400000 urw
- |-- PTE(00001f) eec00000-eec1f000 0001f000 ur-
-PDE(001) ef000000-ef400000 00400000 urw
- |-- PTE(000031) ef000000-ef031000 00031000 ur-
-PDE(001) ef400000-ef800000 00400000 ur-
- |-- PTE(000003) ef400000-ef403000 00003000 urw
- |-- PTE(000001) ef420000-ef421000 00001000 urw
- |-- PTE(000001) ef440000-ef441000 00001000 urw
- |-- PTE(000003) ef7ba000-ef7bd000 00003000 urw
- |-- PTE(000001) ef7bd000-ef7be000 00001000 ur-
- |-- PTE(000001) ef7be000-ef7bf000 00001000 urw
- |-- PTE(000001) ef7bf000-ef7c0000 00001000 -rw
- |-- PTE(000040) ef7c0000-ef800000 00040000 urw
-PDE(001) ef800000-efc00000 00400000 -rw
- |-- PTE(000008) efbf8000-efc00000 00008000 -rw
-PDE(001) efc00000-f0000000 00400000 -rw
- |-- PTE(000003) efc00000-efc03000 00003000 urw
- |-- PTE(000001) efc20000-efc21000 00001000 urw
- |-- PTE(000001) efc40000-efc41000 00001000 urw
- |-- PTE(000003) effba000-effbd000 00003000 urw
- |-- PTE(000001) effbd000-effbe000 00001000 ur-
- |-- PTE(000001) effbe000-effbf000 00001000 urw
- |-- PTE(000001) effbf000-effc0000 00001000 -rw
- |-- PTE(000040) effc0000-f0000000 00040000 urw
-PDE(040) f0000000-00000000 10000000 urw
- |-- PTE(010000) f0000000-00000000 10000000 -rw
-(qemu) 
-\end{lstlisting}
-
-只要关心最后一项关于 f0000000-00000000 的映射即可，这个现象让我百思不得其解，因为在程序中所有打印的测试都是没问题的，后来我想到在以前的Lab中我们曾经实现过一个打印地址映射的命令showmappings，我尝试着用自己写的命令打印了一下：
-
-\newpage
-
-\begin{lstlisting}[style=console]
-K> showmappings 0xf0000000 0xf000c000
-0xf0000000 - 0xf0001000     0x0   kernel: read/write
-0xf0001000 - 0xf0002000     0x40bb000   kernel: read/write
-0xf0002000 - 0xf0003000     0x40ba000   kernel: read/write
-0xf0003000 - 0xf0004000     0x40b9000   kernel: read/write
-0xf0004000 - 0xf0005000     0x40b8000   kernel: read/write
-0xf0005000 - 0xf0006000     0x40b7000   kernel: read/write
-0xf0006000 - 0xf0007000     0x40b6000   kernel: read/write
-0xf0007000 - 0xf0008000     0x40b5000   kernel: read/write
-0xf0008000 - 0xf0009000     0x40b4000   kernel: read/write
-0xf0009000 - 0xf000a000     0x40b3000   kernel: read/write
-0xf000a000 - 0xf000b000     0x40b2000   kernel: read/write
-0xf000b000 - 0xf000c000     0xb000   kernel: read/write
-K> 
-\end{lstlisting}
-
-发现在这里又是正确的。可能是QEMU对于某些打印区间作了简化把，这个情况我确实不清楚为什么QEMU的打印信息不对了。不过至少写到现在代码在后面没有出现过问题。
-
-\vspace{1em}
+\vspace{2em}
 \hrule
-\vspace{1em}
+\vspace{2em}
 
 TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。从这里开始就涉及到对于CU的操作字的问题。首先回顾一下我们在建立TCB以后可能需要进行的操作：
 
@@ -1371,8 +1200,6 @@ TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。
 
 看到这里，我们已经知道\highlight{如何关闭CU的中断}、使其\highlight{开始}和\highlight{恢复}执行，但是在开始前需要将TCB的地址告诉CU使其能够开始运行，这个如何设置？这里就涉及到SCB中General Pointer的设置了：
 
-\newpage
-
 \begin{figure}[htp]
 \centering
 \includegraphics[scale=0.30]{/home/zhangchi/lab/report/scbgp.png}
@@ -1433,10 +1260,7 @@ When software wants to issue an action command, it should write to the Command b
 
 通过修改SCB对CU发出一条指令之后，\highlight{我们必须等待其命令字被清空以后}，才能继续下面的指令。
 
-\vspace{2em}
-\hrule
-\vspace{2em}
-
+\newpage
 好了我们可以正式开始编程了，首先是对CU发出命令的基本模块：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_exec\_cmd()}]
@@ -1631,6 +1455,7 @@ cbl_init ()
 
 然后初始化过程中我们添加发送了CBL中所有的10个TCB，并且最后一次发送transmit不是suspend，那么在我们发出的第一次Start指令后，应该会在第四个NOP指令停下来，接下来发出Resume指令后，应该会循环执行CBL中的所有TCB后在同样在第四个NOP停下来，启动JOS后打印的信息如下：
 
+\vspace{1em}
 
 \begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
 PCI function 00:03.0 (8086:1209) enabled
@@ -1682,8 +1507,6 @@ FS can do I/O
 
 可以看到发送的流程和我们的预期是正常的，但是这里看到发送的时候打印的信息不是很给力：
 
-\vspace{1em}
-
 \begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
 EE100	action_command          transmit, TBD array address 0xffffffff, TCB byte count 0x0005, TBD count 0
 EE100	action_command          TBD (simplified mode): buffer address 0x040b2010, size 0x0005
@@ -1728,7 +1551,7 @@ cbl_init ()
 \hrule
 \vspace{2em}
 
-到这里我们已经做完了所有的实验，到现在已经可以实现出一个完整的系统调用了：
+到这里我们已经做完了所有的\highlight{实验}，到现在已经可以实现出一个完整的系统调用了：
 
 
 \begin{lstlisting}[style=exercise]
@@ -1739,7 +1562,7 @@ cbl_init ()
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
 static void
-cbl_gc () 
+cbl_validate () 
 {
     while (nic.cbl.cb_wait > 0 && (nic.cbl.front->cb_status & CBS_C) != 0) {
         nic.cbl.front = nic.cbl.front->next;
@@ -1751,7 +1574,7 @@ cbl_gc ()
 int 
 e100_transmit (const char *data, uint16_t len)
 {
-    cbl_gc ();
+    cbl_validate ();
 
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
@@ -1767,8 +1590,10 @@ e100_transmit (const char *data, uint16_t len)
 }
 \end{lstlisting}
 
+\label{cususpend}
+
 \begin{description}
-\item[cbl\_gc()]:\\
+\item[cbl\_validate()]:\\
 将在待发送队列中已经发送完毕的TCB回收，并维护CBL相关的状态值
 \item[e100\_transmit()]:
 \begin{itemize}
@@ -1837,10 +1662,6 @@ output(envid_t ns_envid)
 {
     binaryname = "ns_output";
 
-    // LAB 6: Your code here:
-    // 	- read a packet from the network server
-    //	- send the packet to the device driver
-
     uint32_t req, whom;
     int perm, r;
 
@@ -1864,6 +1685,7 @@ output(envid_t ns_envid)
 
 启动JOS后可以看到网络服务器发送的包：
 
+\vspace{1em}
 
 \begin{lstlisting}[style=console, basicstyle=\tiny\color{green}\ttfamily\bfseries]
 ns: 52:54:00:12:34:56 bound to static IP 10.0.2.15
@@ -1888,7 +1710,7 @@ file rewrite is good
 
 \section{Receiving packets and the web server}
 
-在E100处理接受的时候，和前面处理发送几乎是一样的，只是RU处理的是RFD而CU处理的是CB，而且CU可能有多个命令，每个命令对应的CB结构是不一样的，发送对应的CB就是TCB。
+在E100处理数据接收的时候，和前面处理发送几乎是一样的，只是RU处理的是RFD而CU处理的是CB，而且CU可能有多个命令，每个命令对应的CB结构是不一样的，发送对应的CB就是TCB。
 
 而RU只有RFD一种结构，其布局如下：
 
@@ -1935,7 +1757,7 @@ file rewrite is good
 
 了解完RFD的结构，类似的，我们需要在其上面实现一个\highlight{支持多数据包等待接收的排队系统}，同样也要注意两方面
 \begin{enumerate}
-\item{首先要记录的是当前RFA环状结构中哪些RFD是等待被用户接收的，哪些是可以被RU重新利用来接受数据的}
+\item{首先要记录的是当前RFA环状结构中哪些RFD是已经被RU收取完毕，\highlight{正等待被用户接收的}，哪些是\highlight{可以被RU重新利用来接受新数据的}}
 \item{其次要做好相应的S位设置，让RU在接收到不能接收的时候就停下来，不要让它将还没被用户接收的RFD覆盖了}
 \end{enumerate}
 
@@ -1953,7 +1775,7 @@ struct rfd {
     uint16_t rfd_actual_count;
     uint16_t rfd_size;
 
-    char rfd_data[TCB_MAXSIZE];
+    char rfd_data[RFD_MAXSIZE];
 
     struct rfd *prev, *next;
     physaddr_t phy_addr;   
@@ -1968,6 +1790,145 @@ struct rfa {
     struct rfd *front, *rear;
 };
 \end{lstlisting}
+
+
+struct rfd的结构没什么好说的，按照手册的规定设计即可，这里关键的是struct rfa，虽然和struct cbl的成员结构几乎一模一样，但是他们两者成员的意义是不一样的。
+
+\begin{itemize}
+\item{rfd\_avail: 表示当前有多少个闲置的RFD可以用来\highlight{接收RU新收到的数据}}
+\item{rfd\_wait: 表示当前有多少个RFD正在处于\highlight{等待被用户接收}的状态}
+\item{很明显上面两者相加应该等于所有RFD的总数，在这里应该是我们定义的RFD\_MAX\_NUM = 10}
+\item{start: 所有RFD中的第一个RFD，用于开始的时候初始化RU用}
+\item{front和rear: 表示当前\highlight{正在等待被用户接收}的RFD的起始和结尾}
+
+\end{itemize}
+
+
+那么这个系统是如何根据rfa中定义的结构工作的呢？
+
+\begin{enumerate}
+\item{初始的时候 front=start, rear=start$\rightarrow$prev，表示当前等待被用户接收的RFD队列为空，同时将start$\rightarrow$prev的Suspend控制位设成1，有两个目的：
+
+\begin{itemize}
+
+\item{在第一次让RU开始执行START指令时，让RU可以一直接收数据直到最后一个RFD才停下。}
+\item{一旦RU开始运行，保证任何时候队列里只有front$\rightarrow$prev的S位为1，即RU一直接受数据\highlight{直到front之前就要停止}}
+\end{itemize}
+
+并且rfd\_avail = RFD\_MAX\_NUM, rfd\_wait = 0}
+\item{当用户需要收取一个数据包时，将front的内容取出，同时增加cb\_wait, 减少cb\_avail}
+\item{当确认等待数据包发送时，检查front指向TCB的C状态是否为1，可以的话则将front向后移动，同时减少cb\_wait, 增加cb\_avail}
+
+\end{enumerate}
+
+那么相应的边界状态比如队列空或者队列满就可以很容易的通过 cb\_wait 和 cb\_avail 检测出来了。
+
+\vspace{2em}
+\hrule
+\vspace{2em}
+
+好了到这里我们已经清楚了一个TCB结构是如何被建立起来并且在后续过程中维护的详细过程，现在我们可以考虑建立起这样的结构了：
+
+\begin{lstlisting}[style=exercise]
+|Exercise 5|. Construct a control DMA ring for the CU to use. You do not need to worry about configuring the device because the default setting are fine. You also do not need to worry about setting up the device MAC address because the emulated E100 has one already configured.
+\end{lstlisting}
+
+首先为了程序的易于管理，我们新定义了一个结构nic:
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.h}]
+// Network Interface Card
+struct nic {
+    uint32_t io_base;
+    uint32_t io_size;
+
+    struct cbl cbl;
+};\end{lstlisting}
+
+nic是用于编写E100网卡驱动中所有过程中一个记录需要使用到的资源的工具，管理我们用到的I/O端口和CBL、RFA等等。
+
+注意在前面的初始化硬件过程中添加上nic的初始化过程：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+struct nic nic;
+
+int
+e100_attach(struct pci_func *pcif) 
+{
+    pci_func_enable(pcif);
+    e100.bus = pcif->bus;
+    e100.dev_id = pcif->dev_id;
+    e100.dev_class = pcif->dev_class;
+    int i;
+    for (i = 0; i < 6; i++) {
+    	e100.reg_base[i] = pcif->reg_base[i];
+        e100.reg_size[i] = pcif->reg_size[i];
+    }
+    e100.irq_line = pcif->irq_line;
+
+    // Initialize NIC
+    nic.io_base = pcif->reg_base[E100_IO];
+    nic.io_size = pcif->reg_size[E100_IO];
+
+    e100_init ();
+
+    return 0;
+}
+\end{lstlisting}
+
+在初始化的第一步我们先需要为TCB分配物理空间，在内核空间地址里我们注意到KERNBASE以上应该是没有被映射的（或者说映射了但是没有实际意义，在内存管理的Lab中我们就知道，KERNBASE以上的空间全部被\highlight{静态映射}成一一对应的物理内存，注意回顾静态映射的概念，就是\highlight{被映射到的物理页没有改变其引用数}，这个特性导致了我后面的程序的一个错误，请多注意！）
+
+我们可以考虑将TCB放置到 KERNBASE 以上的区域中去，我的做法是将 KERNBASE 上 CBLBASE = (KERNBASE + PGSIZE)作为TCB的内存空间，连续分配CB\_MAX\_NUM个物理页，每页对应一个TCB。（实际上一个TCB大概只占用半页的样子，因为tcb\_data最大才1518个bytes而已，但是这样比较方便操作），于是初始化的程序如下：
+
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_alloc()}]
+static void
+cbl_alloc () {
+    int i, r;
+    void *va;
+    struct Page *p;
+    struct cb *prevcb = NULL;
+    struct cb *currcb = NULL;
+
+    // Allocate physical page for Control block
+    for (i = 0; i < CB_MAX_NUM; i++) {
+
+        va = (void *)CBLBASE + i * PGSIZE;
+
+        if ((r = page_alloc (&p)) != 0)
+            panic ("cbl_init: run out of physical memory! %e\n", r);
+
+        if ((r = page_insert (boot_pgdir, p, va, PTE_W|PTE_P)) != 0)
+            panic ("cbl_init: cannot insert page into pgdir %e\n", r);
+
+        memset (va, 0, PGSIZE);
+
+        currcb = (struct cb *)va;
+        currcb->phy_addr = page2pa (p);
+
+        if (i == 0)
+            nic.cbl.start = currcb;
+        else {
+            prevcb->cb_link = currcb->phy_addr;
+            prevcb->next = currcb;
+            currcb->prev = prevcb;
+        }
+
+        prevcb = currcb;
+    }
+
+    prevcb->cb_link = nic.cbl.start->phy_addr;
+    nic.cbl.start->prev = prevcb;
+    prevcb->next = nic.cbl.start;
+
+    nic.cbl.cb_avail = CB_MAX_NUM;
+    nic.cbl.cb_wait = 0;
+
+    nic.cbl.front = nic.cbl.start;
+    nic.cbl.rear = nic.cbl.start->prev;
+}
+\end{lstlisting}
+
+
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
 \end{lstlisting}

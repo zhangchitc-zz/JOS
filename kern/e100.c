@@ -9,15 +9,6 @@
 #include <kern/pmap.h>
 #include <kern/e100.h>
 
-// for test use
-#include <netif/etharp.h>
-#include <ipv4/lwip/inet.h>
-#define IP "10.0.2.15"
-#define MASK "255.255.255.0"
-#define DEFAULT "10.0.2.2"
-
-#define CBLBASE     (KERNBASE + PGSIZE)
-#define RFABASE     (CBLBASE + CB_MAX_NUM * PGSIZE)
 
 
 struct pci_func e100;
@@ -30,7 +21,7 @@ static void e100_init();
 
 static void cbl_init();
 static void cbl_alloc();
-static void cbl_gc ();
+static void cbl_validate ();
 
 static void rfa_init();
 static void rfa_alloc();
@@ -88,13 +79,11 @@ e100_exec_cmd (int csr_comp, uint8_t cmd)
 
 
 /**
- * Allocate CB_MAX_NUM pages starting from CBLBASE, 
- * each page for a control block
+ * Allocate CB_MAX_NUM pages, each page for a control block
  */
 static void
 cbl_alloc () {
     int i, r;
-    void *va;
     struct Page *p;
     struct cb *prevcb = NULL;
     struct cb *currcb = NULL;
@@ -102,19 +91,13 @@ cbl_alloc () {
     // Allocate physical page for Control block
     for (i = 0; i < CB_MAX_NUM; i++) {
 
-        va = (void *)CBLBASE + i * PGSIZE;
-
         if ((r = page_alloc (&p)) != 0)
             panic ("cbl_init: run out of physical memory! %e\n", r);
 
-        pte_t *pte = pgdir_walk (boot_pgdir, va, 1);
-
-        *pte = page2pa (p)|PTE_W|PTE_P;
         p -> pp_ref ++;
+        memset (page2kva (p), 0, PGSIZE);
 
-        memset (va, 0, PGSIZE);
-
-        currcb = (struct cb *)va;
+        currcb = (struct cb *)page2kva (p);
         currcb->phy_addr = page2pa (p);
 
 
@@ -187,7 +170,7 @@ cbl_append_transmit (const char *data, uint16_t l, uint16_t flag)
 int 
 e100_transmit (const char *data, uint16_t len)
 {
-    cbl_gc ();
+    cbl_validate ();
 
     if (nic.cbl.cb_avail == 0)
         return -E_CBL_FULL;
@@ -203,7 +186,7 @@ e100_transmit (const char *data, uint16_t len)
 }
 
 static void
-cbl_gc () 
+cbl_validate () 
 {
     while (nic.cbl.cb_wait > 0 && (nic.cbl.front->cb_status & CBS_C) != 0) {
         nic.cbl.front = nic.cbl.front->next;

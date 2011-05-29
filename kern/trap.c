@@ -312,6 +312,12 @@ page_fault_handler(struct Trapframe *tf)
         print_trapframe (tf);
         panic ("kernel-mode page faults");
     }
+
+    if (curenv->env_id == 0x1003) {
+      //cprintf ("tf for input env\n");
+	  //cprintf("va %08x ip %08x\n", fault_va, tf->tf_eip);
+      //print_trapframe (tf);
+    }
  
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
