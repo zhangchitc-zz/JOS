@@ -213,8 +213,7 @@ cbl_init ()
 
 
 /**
- * Allocate CB_MAX_NUM pages starting from CBLBASE, 
- * each page for a control block
+ * Allocate RFD_MAX_NUM pages each page for a Recieve Frame Descriptor
  */
 static void
 rfa_alloc () {

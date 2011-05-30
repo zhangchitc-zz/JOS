@@ -369,7 +369,7 @@ zhangchi@zhangchi-vostro1400:~$ lspci
 
 更多更详细的内容可以参考网站：\burl{http://xwindow.angelfire.com/page13_1.html}，上面介绍的内容已经足够我们理解JOS中的相应代码了。
 
-\vspace{2em}
+\vspace{3em}
 \hrule
 \vspace{2em}
 
@@ -401,21 +401,7 @@ pci_conf_read(struct pci_func *f, uint32_t off)
 }
 
 static void
-pci_conf_write(struct pci_func *f, uintint
-e100_sw_reset(struct dev_e100 *e100) {
-        outl(e100->reg_base[E100_IO] + CSR_PORT, PORT_SW_RESET);
-        
-        // delay about 10us
-        int i = 0;
-        for (i = 0; i < 8; i++) {
-                inb (0x84);
-        }
-
-        e100_init(e100);
-
-        return 1;
-}
-32_t off, uint32_t v)
+pci_conf_write(struct pci_func *f, uint32_t off, uint32_t v)
 {
 	pci_conf1_set_addr(f->bus->busno, f->dev, f->func, off);
 	outl(pci_conf1_data_ioport, v);
@@ -423,7 +409,13 @@ e100_sw_reset(struct dev_e100 *e100) {
 \end{lstlisting}
 
 
-这三个函数是对PCI设备最基本的读状态和写状态的函数，其中 \funcname{ pci\_conf1\_set\_addr() } 负责设置需要读写的具体设备。这里涉及到的两个I/O端口定义在了文件最上方：
+这三个函数是对PCI设备最基本的读状态和写状态的函数
+
+\begin{itemize}
+\item{\funcname{pci\_conf\_read()} 是读取PCI配置地址空间中特定位置的配置值}
+\item{\funcname{pci\_conf\_write()} 是设置PCI配置地址空间中特定位置的配置值}
+
+\item{其中 \funcname{ pci\_conf1\_set\_addr() } 负责设置需要读写的具体设备。这里涉及到的两个I/O端口定义在了文件最上方：
 
 
 \begin{lstlisting}[style=ccode, firstnumber=12, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
@@ -432,7 +424,15 @@ static uint32_t pci_conf1_addr_ioport = 0x0cf8;
 static uint32_t pci_conf1_data_ioport = 0x0cfc;
 \end{lstlisting}
 
-正是我们前面提到的两个端口。接下来我们看看它是怎么初始化PCI设备的，看到 \funcname{pic\_init()}：
+正是我们前面提到的两个操作PCI设备的I/O端口。
+}
+
+\end{itemize}
+
+\vspace{2em}
+
+
+接下来我们看看它是怎么初始化PCI设备的，看到 \funcname{pic\_init()}：
 
 
 \begin{lstlisting}[style=ccode, firstnumber=36, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
@@ -542,6 +542,16 @@ pci_attach(struct pci_func *f)
 }
 \end{lstlisting}
 
+默认的情况下系统初始是没有定义的PCI设备的，看到 pci\_attach\_vendor 就知道:
+
+\begin{lstlisting}[style=ccode, firstnumber=31, title={\scriptsize \ttfamily \bfseries kern/pci.c}]
+// pci_attach_vendor matches the vendor ID and device ID of a PCI device
+struct pci_driver pci_attach_vendor[] = {
+	{ 0, 0, 0 },
+};
+\end{lstlisting}
+
+待会我们初始化的时候要将我们定义的网卡加入这个数组。
 
 }
 \end{enumerate}
@@ -640,7 +650,7 @@ FS is running
 FS can do I/O
 \end{lstlisting}
 
-可以看到第二个端口应该就是我们以后进行操作的I/O端口c040，空间大小为40h = 64 bytes
+看到那个以c开头的第二个地址了么，这个明显不是内存地址，它应该就是我们以后进行操作的I/O端口c040，空间大小为40h = 64 bytes
 
 
 \subsubsection{E100 Reset}
@@ -655,7 +665,7 @@ There will also be a few nic_reset's before JOS starts; those are the BIOS itsel
 \end{lstlisting}
 
 
-这一段的MIT提供的资料是相对来说比较详尽的，还记得我们前面打印出来的c040地址么？这个地方就是我们要写入CSR的端口。CSR(Control/Status Registers)是我们对于E100网卡的控制字，如前面所说，它是一个64 bytes的地址空间，其中我们最需要关注的是它的前12个bytes，称为SCB(System Control Block)，我们对网卡的主要控制主要是对于SCB相应参数的进行设置。其布局如下：
+这一段的MIT提供的资料是相对来说比较详尽的，还记得我们前面打印出来的c040地址么？这个地方就是我们要写入CSR的端口。CSR(Control/Status Registers)是我们对于E100网卡的控制字，如前面所说，它是一个64 bytes的地址空间，其中我们最需要关注的是它的前12个bytes，称为SCB(System Control Block)，我们对网卡的主要控制主要是对于SCB相应参数的进行设置。其布局如下，更详细可以参考提供的手册里6.3.1 Control / Status Registers (CSR)：
 
 \begin{figure}[htp]
 \centering
@@ -670,9 +680,7 @@ There will also be a few nic_reset's before JOS starts; those are the BIOS itsel
 \includegraphics[scale=0.30]{/home/zhangchi/lab/report/reset.png}
 \end{figure}
 
-从这个表格看出，我们只需要对PORT字段写入全0就可以达到重启的目的了。
-
-但是在进行编码之前，我们需要对头文件进行一些修改，方便后续的程序编写。
+从这个表格看出，我们只需要对PORT字段写入全0就可以达到重启的目的了。但是在进行编码之前，我们需要将一些常用的常数放入头文件，方便后续的程序编写。
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e1000.h}]
 #ifndef JOS_KERN_E100_H
@@ -707,6 +715,7 @@ int e100_attach(struct pci_func *pcif);
 #endif	// JOS_KERN_E100_H
 \end{lstlisting}
 
+里面定义了三组常数分别以E100，CSR和PORT开头：
 
 \begin{enumerate}
 \item{在手册中的4.1 PCI Configuration Space，对于E100而言，PCI配置中提供的6个地址中的前三个分别为
@@ -773,6 +782,8 @@ e100_sw_reset(struct pci_func e100) {
 
 注意不要忘了按照MIT材料的提示重启后delay 一段时间再返回。使用make qemu QEMUEXTRA="-debug-e100"启动JOS应该可以看到网卡的重启消息:
 
+\newpage
+
 \begin{lstlisting}[style=console]
 EE100	nic_init                
 EE100	pci_reset               0x9566008
@@ -812,7 +823,7 @@ FS is running
 \end{lstlisting}
 
 
-
+可以看到最后两行nic\_reset表明网卡已成功进行了软启动。
 
 \subsubsection{E100 Structure}
 
@@ -824,7 +835,7 @@ FS is running
 
 根据资料的描述，DMA Rings就是系统为E100在内存中开辟的一片区域，用于网卡使用DMA缓存当前的收发数据的。一个DMA Rings在申请好以后，就可以将其所在的物理地址通知给E100的DMA控制器，那么E100就可以在不占用CPU的情况下自己根据内存中的数据开始进行收发操作了。\highlight{实际情况中内存里应该有两条DMA Rings}，一个专门用于放置待发送的数据（Control Block list, CBL），一个专门放置接受到的数据（Receive Frame Area, RFA）。
 
-因为采取了这样的操作模式，所以提示我们E100是根据DMA Rings中的内容进行工作的。接下来我们就会详细讲述利用CU发送数据时数据包格式是如何用Control Block(CB)进行描述的。E100读取CB中的设置，然后进行相应的发送操作，当工作完成后，\highlight{通过引发中断或者改变DMA Rings相应的状态位来提示系统工作已完成}。我们可以修改CB中相应场位的设置，来改变E100的工作模式。
+因为采取了这样的操作模式，所以提示我们E100是根据DMA Rings中的内容进行工作的。接下来我们就会详细讲述利用CU发送数据时数据包格式是如何用Control Block(CB)进行描述的。E100读取CB中的设置，然后进行相应的发送操作，当工作完成后，\highlight{通过引发中断或者改变CB相应的状态位来提示系统工作已完成}。我们可以修改CB中相应场位的设置，来改变E100的工作模式。
 
 上面是E100自动进行工作的一种方式，如果我们需要人为的干预E100的运行的话，\highlight{还可以向CSR中的SCB寄存器写入相应的控制指令}，比如终止运行等，来改变其运行状态。
 
@@ -908,7 +919,7 @@ FS is running
 \subsubsection{C Structures}
 
 
-上面描述的是CB的一些通用概念，具体到发送包指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。这个是TCB的一个布局图。
+上面描述的是CB的一些通用概念，适用所有命令格式，具体到发送指令Transmit的时候，我们将这样一连串的CB称为TCBs (Transmit Command Blocks)。在MIT资料中已经有一个形象的图为我们展示出了TCB的串联结构，更详细的信息可以在手册中的6.4.2.5 Transmit找到。这个是TCB的一个布局图。
 
 \begin{figure}[htp]
 \centering
@@ -917,11 +928,13 @@ FS is running
 
 可以看到，虽然TCB的结构比CB更细化了，但是我们现在还不需要关注它的设置的细节，第一步我们先考虑\highlight{在内存中分配空间和建立起相应的TCB结构}。这就需要结合CU的工作方式来阐述它是如何读取和使用TCB的了。以下列出了使用TCBs发送数据包的全过程：
 
+\label{tcbproc}
+
 \begin{enumerate}
 \item{首先在内存中建立起TCBs的环状结构}
 \item{将其中第一个TCB的物理地址写入CU的General Pointer，通知其要操作的TCB所在的内存位置}
 \item{给CU一个Start指令，CU开始工作}
-\item{如果环状的TCB中所有的S位都是0，那么CU将根据Link Address无限循环的处理这些TCB，每次执行完成以后，以中断和修改TCB中C状态位来表明任务已完成(后面我们会说明处理这些消息的方式，现在先不用管)}
+\item{如果环状的TCB中所有的S位都是0，那么CU将根据Link Address无限循环的处理这些TCB，每次执行完成以后，以中断和修改TCB中C状态位来表明任务已完成(后面我们会说明到底是以中断还是轮询查看C状态位来处理消息，现在先不用管)}
 \item{如果CU碰到了某个TCB的S被设置为1，那么处理完该TCB之后，CU进入Suspend状态，等待用户发送Resume命令恢复运行，那么CU将从当前TCB的下个TCB开始执行}
 \end{enumerate}
 
@@ -1130,7 +1143,7 @@ cbl_alloc () {
 \hrule
 \vspace{2em}
 
-TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。从这里开始就涉及到对于CU的操作字的问题。首先回顾一下我们在建立TCB以后可能需要进行的操作：
+TCB结构建立完毕以后，我们可以考虑使用CU在TCB上跑一跑了。从这里开始就涉及到对于CU的操作字的问题。首先回顾一下我们在\ref{tcbproc}中提到的建立TCB以后可能需要进行的操作：
 
 \begin{enumerate}
 \item{将其中第一个TCB的物理地址写入CU的General Pointer，通知其要操作的TCB所在的内存位置}
@@ -1263,7 +1276,6 @@ When software wants to issue an action command, it should write to the Command b
 
 通过修改SCB对CU发出一条指令之后，\highlight{我们必须等待其命令字被清空以后}，才能继续下面的指令。
 
-\newpage
 好了我们可以正式开始编程了，首先是对CU发出命令的基本模块：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: e100\_exec\_cmd()}]
@@ -1301,7 +1313,7 @@ e100_init ()
 
 然后我们看看对于CBL进行初始化的\funcname{cbl\_init()}:
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c: cbl\_init()}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
 static int
 cbl_append_nop (uint16_t flag)
 {
@@ -1331,7 +1343,7 @@ cbl_init ()
 
     outl(nic.io_base + CSR_GP, nic.cbl.front->phy_addr);
     e100_exec_cmd (CSR_COMMAND, CUC_START); 
-}http://im.qq.com/webqq/
+}
 \end{lstlisting}
 
 \funcname{cbl\_append\_nop()}是在CBL待发送队列中添加一个NOP指令，用于我们待会查看网卡输出判断我们在 \funcname{cbl\_alloc()} 建立的结构是否被CU正确找到。
@@ -1550,9 +1562,10 @@ cbl_init ()
 执行一个NOP指令后停在第一个TCB上，等待Resume
 
 
-\vspace{2em}
+\vspace{1em}
 \hrule
-\vspace{2em}
+\vspace{1em}
+
 
 到这里我们已经做完了所有的\highlight{实验}，到现在已经可以实现出一个完整的系统调用了：
 
@@ -1831,9 +1844,9 @@ struct rfd的结构没什么好说的，按照手册的规定设计即可，这�
 \end{enumerate}
 
 
-\vspace{2em}
+\vspace{1em}
 \hrule
-\vspace{2em}
+\vspace{1em}
 
 好了RFA的结构了解完毕，现在我们可以考虑建立起这样的结构了：
 
@@ -2155,16 +2168,30 @@ e100_receive (char *data)
 
 如果没有数据可以获取，返回负数错误，否则将数据填入data代表的buffer，然后将数据的字节数作为返回值返回。
 
-记得修改相关代码将系统调用安装到JOS中去。
+记得修改相关代码将系统调用安装到JOS中去。我添加的系统调用如下：
 
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/syscall.c: sys\_net\_try\_recv()}]
+static int
+sys_net_try_recv (char *data)
+{
+    return e100_receive (data);
+}
+\end{lstlisting}
+
+数据接口以一个数据buffer为参数，然后以接受数据的长度为返回值。
+
+\vspace{1em}
 
 \subsection{Receiving Packets: Network Server}
 
+\vspace{1em}
 
 
 \begin{lstlisting}[style=exercise]
 |Exercise 10|. Implement net/input.c.
 \end{lstlisting}
+
+\vspace{1em}
 
 这个Exercise是我本次实验花费的时间最多的地方之一，为什么，可以看看我的代码：
 
@@ -2195,9 +2222,9 @@ runtest1 -tag "testinput [5 packets]" -dir net testinput -DTEST_NO_NS \
 	-check check_testinput 5
 \end{lstlisting}
 
-注意DTEST\_NO\_NS是不启动网络服务器的宏，这就让我很纳闷了，如果不启动的话怎么测试Input和Output模块的？结果查看了一下net/testinput.c代码后才发现，它自己在进程中创建了Input环境和Output环境，单独对这两个模块进行测试：
+注意DTEST\_NO\_NS是不启动网络服务器的宏，这就让我很纳闷了，Input 和 Output 都是网络服务器的一个子模块，如果不启动的话怎么测试 Input 和 Output 模块的？结果查看了一下net/testinput.c代码后才发现，它自己在进程中创建了Input环境和Output环境，单独对这两个模块进行测试：
 
-\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries kern/e100.c}]
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/testinput.c: umain()}]
 void
 umain(void)
 {
@@ -2373,11 +2400,11 @@ input(envid_t ns_envid)
 }
 \end{lstlisting}
 
-第12行的sys\_net\_try\_recv 就是调用的 e100\_receive ()，为什么写入 nsipcbuf.pkt.jp\_data会错误呢？我百思不得其解，直到\highlight{张顺廷}湿胸提醒我才明白过来，Input和Output都是由testinput这个进程fork出来的，因此对于nsipcbuf这样的数据，在他们的地址中都是\highlight{COW页}。
+第12行的sys\_net\_try\_recv 就是调用的 e100\_receive ()，可以看到写入的目标是  nsipcbuf.pkt.jp\_data ，为什么写入 nsipcbuf.pkt.jp\_data 会错误呢？我百思不得其解，直到\highlight{张顺廷}湿胸提醒我才明白过来，Input和Output都是由testinput这个进程fork出来的，因此对于nsipcbuf这样的数据，在他们的地址中都是\highlight{COW页}。
 
-如果按照我这样的调用方法传入调用系统调用，那么向nsipcbuf中写入值的时候由于是处在内核态，内核态没有COW恢复机制，所以就发生了内核页错误了。COW恢复只可能是在用户态程序中进行写入时才有可能发生，即只有在Input本身向nsipcbuf写入数据，才有可能恢复。
+如果按照我这样的调用方法传入调用系统调用，那么向nsipcbuf中写入值的时候是在kern/e100.c中的\funcname{e100\_receive()} ，运行过程中是\highlight{处在内核态}，\highlight{内核态没有COW恢复机制}，所以就发生了内核页错误了。COW恢复只可能是在用户态程序中进行写入时才有可能发生，即只有在Input本身向nsipcbuf写入数据，才有可能恢复。
 
-所以处理的办法是，在Input环境中开一片buf专门用于存储从系统调用 \funcname{ sys\_net\_try\_recv() } 接受来的数据，然后在接收以后再复制给 nsipcbuf.pkt.jp\_data，修改后的Input如下：
+所以处理的办法是，在Input环境中开一片buf专门用于存储从系统调用 \funcname{ sys\_net\_try\_recv() } 接受来的数据，接受完成后，再将buf的内容使用 memmove 复制给 nsipcbuf.pkt.jp\_data，修改后的Input如下：
 
 \begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries net/input.c}]
 #include "ns.h"
@@ -2405,6 +2432,8 @@ input(envid_t ns_envid)
 
 修改以后再次测试，出现了很奇怪的现象：
 
+\newpage
+
 \begin{lstlisting}[style=console]
 testinput [5 packets]: WRONG, receiving packet 001/5 (5.0s)
 expected input: 0030   2030 3031 0a
@@ -2426,9 +2455,36 @@ echosvr过了，但是testinput还是不过，而且跟答案的差距还非常�
     // another packet in to the same physical page.
 \end{lstlisting}
 
-即会有这样的情况，Input将数据放入nsipcbuf中传给NS，NS处理这些数据需要一些时间。因为Input 是轮询查询网卡是不是有新数据的，所以可能在NS还没处理完的时候就利用原来的页面装进了新收到的数据，准备发给NS，这个时候就悲剧了，原来的数据被刷新了。
+即会有\highlight{这样的情况}，Input将数据放入nsipcbuf中传给NS，NS处理这些数据需要一些时间。因为Input 是轮询查询网卡是不是有新数据的，所以可能在NS还没处理完的时候就利用原来放置 nsipcbuf 的页面装进了新收到的数据，准备发给NS，这个时候就悲剧了，原来NS正在读取的数据被刷新了。
 
-张磊的做法是每次把nsipcbuf以ipc发送给NS以后，进行一次 \funcname{sys\_yield()} 我也这么试了，让我很郁闷，他进行一次就可以了，我一定要yield三次才可以。其实事实上yield多少次都不安全，因为没法知道网络服务器端什么时候才读完所有的数据，允许Input可以在nsipcbuf上写新的东西。
+张磊的做法是每次把nsipcbuf以ipc发送给NS以后，进行一次 \funcname{sys\_yield()} 我也这么试了，让我很郁闷的是，他进行一次就可以了，\highlight{尼玛我一定要yield三次才可以！！！}其实事实上yield多少次都不安全，因为没法知道网络服务器端什么时候才读完所有的数据，允许Input可以在nsipcbuf上写新的东西。
+
+\highlight{张顺廷湿胸}跟我说了一个方法，是所有方法里感觉比较靠谱的一个了，就是当使用ipc传输数据的时候，\highlight{每个接受的进程在使用完共享的页面时，应该都会将页面卸载}。（但是不卸载也是没有问题的，因为当你下次使用IPC接受页面时，重新映射的时候如果发现已有装入的页面，系统的IPC接口会自动帮用户卸载，但是一般编写的比较良好的程序应该都会卸载）。所以我们可以在发送以后记录nsipcbuf页面的引用数，在标准库中提供用户访问页面引用数的接口：
+
+\begin{lstlisting}[style=ccode, title={\scriptsize \ttfamily \bfseries lib/pageref.c}]
+#include <inc/lib.h>
+
+int
+pageref(void *v)
+{
+	pte_t pte;
+
+	if (!(vpd[PDX(v)] & PTE_P))
+		return 0;
+	pte = vpt[VPN(v)];
+	if (!(pte & PTE_P))
+		return 0;
+	return pages[PPN(pte)].pp_ref;
+}
+\end{lstlisting}
+
+然后我们可以轮询查询该页面的引用数，当NS使用完该页面的时候卸载页面，那么它的引用数一定会减小，那么这个时候我们就可以知道该页面已被用完，可以装入新数据了。
+
+这个做法还有一个要注意的地方，就是前面提到过，由于Input和Output都是网络服务器的一个模块，是由NS在进程里fork出来的进程，所以\highlight{nsipcbuf都是COW页面}，COW页面可能会被很多程序使用，当一个程序对页面进行写操作，那么COW恢复程序就会申请新的页面给改程序，那么原来的COW页面的引用数就会减少了。另一方面，如果另外一个程序执行了fork，那么该COW页面的引用数就会增加。
+
+前面这段说明的就是如果nsipcbuf的页面是COW页面，\highlight{那么对其读取引用数是没有意义的，它随时可以改变}，为了避免这种情况，可以Input一开始的时候就可以对 nsipcbuf进行一次写操作。那么这个时候COW页面的恢复机制会自动为nsipcbuf拷贝一个新的物理页，那么这个物理页就是唯一专属 Input模块了，这个时候再进行读写引用数就是唯一的了。
+
+但是我仍然没有采用这样的方法，因为采用这种方式的前提是我们需要知道网络服务器一定遵照了ipc调用的原则卸载了传输的IPC页面，实际情况下我不清楚它是否这么作了，即如果别人的实现比较丑的情况下，这样的机制仍会挂。
 
 所以我的想法是应该让网络服务器接受和处理完毕以后，向Input发送一条消息，通知他可以继续收数据。但是具体服务器代码我没有看，所以也无所谓改不改了。
 
@@ -2525,9 +2581,34 @@ send_data(struct http_request *req, int fd)
 }
 \end{lstlisting}
 
+然后按照材料的提示，使用make run-httpd运行服务器，在make which-ports查看QEMU为我们映射的监听端口
+
+\begin{lstlisting}[style=console]
+zhangchi@zhangchi-vostro1400:~/lab$ make which-ports
+Local port 26001 forwards to JOS port 7 (echo server)
+Local port 26002 forwards to JOS port 80 (web server)
+zhangchi@zhangchi-vostro1400:~/lab$ 
+\end{lstlisting}
+
+于是在浏览器里打开\burl{http://127.0.0.1:26002/index.html}即可看到JOS内运行的Web服务器了：
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.40]{/home/zhangchi/lab/report/httpd.png}
+\end{figure}
+
+
+
+
 \vspace{3em}
 
-到这里Lab6终于完全结束了！真的太消耗人了。
+到这里Lab6终于完全结束了！真的太消耗人了！！！写到这里我想衷心的感谢一些人：
+
+\begin{itemize}
+\item{\highlight{李春奇}：春哥提供的程序和讲解帮我从一无所知到终于鼓起勇气开始动手有很大的帮助}
+\item{\highlight{张磊}：磊牛的代码给我了我很多启发，并且提供了非常好的参考资料，省去了我在茫茫信息的大海中自己找寻的麻烦}
+\item{\highlight{张顺廷}：顺顺湿胸是在整个操统实习课程中对我帮助最大的人，他对我的指点纠正了我很多理解上的误区，让我对JOS有了更加深入的认识，同时他也是我见过的对于JOS的见解最到位也最负责的助教了}
+\end{itemize}
 
 \clearpage
 
